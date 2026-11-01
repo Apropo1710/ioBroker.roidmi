@@ -17,8 +17,12 @@ export declare class XiaomiCloudMapClient {
     private ssecurity;
     private userId;
     private serviceToken;
+    private pendingFlag;
+    private maskedDestination;
     private readonly agent;
-    fetchMap(o: XiaomiCloudMapOptions): Promise<XiaomiCloudMapResult>;
+    fetchMap(o: XiaomiCloudMapOptions, verificationCode?: string): Promise<XiaomiCloudMapResult>;
+    private startTwoFactor;
+    private finishLogin;
     private api;
     private request;
     private json;

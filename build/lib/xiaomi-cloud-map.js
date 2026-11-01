@@ -52,30 +52,49 @@ class XiaomiCloudMapClient {
     ssecurity = "";
     userId = "";
     serviceToken = "";
+    pendingFlag = "";
+    maskedDestination = "";
     agent = "Android-7.1.1-1.0.0-ROIDMIIOBROKER APP/xiaomi.smarthome APPV/62830";
-    async fetchMap(o) {
+    async fetchMap(o, verificationCode) {
         if (!o.username.trim() || !o.password || !o.mapName.trim())
             throw new Error("Xiaomi cloud username, password and map name are required");
-        const first = await this.request("https://account.xiaomi.com/pass/serviceLogin?sid=xiaomiio&_json=true", { headers: { Cookie: `userId=${encodeURIComponent(o.username)}` } });
-        const init = this.json(await first.text());
-        if (typeof init._sign !== "string")
-            throw new Error("Xiaomi login could not be initialized");
-        const fields = new URLSearchParams({ sid: "xiaomiio", hash: (0, node_crypto_1.createHash)("md5").update(o.password).digest("hex").toUpperCase(), callback: "https://sts.api.io.mi.com/sts", qs: "%3Fsid%3Dxiaomiio%26_json%3Dtrue", user: o.username, _sign: init._sign, _json: "true" });
-        const login = await this.request("https://account.xiaomi.com/pass/serviceLoginAuth2", { method: "POST", body: fields.toString(), headers: { "Content-Type": "application/x-www-form-urlencoded" } });
-        const auth = this.json(await login.text());
-        if (typeof auth.ssecurity !== "string") {
-            if (typeof auth.notificationUrl === "string")
-                throw new Error("XIAOMI_2FA:" + auth.notificationUrl);
-            throw new Error("Xiaomi login failed. Check account, password and region.");
+        if (!this.serviceToken || !this.ssecurity) {
+            if (this.pendingFlag) {
+                if (!verificationCode?.trim())
+                    throw new Error("XIAOMI_2FA_CODE:Enter the verification code sent by Xiaomi.");
+                const method = this.pendingFlag === "8" ? "Email" : "Phone";
+                const verify = await this.request("https://account.xiaomi.com/identity/auth/verify" + method, {
+                    method: "POST",
+                    body: new URLSearchParams({ _flag: this.pendingFlag, ticket: verificationCode.trim(), trust: "false", _json: "true" }).toString(),
+                    headers: { "Content-Type": "application/x-www-form-urlencoded", Cookie: "identity_session=" + this.cookies.get("identity_session") }
+                });
+                const verified = this.json(await verify.text());
+                if (typeof verified.location !== "string")
+                    throw new Error("Xiaomi rejected the verification code. Please request a new code.");
+                await this.finishLogin(verified.location);
+                this.pendingFlag = "";
+            }
+            else {
+                const first = await this.request("https://account.xiaomi.com/pass/serviceLogin?sid=xiaomiio&_json=true", { headers: { Cookie: `userId=${encodeURIComponent(o.username)}` } });
+                const init = this.json(await first.text());
+                if (typeof init._sign !== "string")
+                    throw new Error("Xiaomi login could not be initialized");
+                const fields = new URLSearchParams({ sid: "xiaomiio", hash: (0, node_crypto_1.createHash)("md5").update(o.password).digest("hex").toUpperCase(), callback: "https://sts.api.io.mi.com/sts", qs: "%3Fsid%3Dxiaomiio%26_json%3Dtrue", user: o.username, _sign: init._sign, _json: "true" });
+                const login = await this.request("https://account.xiaomi.com/pass/serviceLoginAuth2", { method: "POST", body: fields.toString(), headers: { "Content-Type": "application/x-www-form-urlencoded" } });
+                const auth = this.json(await login.text());
+                if (typeof auth.notificationUrl === "string") {
+                    await this.startTwoFactor(auth.notificationUrl);
+                    throw new Error("XIAOMI_2FA_CODE:Code sent to " + this.maskedDestination + ". Enter it in map.cloudVerificationCode.");
+                }
+                if (typeof auth.ssecurity !== "string" || typeof auth.location !== "string")
+                    throw new Error("Xiaomi login failed. Check account, password and region.");
+                this.ssecurity = auth.ssecurity;
+                this.userId = String(auth.userId ?? "");
+                await this.finishLogin(auth.location);
+            }
         }
-        this.ssecurity = auth.ssecurity;
-        this.userId = String(auth.userId ?? "");
-        if (typeof auth.location !== "string")
-            throw new Error("Xiaomi login returned no authentication location");
-        await this.request(auth.location);
-        this.serviceToken = this.cookies.get("serviceToken") ?? "";
-        if (!this.serviceToken)
-            throw new Error("Xiaomi login did not provide a service token");
+        if (!this.serviceToken || !this.ssecurity)
+            throw new Error("Xiaomi login did not provide valid cloud session tokens");
         const base = `https://${o.country === "cn" ? "" : o.country + "."}api.io.mi.com/app`;
         const devices = await this.api(base + "/home/device_list", { data: '{"getVirtualModel":false,"getHuamiDevices":0}' });
         const list = devices?.result?.list;
@@ -93,6 +112,48 @@ class XiaomiCloudMapClient {
         if (!archive.length || archive.length > 20 * 1024 * 1024)
             throw new Error("Downloaded map archive has an invalid size");
         return { metadata: (0, roidmi_map_1.parseRoidmiMapArchive)(archive), mapName: o.mapName, deviceId, userId };
+    }
+    async startTwoFactor(notificationUrl) {
+        const listUrl = notificationUrl.replace("/fe/service/identity/authStart", "/identity/list");
+        const listResponse = await this.request(listUrl);
+        const list = this.json(await listResponse.text());
+        const flag = String(list.flag ?? (Array.isArray(list.options) ? list.options[0] : ""));
+        if (list.code !== 0 || (flag !== "4" && flag !== "8") || !this.cookies.get("identity_session")) {
+            throw new Error("Xiaomi did not provide a supported two-factor method or identity session.");
+        }
+        this.pendingFlag = flag;
+        const method = flag === "8" ? "Email" : "Phone";
+        const optionsResponse = await this.request("https://account.xiaomi.com/identity/auth/verify" + method, {
+            headers: { Cookie: "identity_session=" + this.cookies.get("identity_session") }
+        });
+        const options = this.json(await optionsResponse.text());
+        this.maskedDestination = String(flag === "8" ? options.maskedEmail ?? "your email" : options.maskedPhone ?? "your phone");
+        const sent = await this.request("https://account.xiaomi.com/identity/auth/send" + method + "Ticket?_json=true", {
+            method: "POST",
+            body: new URLSearchParams({ _flag: flag, retry: "0", _json: "true" }).toString(),
+            headers: { "Content-Type": "application/x-www-form-urlencoded", Cookie: "identity_session=" + this.cookies.get("identity_session") }
+        });
+        const result = this.json(await sent.text());
+        if (result.code !== 0)
+            throw new Error("Xiaomi could not send the verification code.");
+    }
+    async finishLogin(location) {
+        const response = await this.request(location);
+        const extension = response.headers.get("Extension-Pragma");
+        if (extension) {
+            try {
+                const parsed = JSON.parse(extension);
+                if (typeof parsed.ssecurity === "string")
+                    this.ssecurity = parsed.ssecurity;
+            }
+            catch { /* Ignore malformed optional header. */ }
+        }
+        this.serviceToken = this.cookies.get("serviceToken") ?? "";
+        this.userId = this.cookies.get("userId") ?? this.userId;
+        if (!this.ssecurity)
+            throw new Error("Xiaomi verification completed but no cloud security token was returned.");
+        if (!this.serviceToken)
+            throw new Error("Xiaomi verification completed but no service token was returned.");
     }
     async api(url, params) {
         const millis = Date.now(), nonce = Buffer.concat([(0, node_crypto_1.randomBytes)(8), Buffer.from(Math.floor(millis / 60000).toString(16).padStart(8, "0"), "hex")]).toString("base64");
