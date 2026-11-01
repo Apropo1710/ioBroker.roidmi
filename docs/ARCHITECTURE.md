@@ -22,7 +22,7 @@ Die konkrete Implementierung wird erst nach Validierung der realen Geräteantwor
 
 Ziel ist eine möglichst geringe Datenlatenz bei minimaler Last für Roboter und ioBroker.
 
-- MIoT-Eigenschaften nach Möglichkeit gebündelt mit einem `get_properties`-Aufruf lesen, nicht je Datenpunkt einen UDP-Aufruf senden.
+- Das konservative V60-Profil liest aktuell eine Property je `get_properties`-RPC, weil die verfügbare Gerätebeschreibung `maxProperties: 1` nennt. Erst wenn das konkrete Gerät Mehrfachabfragen nachweislich unterstützt, werden Properties gebündelt.
 - Polling standardmäßig moderat (30 Sekunden); die Frequenz muss konfigurierbar bleiben.
 - Keine überlappenden Polling-Durchläufe: der nächste Lauf wird erst nach Abschluss des vorherigen geplant.
 - Bei erfolgreicher Abfrage nur geänderte Werte mit `setStateChangedAsync` schreiben, damit unnötige Datenbank- und Event-Last vermieden wird.
@@ -33,4 +33,4 @@ Ziel ist eine möglichst geringe Datenlatenz bei minimaler Last für Roboter und
 - Keine unnötigen Objekte/Datenpunkte pro Poll neu anlegen.
 - Polling-Takt, Anzahl der RPC-Aufrufe und Antwortzeiten später messbar machen, ohne Tokens oder sensible Nutzdaten zu protokollieren.
 
-Die aktuelle Implementierung bündelt vier Basis-Eigenschaften in einem Aufruf, schreibt nur geänderte Werte und verwendet ein nicht überlappendes Polling mit Fehler-Backoff. Die Intervalle werden anhand echter Geräteantworten weiter optimiert.
+Die aktuelle Implementierung liest vier Basis-Eigenschaften nacheinander mit je einem RPC, schreibt nur geänderte Werte und verwendet ein nicht überlappendes Polling mit Fehler-Backoff. Die Intervalle werden anhand echter Geräteantworten weiter optimiert.
