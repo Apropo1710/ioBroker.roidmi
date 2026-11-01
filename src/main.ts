@@ -3,6 +3,7 @@ import { MiioClient } from "./lib/miio-client";
 import { parseRoomCleaningRequest } from "./lib/room-cleaning";
 import { validateConfig } from "./lib/config";
 import { buildVacuumAction } from "./lib/roidmi-actions";
+import { parseRoomMapConfig, RoomMapConfig } from "./lib/room-map";
 
 interface RoidmiAdapterConfig {
     host?: string;
@@ -23,6 +24,7 @@ class RoidmiAdapter extends Adapter {
     private lastPollError = "";
     private commandRunning = false;
     private client?: MiioClient;
+    private roomMapConfig?: RoomMapConfig;
 
     public constructor() {
         super({ name: "roidmi" });
@@ -85,7 +87,8 @@ class RoidmiAdapter extends Adapter {
             { id: "start", name: "Start full cleaning" },
             { id: "pause", name: "Pause cleaning" },
             { id: "resume", name: "Resume cleaning" },
-            { id: "dock", name: "Return to charging dock" }
+            { id: "dock", name: "Return to charging dock" },
+            { id: "stop", name: "Stop cleaning" }
         ] as const;
         for (const control of controls) {
             await this.setObjectNotExistsAsync(`control.${control.id}`, {
@@ -102,6 +105,27 @@ class RoidmiAdapter extends Adapter {
             native: {}
         });
         await this.subscribeStatesAsync("control.cleanRooms");
+
+        await this.setObjectNotExistsAsync("control.importRooms", {
+            type: "state",
+            common: { name: "Import room map (JSON: mapId and rooms)", type: "string", role: "json", read: false, write: true, def: "" },
+            native: {}
+        });
+        await this.subscribeStatesAsync("control.importRooms");
+        await this.setObjectNotExistsAsync("map.config", {
+            type: "state",
+            common: { name: "Persisted room map configuration", type: "string", role: "json", read: true, write: false },
+            native: {}
+        });
+        const savedMap = await this.getStateAsync("map.config");
+        if (savedMap && typeof savedMap.val === "string" && savedMap.val.trim()) {
+            try {
+                await this.applyRoomMapConfig(parseRoomMapConfig(savedMap.val));
+            } catch (error) {
+                const message = error instanceof Error ? error.message : "Stored room map is invalid";
+                this.log.warn("Stored room map could not be restored: " + message);
+            }
+        }
 
         const poll = async (): Promise<void> => {
             if (!this.client || this.stopping) return;
@@ -150,43 +174,113 @@ class RoidmiAdapter extends Adapter {
         scheduleNext(this.lastPollError ? Math.min(baseIntervalMs * 2, 300000) : baseIntervalMs);
     }
 
-    private async onStateChange(id: string, state: ioBroker.State | null | undefined): Promise<void> {
-        const prefix = this.namespace + ".control.";
-        if (!state || state.ack || !id.startsWith(prefix)) return;
+    private async applyRoomMapConfig(config: RoomMapConfig): Promise<void> {
+        const previous = this.roomMapConfig;
+        this.roomMapConfig = config;
+        await this.setStateAsync("map.config", { val: JSON.stringify(config), ack: true });
+        await this.setStateChangedAsync("map.mapId", { val: config.mapId, ack: true });
+        await this.setStateChangedAsync("map.roomsJson", { val: JSON.stringify(config.rooms), ack: true });
+        for (const room of config.rooms) {
+            await this.setObjectNotExistsAsync(`rooms.${room.id}.name`, {
+                type: "state",
+                common: { name: "Room name", type: "string", role: "text", read: true, write: false },
+                native: { segmentId: room.id }
+            });
+            await this.setStateChangedAsync(`rooms.${room.id}.name`, { val: room.name, ack: true });
+            await this.setObjectNotExistsAsync(`rooms.${room.id}.clean`, {
+                type: "state",
+                common: { name: `Clean ${room.name}`, type: "boolean", role: "button", read: false, write: true, def: false },
+                native: { segmentId: room.id }
+            });
+            await this.subscribeStatesAsync(`rooms.${room.id}.clean`);
+        }
+        if (previous) {
+            const currentIds = new Set(config.rooms.map((room) => room.id));
+            for (const room of previous.rooms) {
+                if (!currentIds.has(room.id)) {
+                    await this.delObjectAsync(`rooms.${room.id}.name`);
+                    await this.delObjectAsync(`rooms.${room.id}.clean`);
+                }
+            }
+        }
+        this.log.info(`Loaded room map ${config.mapId} with ${config.rooms.length} rooms`);
+    }
 
+    private async onStateChange(id: string, state: ioBroker.State | null | undefined): Promise<void> {
+        if (!state || state.ack) return;
+
+        const importId = this.namespace + ".control.importRooms";
+        if (id === importId) {
+            if (typeof state.val === "string" && state.val.trim()) {
+                try {
+                    const config = parseRoomMapConfig(state.val);
+                    await this.applyRoomMapConfig(config);
+                } catch (error) {
+                    const message = error instanceof Error ? error.message : "Invalid room map";
+                    this.log.warn("Room-map import rejected: " + message);
+                }
+            }
+            await this.setStateAsync("control.importRooms", { val: "", ack: true });
+            return;
+        }
+
+        const roomPrefix = this.namespace + ".rooms.";
+        if (id.startsWith(roomPrefix) && id.endsWith(".clean")) {
+            const roomIdText = id.slice(roomPrefix.length, -".clean".length);
+            const roomId = Number(roomIdText);
+            if (state.val !== true) return;
+            const room = this.roomMapConfig?.rooms.find((entry) => entry.id === roomId);
+            if (!room || !this.roomMapConfig) {
+                this.log.warn("Room command ignored: room map is not configured");
+                await this.setStateAsync(id, { val: false, ack: true });
+                return;
+            }
+            await this.sendAction("room-" + room.name, {
+                siid: 14, aiid: 1,
+                in: [2, JSON.stringify({ mapId: this.roomMapConfig.mapId, segmentId: [room.id] })]
+            }, id);
+            return;
+        }
+
+        const prefix = this.namespace + ".control.";
+        if (!id.startsWith(prefix)) return;
         const command = id.slice(prefix.length);
         const config = this.config as RoidmiAdapterConfig;
-        let action: MiotAction | undefined;
-        let resetValue: boolean | string;
 
         if (command === "cleanRooms") {
-            resetValue = "";
-            if (typeof state.val !== "string" || !state.val.trim()) return;
+            if (typeof state.val !== "string" || !state.val.trim()) {
+                await this.setStateAsync("control.cleanRooms", { val: "", ack: true });
+                return;
+            }
             try {
                 const roomAction = parseRoomCleaningRequest(state.val);
-                action = { siid: roomAction.siid, aiid: roomAction.aiid, in: roomAction.params };
+                await this.sendAction("cleanRooms", { siid: roomAction.siid, aiid: roomAction.aiid, in: roomAction.params }, "control.cleanRooms", "");
             } catch (error) {
                 const message = error instanceof Error ? error.message : "Invalid room-cleaning request";
                 this.log.warn("Room-cleaning request rejected: " + message);
                 await this.setStateAsync("control.cleanRooms", { val: "", ack: true });
-                return;
             }
-        } else {
-            if (state.val !== true) return;
-            resetValue = false;
-            if (command === "start" || command === "pause" || command === "resume" || command === "dock" || command === "stop") {
-                action = buildVacuumAction(command);
-            }
+            return;
         }
 
-        if (!action || !this.client || !config.did) {
+        if (state.val !== true) return;
+        if (command === "start" || command === "pause" || command === "resume" || command === "dock" || command === "stop") {
+            await this.sendAction(command, buildVacuumAction(command), "control." + command, false);
+            return;
+        }
+        await this.setStateAsync("control." + command, { val: false, ack: true });
+    }
+
+    private async sendAction(command: string, action: MiotAction, stateId: string, resetValue: boolean | string = false): Promise<void> {
+        const config = this.config as RoidmiAdapterConfig;
+        if (!this.client || !config.did) {
             this.log.warn("Control command ignored: " + command + " is unavailable");
-            await this.setStateAsync("control." + command, { val: resetValue, ack: true });
+            await this.setStateAsync(stateId, { val: resetValue, ack: true });
             return;
         }
         if (this.commandRunning) {
             this.log.warn("Control command ignored because another command is still running");
-            await this.setStateAsync("control." + command, { val: resetValue, ack: true });
+            await this.setStateAsync(stateId, { val: resetValue, ack: true });
             return;
         }
 
@@ -204,7 +298,7 @@ class RoidmiAdapter extends Adapter {
             await this.setStateChangedAsync("info.connectionText", { val: message, ack: true });
         } finally {
             this.commandRunning = false;
-            await this.setStateAsync("control." + command, { val: resetValue, ack: true });
+            await this.setStateAsync(stateId, { val: resetValue, ack: true });
         }
     }
 
