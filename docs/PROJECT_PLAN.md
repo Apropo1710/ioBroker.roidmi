@@ -12,9 +12,9 @@
 - [x] TypeScript-Projektgerüst
 - [x] Konfigurationsvalidierung als erste isolierte Funktion
 - [x] Secret-Redaction-Helfer
-- [ ] ioBroker-Adapter-Core integrieren
-- [ ] Konfiguration, Verbindungsmanager, Polling und Backoff
-- [ ] Objekt-/State-Modell und Tests
+- [x] ioBroker-Adapter-Core integrieren
+- [x] Konfiguration, Verbindungsmanager, Polling und Backoff
+- [x] Basis-Objekt-/State-Modell und Tests
 
 ## Phase 2 – Kernsteuerung (inkl. priorisierter Raumsteuerung)
 - [ ] Status und Akkudaten
