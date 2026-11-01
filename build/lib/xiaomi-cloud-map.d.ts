@@ -22,6 +22,10 @@ export declare class XiaomiCloudMapClient {
     private pendingFlag;
     private maskedDestination;
     private readonly agent;
+    hasSession(): boolean;
+    exportSession(): string;
+    restoreSession(serialized: string): void;
+    clearSession(): void;
     fetchMap(o: XiaomiCloudMapOptions, verificationCode?: string): Promise<XiaomiCloudMapResult>;
     private identityCookie;
     private startTwoFactor;

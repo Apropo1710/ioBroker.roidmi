@@ -17,6 +17,14 @@ class CookieStore {
     }
     header() { return [...this.values].map(([k, v]) => `${k}=${v}`).join("; "); }
     get(name) { return this.values.get(name); }
+    export() { return [...this.values.entries()]; }
+    restore(values) {
+        this.values.clear();
+        for (const [name, value] of values) {
+            if (typeof name === "string" && typeof value === "string")
+                this.values.set(name, value);
+        }
+    }
 }
 function rc4(key, input) {
     const s = new Uint8Array(256);
@@ -59,6 +67,38 @@ class XiaomiCloudMapClient {
     pendingFlag = "";
     maskedDestination = "";
     agent = "Android-7.1.1-1.0.0-ROIDMIIOBROKER APP/xiaomi.smarthome APPV/62830";
+    hasSession() { return Boolean(this.ssecurity && this.serviceToken && this.userId); }
+    exportSession() {
+        return JSON.stringify({
+            cookies: this.cookies.export(), ssecurity: this.ssecurity, userId: this.userId,
+            serviceToken: this.serviceToken, cUserId: this.cUserId, passToken: this.passToken
+        });
+    }
+    restoreSession(serialized) {
+        const value = JSON.parse(serialized);
+        if (!Array.isArray(value.cookies) || typeof value.ssecurity !== "string" ||
+            typeof value.userId !== "string" || typeof value.serviceToken !== "string" ||
+            !value.ssecurity || !value.userId || !value.serviceToken) {
+            throw new Error("Stored Xiaomi cloud session is incomplete");
+        }
+        const cookies = value.cookies.filter((entry) => Array.isArray(entry) && entry.length === 2 && typeof entry[0] === "string" && typeof entry[1] === "string");
+        this.cookies.restore(cookies);
+        this.ssecurity = value.ssecurity;
+        this.userId = value.userId;
+        this.serviceToken = value.serviceToken;
+        this.cUserId = typeof value.cUserId === "string" ? value.cUserId : "";
+        this.passToken = typeof value.passToken === "string" ? value.passToken : "";
+    }
+    clearSession() {
+        this.cookies.restore([]);
+        this.ssecurity = "";
+        this.userId = "";
+        this.serviceToken = "";
+        this.cUserId = "";
+        this.passToken = "";
+        this.pendingFlag = "";
+        this.maskedDestination = "";
+    }
     async fetchMap(o, verificationCode) {
         if (!o.username.trim() || !o.password || !o.mapName.trim())
             throw new Error("Xiaomi cloud username, password and map name are required");

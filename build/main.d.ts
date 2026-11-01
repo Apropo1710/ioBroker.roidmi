@@ -17,6 +17,8 @@ declare class RoidmiAdapter extends Adapter {
      * This is deliberately excluded from the fast status polling cycle.
      */
     private refreshTiming;
+    private onMessage;
+    private persistCloudSession;
     private refreshCloudMap;
     private sendProperty;
     private sendAction;
