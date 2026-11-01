@@ -4,7 +4,8 @@
 - [ ] Modell/Firmware und lokale Netzwerkadresse erfassen
 - [ ] MIoT-/miIO-Token sicher beschaffen und lokal halten
 - [ ] Read-only-Verbindung testen
-- [ ] Tatsächlich unterstützte Properties, Actions, Raum-IDs und Fehlercodes dokumentieren
+- [ ] Tatsächlich unterstützte Properties, Actions, Raum-IDs und Fehlercodes am Gerät dokumentieren
+- [x] Dokumentiertes MIoT-Format für Einzel- und Mehrraumreinigung als getesteten Payload-Builder abbilden
 - [ ] Prüfen, welche Funktionen lokal und welche nur über Cloud verfügbar sind
 
 ## Phase 1 – Adapterbasis
@@ -21,6 +22,7 @@
 - [ ] Saugmodus und Wasserstufe
 - [ ] Fehler- und Verbindungsstatus
 - [ ] Raumaufteilung bzw. Raumliste vom Gerät abrufen, soweit das Protokoll es ermöglicht
+- [ ] Aktuelle mapId und Raum-/Segment-IDs automatisch ermitteln und persistent ablegen
 - [ ] Räume mit stabilen Raum-IDs und lesbaren Namen als ioBroker-Objekte abbilden
 - [ ] Reinigung eines einzelnen ausgewählten Raums starten
 - [ ] Reinigung mehrerer ausgewählter Räume in einem Auftrag starten
