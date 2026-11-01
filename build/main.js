@@ -1,0 +1,498 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const adapter_core_1 = require("@iobroker/adapter-core");
+const miio_client_1 = require("./lib/miio-client");
+const room_cleaning_1 = require("./lib/room-cleaning");
+const config_1 = require("./lib/config");
+const roidmi_actions_1 = require("./lib/roidmi-actions");
+const room_map_1 = require("./lib/room-map");
+const roidmi_settings_1 = require("./lib/roidmi-settings");
+const xiaomi_cloud_map_1 = require("./lib/xiaomi-cloud-map");
+class RoidmiAdapter extends adapter_core_1.Adapter {
+    pollTimer;
+    stopping = false;
+    lastPollError = "";
+    commandRunning = false;
+    client;
+    roomMapConfig;
+    lastKnownSettings = {};
+    constructor() {
+        super({ name: "roidmi" });
+        this.on("ready", () => void this.onReady());
+        this.on("stateChange", (id, state) => void this.onStateChange(id, state));
+        this.on("unload", (callback) => this.onUnload(callback));
+    }
+    async onReady() {
+        await this.setObjectNotExistsAsync("info.connection", {
+            type: "state",
+            common: { name: "Device connection", type: "boolean", role: "indicator.reachable", read: true, write: false },
+            native: {}
+        });
+        await this.setObjectNotExistsAsync("info.connectionText", {
+            type: "state",
+            common: { name: "Connection status", type: "string", role: "text", read: true, write: false },
+            native: {}
+        });
+        await this.setObjectNotExistsAsync("info.lastPoll", {
+            type: "state",
+            common: { name: "Last successful status poll", type: "string", role: "date", read: true, write: false },
+            native: {}
+        });
+        await this.setObjectNotExistsAsync("info.pollCount", {
+            type: "state",
+            common: { name: "Successful status polls since adapter start", type: "number", role: "value", read: true, write: false },
+            native: {}
+        });
+        let successfulPollCount = 0;
+        const config = this.config;
+        const errors = (0, config_1.validateConfig)(config);
+        await this.setStateChangedAsync("info.connection", { val: false, ack: true });
+        if (errors.length) {
+            const message = errors.join(" ");
+            await this.setStateChangedAsync("info.connectionText", { val: message, ack: true });
+            this.log.error(message);
+            return;
+        }
+        if (!config.host || !config.did || !config.token) {
+            const message = "Configuration incomplete: enter robot IP, numeric Xiaomi device DID and MIoT/miIO token.";
+            await this.setStateChangedAsync("info.connectionText", { val: message, ack: true });
+            this.log.info(message);
+            return;
+        }
+        this.client = new miio_client_1.MiioClient({ host: config.host, token: config.token });
+        const properties = [
+            { id: "battery", siid: 3, piid: 1, name: "Battery level", unit: "%" },
+            { id: "charging", siid: 3, piid: 2, name: "Charging state" },
+            { id: "state", siid: 2, piid: 1, name: "Vacuum state" },
+            { id: "errorCode", siid: 2, piid: 2, name: "Error code" },
+            { id: "fanSpeed", siid: 2, piid: 4, name: "Suction power", min: 0, max: 4 },
+            { id: "sweepType", siid: 2, piid: 8, name: "Cleaning type", min: 0, max: 2 },
+            { id: "waterLevel", siid: 8, piid: 11, name: "Water level", min: 0, max: 4 }
+        ];
+        for (const property of properties) {
+            await this.setObjectNotExistsAsync(property.id, {
+                type: "state",
+                common: {
+                    name: property.name, type: "number", role: "level",
+                    ...("min" in property ? { min: property.min, max: property.max } : {}),
+                    ...("unit" in property ? { unit: property.unit } : {}),
+                    read: true, write: "min" in property
+                },
+                native: { siid: property.siid, piid: property.piid }
+            });
+            if ("min" in property)
+                await this.subscribeStatesAsync(property.id);
+        }
+        const controls = [
+            { id: "start", name: "Start full cleaning" },
+            { id: "pause", name: "Pause cleaning" },
+            { id: "resume", name: "Resume cleaning" },
+            { id: "dock", name: "Return to charging dock" },
+            { id: "stop", name: "Stop cleaning" }
+        ];
+        for (const control of controls) {
+            await this.setObjectNotExistsAsync(`control.${control.id}`, {
+                type: "state",
+                common: { name: control.name, type: "boolean", role: "button", read: false, write: true, def: false },
+                native: {}
+            });
+            await this.subscribeStatesAsync(`control.${control.id}`);
+        }
+        await this.setObjectNotExistsAsync("control.cleanRooms", {
+            type: "state",
+            common: { name: "Clean selected rooms (JSON: mapId and roomIds)", type: "string", role: "json", read: false, write: true, def: "" },
+            native: {}
+        });
+        await this.subscribeStatesAsync("control.cleanRooms");
+        await this.setObjectNotExistsAsync("control.refreshTiming", {
+            type: "state",
+            common: { name: "Read saved cleaning schedules and room selections", type: "boolean", role: "button", read: false, write: true, def: false },
+            native: {}
+        });
+        await this.subscribeStatesAsync("control.refreshTiming");
+        await this.setObjectNotExistsAsync("timing.raw", {
+            type: "state",
+            common: { name: "Raw saved Roidmi cleaning schedules (read on demand)", type: "string", role: "json", read: true, write: false },
+            native: { siid: 8, piid: 6 }
+        });
+        await this.setObjectNotExistsAsync("timing.lastUpdate", {
+            type: "state",
+            common: { name: "Last schedule read", type: "string", role: "date", read: true, write: false },
+            native: {}
+        });
+        await this.setObjectNotExistsAsync("control.importRooms", {
+            type: "state",
+            common: { name: "Import room map (JSON: mapId and rooms)", type: "string", role: "json", read: false, write: true, def: "" },
+            native: {}
+        });
+        await this.subscribeStatesAsync("control.importRooms");
+        await this.setObjectNotExistsAsync("map.config", {
+            type: "state",
+            common: { name: "Persisted room map configuration", type: "string", role: "json", read: true, write: false },
+            native: {}
+        });
+        await this.setObjectNotExistsAsync("control.refreshMap", { type: "state", common: { name: "Fetch map and rooms from Xiaomi Cloud (manual)", type: "boolean", role: "button", read: false, write: true, def: false }, native: {} });
+        await this.subscribeStatesAsync("control.refreshMap");
+        for (const [id, name, role] of [["map.cloudStatus", "Xiaomi Cloud map retrieval status", "text"], ["map.cloudAuthUrl", "Xiaomi two-factor authentication URL", "text"], ["map.cloudLastUpdate", "Last successful Xiaomi Cloud map retrieval", "date"]])
+            await this.setObjectNotExistsAsync(id, { type: "state", common: { name, type: "string", role, read: true, write: false }, native: {} });
+        const savedMap = await this.getStateAsync("map.config");
+        if (savedMap && typeof savedMap.val === "string" && savedMap.val.trim()) {
+            try {
+                await this.applyRoomMapConfig((0, room_map_1.parseRoomMapConfig)(savedMap.val));
+            }
+            catch (error) {
+                const message = error instanceof Error ? error.message : "Stored room map is invalid";
+                this.log.warn("Stored room map could not be restored: " + message);
+            }
+        }
+        const poll = async () => {
+            if (!this.client || this.stopping || this.commandRunning)
+                return;
+            this.commandRunning = true;
+            try {
+                // Read all status properties in one MIoT RPC to minimize UDP traffic and robot wakeups.
+                const result = await this.client.call("get_properties", properties.map((property) => ({
+                    did: config.did, siid: property.siid, piid: property.piid
+                })));
+                if (!Array.isArray(result))
+                    throw new Error("Unexpected MIoT property response");
+                for (let index = 0; index < properties.length; index++) {
+                    const property = properties[index];
+                    const item = result[index];
+                    if (item?.code === 0 && typeof item.value === "number") {
+                        await this.setStateChangedAsync(property.id, { val: item.value, ack: true });
+                        if ((0, roidmi_settings_1.getRoidmiSetting)(property.id))
+                            this.lastKnownSettings[property.id] = item.value;
+                    }
+                    else if (item && typeof item.code === "number" && item.code !== 0) {
+                        throw new Error(`MIoT property read failed (SIID ${property.siid}, PIID ${property.piid}, code ${item.code})`);
+                    }
+                }
+                successfulPollCount++;
+                await this.setStateChangedAsync("info.lastPoll", { val: new Date().toISOString(), ack: true });
+                await this.setStateChangedAsync("info.pollCount", { val: successfulPollCount, ack: true });
+                await this.setStateChangedAsync("info.connection", { val: true, ack: true });
+                await this.setStateChangedAsync("info.connectionText", { val: "Local miIO connection established", ack: true });
+                this.lastPollError = "";
+            }
+            catch (error) {
+                const message = error instanceof Error ? error.message : "Unknown local miIO error";
+                await this.setStateChangedAsync("info.connection", { val: false, ack: true });
+                await this.setStateChangedAsync("info.connectionText", { val: message, ack: true });
+                if (message !== this.lastPollError)
+                    this.log.warn(message);
+                this.lastPollError = message;
+            }
+            finally {
+                this.commandRunning = false;
+            }
+        };
+        const baseIntervalMs = (config.pollIntervalSeconds ?? 30) * 1000;
+        let consecutiveFailures = 0;
+        const scheduleNext = (delayMs) => {
+            if (this.stopping)
+                return;
+            this.pollTimer = setTimeout(async () => {
+                await poll();
+                if (this.lastPollError)
+                    consecutiveFailures++;
+                else
+                    consecutiveFailures = 0;
+                const nextDelay = this.lastPollError
+                    ? Math.min(baseIntervalMs * (2 ** Math.min(consecutiveFailures, 6)), 300000)
+                    : baseIntervalMs;
+                scheduleNext(nextDelay);
+            }, delayMs);
+        };
+        await poll();
+        scheduleNext(this.lastPollError ? Math.min(baseIntervalMs * 2, 300000) : baseIntervalMs);
+    }
+    async applyRoomMapConfig(config) {
+        const previous = this.roomMapConfig;
+        this.roomMapConfig = config;
+        await this.setObjectNotExistsAsync("map.mapId", {
+            type: "state",
+            common: { name: "Active map ID", type: "number", role: "value", read: true, write: false },
+            native: {}
+        });
+        await this.setObjectNotExistsAsync("map.roomsJson", {
+            type: "state",
+            common: { name: "Imported room list", type: "string", role: "json", read: true, write: false },
+            native: {}
+        });
+        await this.setStateAsync("map.config", { val: JSON.stringify(config), ack: true });
+        await this.setStateChangedAsync("map.mapId", { val: config.mapId, ack: true });
+        await this.setStateChangedAsync("map.roomsJson", { val: JSON.stringify(config.rooms), ack: true });
+        for (const room of config.rooms) {
+            await this.setObjectNotExistsAsync(`rooms.${room.id}.name`, {
+                type: "state",
+                common: { name: "Room name", type: "string", role: "text", read: true, write: false },
+                native: { segmentId: room.id }
+            });
+            await this.setStateChangedAsync(`rooms.${room.id}.name`, { val: room.name, ack: true });
+            await this.setObjectNotExistsAsync(`rooms.${room.id}.clean`, {
+                type: "state",
+                common: { name: `Clean ${room.name}`, type: "boolean", role: "button", read: false, write: true, def: false },
+                native: { segmentId: room.id }
+            });
+            await this.subscribeStatesAsync(`rooms.${room.id}.clean`);
+        }
+        if (previous) {
+            const currentIds = new Set(config.rooms.map((room) => room.id));
+            for (const room of previous.rooms) {
+                if (!currentIds.has(room.id)) {
+                    await this.delObjectAsync(`rooms.${room.id}.name`);
+                    await this.delObjectAsync(`rooms.${room.id}.clean`);
+                }
+            }
+        }
+        this.log.info(`Loaded room map ${config.mapId} with ${config.rooms.length} rooms`);
+    }
+    async onStateChange(id, state) {
+        if (!state || state.ack)
+            return;
+        const importId = this.namespace + ".control.importRooms";
+        if (id === importId) {
+            if (typeof state.val === "string" && state.val.trim()) {
+                try {
+                    const config = (0, room_map_1.parseRoomMapConfig)(state.val);
+                    await this.applyRoomMapConfig(config);
+                }
+                catch (error) {
+                    const message = error instanceof Error ? error.message : "Invalid room map";
+                    this.log.warn("Room-map import rejected: " + message);
+                }
+            }
+            await this.setStateAsync("control.importRooms", { val: "", ack: true });
+            return;
+        }
+        if (id === this.namespace + ".control.refreshMap") {
+            if (state.val === true)
+                await this.refreshCloudMap();
+            await this.setStateAsync("control.refreshMap", { val: false, ack: true });
+            return;
+        }
+        const refreshTimingId = this.namespace + ".control.refreshTiming";
+        if (id === refreshTimingId) {
+            if (state.val === true)
+                await this.refreshTiming();
+            await this.setStateAsync("control.refreshTiming", { val: false, ack: true });
+            return;
+        }
+        const roomPrefix = this.namespace + ".rooms.";
+        if (id.startsWith(roomPrefix) && id.endsWith(".clean")) {
+            const roomIdText = id.slice(roomPrefix.length, -".clean".length);
+            const roomId = Number(roomIdText);
+            if (state.val !== true)
+                return;
+            const room = this.roomMapConfig?.rooms.find((entry) => entry.id === roomId);
+            if (!room || !this.roomMapConfig) {
+                this.log.warn("Room command ignored: room map is not configured");
+                await this.setStateAsync(id, { val: false, ack: true });
+                return;
+            }
+            await this.sendAction("room-" + room.name, {
+                siid: 14, aiid: 1,
+                in: [2, JSON.stringify({ mapId: this.roomMapConfig.mapId, segmentId: [room.id] })]
+            }, `rooms.${room.id}.clean`);
+            return;
+        }
+        const propertyId = id.slice(this.namespace.length + 1);
+        const property = id.startsWith(this.namespace + ".") ? (0, roidmi_settings_1.getRoidmiSetting)(propertyId) : undefined;
+        if (property) {
+            if (typeof state.val !== "number" || !Number.isInteger(state.val) || state.val < property.min || state.val > property.max) {
+                this.log.warn("Setting rejected: value out of range for " + id);
+                await this.setStateAsync(id, { val: this.lastKnownSettings[propertyId] ?? 0, ack: true });
+                return;
+            }
+            await this.sendProperty(id, property, state.val);
+            return;
+        }
+        const prefix = this.namespace + ".control.";
+        if (!id.startsWith(prefix))
+            return;
+        const command = id.slice(prefix.length);
+        const config = this.config;
+        if (command === "cleanRooms") {
+            if (typeof state.val !== "string" || !state.val.trim()) {
+                await this.setStateAsync("control.cleanRooms", { val: "", ack: true });
+                return;
+            }
+            try {
+                const roomAction = (0, room_cleaning_1.parseRoomCleaningRequest)(state.val);
+                await this.sendAction("cleanRooms", { siid: roomAction.siid, aiid: roomAction.aiid, in: roomAction.params }, "control.cleanRooms", "");
+            }
+            catch (error) {
+                const message = error instanceof Error ? error.message : "Invalid room-cleaning request";
+                this.log.warn("Room-cleaning request rejected: " + message);
+                await this.setStateAsync("control.cleanRooms", { val: "", ack: true });
+            }
+            return;
+        }
+        if (state.val !== true)
+            return;
+        if (command === "start" || command === "pause" || command === "resume" || command === "dock" || command === "stop") {
+            await this.sendAction(command, (0, roidmi_actions_1.buildVacuumAction)(command), "control." + command, false);
+            return;
+        }
+        await this.setStateAsync("control." + command, { val: false, ack: true });
+    }
+    /**
+     * Read the stored schedule JSON only when explicitly requested.
+     * This is deliberately excluded from the fast status polling cycle.
+     */
+    async refreshTiming() {
+        const config = this.config;
+        if (!this.client || !config.did || this.commandRunning) {
+            this.log.warn("Schedule read skipped: device unavailable or another command is running");
+            return;
+        }
+        this.commandRunning = true;
+        try {
+            const result = await this.client.call("get_properties", [{
+                    did: config.did, siid: 8, piid: 6
+                }]);
+            if (!Array.isArray(result))
+                throw new Error("Unexpected MIoT schedule response");
+            const item = result[0];
+            if (!item || item.code !== 0 || typeof item.value !== "string") {
+                throw new Error("MIoT schedule read failed or returned an unsupported value");
+            }
+            let formatted = item.value;
+            try {
+                formatted = JSON.stringify(JSON.parse(item.value), null, 2);
+            }
+            catch {
+                // Preserve the exact device response if firmware returns non-JSON text.
+            }
+            await this.setStateChangedAsync("timing.raw", { val: formatted, ack: true });
+            await this.setStateChangedAsync("timing.lastUpdate", { val: new Date().toISOString(), ack: true });
+            this.log.info("Saved cleaning schedules read from robot (SIID 8 / PIID 6)");
+        }
+        catch (error) {
+            const message = error instanceof Error ? error.message : "Unknown schedule read error";
+            this.log.warn("Could not read saved cleaning schedules: " + message);
+        }
+        finally {
+            this.commandRunning = false;
+        }
+    }
+    async refreshCloudMap() {
+        const c = this.config;
+        if (!c.cloudEnabled) {
+            await this.setStateAsync("map.cloudStatus", { val: "Optional Xiaomi Cloud access is disabled in adapter settings.", ack: true });
+            return;
+        }
+        if (!c.cloudUsername || !c.cloudPassword || !c.token || !this.client || this.commandRunning) {
+            await this.setStateAsync("map.cloudStatus", { val: "Cloud credentials, local robot token or an idle adapter are missing.", ack: true });
+            return;
+        }
+        this.commandRunning = true;
+        await this.setStateAsync("map.cloudAuthUrl", { val: "", ack: true });
+        try {
+            const raw = await this.client.call("get_map_v1", []);
+            const mapName = Array.isArray(raw) && typeof raw[0] === "string" ? raw[0] : "";
+            if (!mapName || mapName === "retry")
+                throw new Error("Robot did not return a current map name. Check local connectivity and try again.");
+            const result = await new xiaomi_cloud_map_1.XiaomiCloudMapClient().fetchMap({ username: c.cloudUsername, password: c.cloudPassword, country: c.cloudCountry || "de", token: c.token, mapName });
+            const rooms = result.metadata.rooms;
+            if (!rooms.length)
+                throw new Error("Downloaded map contains no named rooms.");
+            await this.setStateChangedAsync("map.roomsJson", { val: JSON.stringify(rooms), ack: true });
+            if (result.metadata.mapId) {
+                await this.applyRoomMapConfig({ mapId: result.metadata.mapId, rooms: rooms.map(({ id, name }) => ({ id, name })) });
+                await this.setStateAsync("map.cloudStatus", { val: `Map and ${rooms.length} rooms imported. Map ID: ${result.metadata.mapId}`, ack: true });
+            }
+            else
+                await this.setStateAsync("map.cloudStatus", { val: `Found ${rooms.length} rooms. The archive lacks the separate cleaning mapId; enter that ID once via control.importRooms to enable room-clean buttons.`, ack: true });
+            await this.setStateChangedAsync("map.cloudLastUpdate", { val: new Date().toISOString(), ack: true });
+            this.log.info(`Xiaomi Cloud map read succeeded: ${rooms.length} rooms`);
+        }
+        catch (e) {
+            const msg = e instanceof Error ? e.message : "Unknown Xiaomi Cloud map error";
+            if (msg.startsWith("XIAOMI_2FA:")) {
+                await this.setStateAsync("map.cloudAuthUrl", { val: msg.slice(11), ack: true });
+                await this.setStateAsync("map.cloudStatus", { val: "Two-factor authentication required. Open map.cloudAuthUrl from a device on the same internet connection, complete verification, then press refreshMap again.", ack: true });
+            }
+            else {
+                await this.setStateAsync("map.cloudStatus", { val: msg, ack: true });
+                this.log.warn("Xiaomi Cloud map retrieval failed: " + msg);
+            }
+        }
+        finally {
+            this.commandRunning = false;
+        }
+    }
+    async sendProperty(stateId, property, value) {
+        const config = this.config;
+        const previousValue = this.lastKnownSettings[stateId.slice(this.namespace.length + 1)] ?? 0;
+        if (!this.client || !config.did || this.commandRunning) {
+            this.log.warn("Property write ignored because the device is unavailable or another command is running");
+            await this.setStateAsync(stateId, { val: previousValue, ack: true });
+            return;
+        }
+        this.commandRunning = true;
+        try {
+            const result = await this.client.call("set_properties", [{
+                    did: config.did, siid: property.siid, piid: property.piid, value
+                }]);
+            if (Array.isArray(result)) {
+                const item = result[0];
+                if (item && typeof item.code === "number" && item.code !== 0) {
+                    throw new Error(`MIoT property write failed (SIID ${property.siid}, PIID ${property.piid}, code ${item.code})`);
+                }
+            }
+            await this.setStateAsync(stateId, { val: value, ack: true });
+            this.lastKnownSettings[stateId.slice(this.namespace.length + 1)] = value;
+            this.log.info("Robot setting updated: " + stateId.slice(this.namespace.length + 1) + " = " + value);
+        }
+        catch (error) {
+            const message = error instanceof Error ? error.message : "Unknown property write error";
+            this.log.warn("Robot setting failed: " + message);
+            await this.setStateAsync(stateId, { val: previousValue, ack: true });
+        }
+        finally {
+            this.commandRunning = false;
+        }
+    }
+    async sendAction(command, action, stateId, resetValue = false) {
+        const config = this.config;
+        if (!this.client || !config.did) {
+            this.log.warn("Control command ignored: " + command + " is unavailable");
+            await this.setStateAsync(stateId, { val: resetValue, ack: true });
+            return;
+        }
+        if (this.commandRunning) {
+            this.log.warn("Control command ignored because another command is still running");
+            await this.setStateAsync(stateId, { val: resetValue, ack: true });
+            return;
+        }
+        this.commandRunning = true;
+        try {
+            const result = await this.client.call("action", [{
+                    did: config.did, siid: action.siid, aiid: action.aiid,
+                    ...(action.in ? { in: action.in } : {})
+                }]);
+            this.log.info("Robot command " + command + " sent");
+            this.log.debug("MIoT action response: " + JSON.stringify(result));
+        }
+        catch (error) {
+            const message = error instanceof Error ? error.message : "Unknown command error";
+            this.log.warn("Robot command " + command + " failed: " + message);
+            await this.setStateChangedAsync("info.connectionText", { val: message, ack: true });
+        }
+        finally {
+            this.commandRunning = false;
+            await this.setStateAsync(stateId, { val: resetValue, ack: true });
+        }
+    }
+    onUnload(callback) {
+        this.stopping = true;
+        if (this.pollTimer)
+            clearTimeout(this.pollTimer);
+        this.setState("info.connection", false, true);
+        callback();
+    }
+}
+exports.default = RoidmiAdapter;
+new RoidmiAdapter();
