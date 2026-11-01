@@ -1,4 +1,5 @@
 import { Adapter } from "@iobroker/adapter-core";
+import { MiioClient } from "./lib/miio-client";
 
 interface RoidmiPilotConfig {
     host?: string;
@@ -7,6 +8,7 @@ interface RoidmiPilotConfig {
 }
 
 class RoidmiPilot extends Adapter {
+    private pollTimer?: NodeJS.Timeout;
     public constructor() {
         super({ name: "roidmipilot" });
         this.on("ready", () => void this.onReady());
@@ -64,11 +66,55 @@ class RoidmiPilot extends Adapter {
             return;
         }
 
-        // Device communication remains disabled until the local protocol has
-        // been validated against the physical EVE Plus.
-        const message = "Configuration saved. Local device protocol validation is pending.";
-        await this.setStateAsync("info.connectionText", { val: message, ack: true });
-        this.log.info(message);
+        const client = new MiioClient({ host: config.host, token: config.token });
+        const properties = [
+            { id: "battery", siid: 3, piid: 1, name: "Battery level", type: "number", unit: "%" },
+            { id: "charging", siid: 3, piid: 2, name: "Charging state", type: "number" },
+            { id: "state", siid: 2, piid: 1, name: "Vacuum state", type: "number" },
+            { id: "errorCode", siid: 2, piid: 2, name: "Error code", type: "number" }
+        ] as const;
+
+        for (const property of properties) {
+            await this.setObjectNotExistsAsync(property.id, {
+                type: "state",
+                common: {
+                    name: property.name,
+                    type: property.type,
+                    role: "value",
+                    unit: "unit" in property ? property.unit : undefined,
+                    read: true,
+                    write: false
+                },
+                native: { siid: property.siid, piid: property.piid }
+            });
+        }
+
+        const poll = async (): Promise<void> => {
+            try {
+                const result = await client.call("get_properties", properties.map((property) => ({
+                    did: "roidmipilot",
+                    siid: property.siid,
+                    piid: property.piid
+                })));
+                if (!Array.isArray(result)) throw new Error("Robot returned an unexpected MIoT property response");
+                for (let index = 0; index < properties.length; index++) {
+                    const item = result[index] as { code?: number; value?: unknown } | undefined;
+                    if (item && item.code === 0 && typeof item.value === "number") {
+                        await this.setStateAsync(properties[index].id, { val: item.value, ack: true });
+                    }
+                }
+                await this.setStateAsync("info.connection", { val: true, ack: true });
+                await this.setStateAsync("info.connectionText", { val: "Local miIO connection established", ack: true });
+            } catch (error) {
+                const message = error instanceof Error ? error.message : "Unknown local miIO error";
+                await this.setStateAsync("info.connection", { val: false, ack: true });
+                await this.setStateAsync("info.connectionText", { val: message, ack: true });
+                this.log.warn(message);
+            }
+        };
+
+        await poll();
+        this.pollTimer = setInterval(() => void poll(), (config.pollIntervalSeconds ?? 30) * 1000);
     }
 
     private onUnload(callback: () => void): void {
