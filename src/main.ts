@@ -42,8 +42,8 @@ class RoidmiAdapter extends Adapter {
 
         const config = this.config as RoidmiAdapterConfig;
         const errors: string[] = [];
-        if (config.host && !/^(?:\\d{1,3}\\.){3}\\d{1,3}$/.test(config.host)) errors.push("The configured host is not a valid IPv4 address.");
-        if (config.did && !/^\\d{1,20}$/.test(config.did)) errors.push("The Xiaomi device DID must be numeric.");
+        if (config.host && !/^(?:\d{1,3}\.){3}\d{1,3}$/.test(config.host)) errors.push("The configured host is not a valid IPv4 address.");
+        if (config.did && !/^\d{1,20}$/.test(config.did)) errors.push("The Xiaomi device DID must be numeric.");
         if (config.pollIntervalSeconds !== undefined &&
             (!Number.isInteger(config.pollIntervalSeconds) || config.pollIntervalSeconds < 5 || config.pollIntervalSeconds > 3600)) {
             errors.push("Polling interval must be between 5 and 3600 seconds.");
