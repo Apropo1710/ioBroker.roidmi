@@ -69,7 +69,7 @@ test('Xiaomi 2FA does not expose verification data when identity session is miss
     if (String(url).endsWith('/pass/serviceLoginAuth2')) {
       return response('&&&START&&&{"notificationUrl":"https://account.xiaomi.com/fe/service/identity/authStart?x=1"}');
     }
-    if (String(url).includes('/identity/list')) return response('&&&START&&&{"flag":8}');
+    if (String(url).includes('/identity/list')) return response('&&&START&&&{"code":0,"flag":8}');
     throw new Error('Unexpected mocked URL: ' + String(url).split('?')[0]);
   };
   t.after(() => { global.fetch = originalFetch; });
@@ -91,12 +91,12 @@ test('Xiaomi 2FA chooses email or phone from Xiaomi flag without logging the cod
       return response('&&&START&&&{"notificationUrl":"https://account.xiaomi.com/fe/service/identity/authStart?x=1"}');
     }
     if (String(url).includes('/identity/list')) {
-      return response('&&&START&&&{"flag":8}', 200, { 'set-cookie': 'identity_session=identity-secret; Path=/' });
+      return response('&&&START&&&{"code":0,"flag":8}', 200, { 'set-cookie': 'identity_session=identity-secret; Path=/' });
     }
-    if (String(url).includes('/identity/auth/verifyEmail?')) {
+    if (String(url).includes('/identity/auth/verifyEmail')) {
       return response('&&&START&&&{"maskedEmail":"a***@example.test"}');
     }
-    if (String(url).startsWith('https://account.xiaomi.com/identity/auth/sendEmailTicket?_dc=')) {
+    if (String(url).includes('/identity/auth/sendEmailTicket')) {
       return response('&&&START&&&{"code":0}');
     }
     throw new Error('Unexpected mocked URL: ' + String(url).split('?')[0]);
@@ -107,9 +107,9 @@ test('Xiaomi 2FA chooses email or phone from Xiaomi flag without logging the cod
     /Bestätigungscode wurde an a\*\*\*@example\.test gesendet/,
   );
   assert.ok(calls.some(c => c.url.includes('/identity/auth/verifyEmail')));
-  const sendCall = calls.find(c => c.url.startsWith('https://account.xiaomi.com/identity/auth/sendEmailTicket?_dc='));
+  const sendCall = calls.find(c => c.url.includes('/identity/auth/sendEmailTicket'));
   assert.ok(sendCall && sendCall.method === 'POST');
-  assert.match(sendCall.url, /_dc=[0-9]+/);
+  assert.match(sendCall.url, /_json=true/);
   assert.match(sendCall.body, /_flag=8/);
   assert.match(sendCall.body, /retry=0/);
   assert.match(sendCall.body, /_json=true/);
