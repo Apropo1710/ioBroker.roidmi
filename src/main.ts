@@ -332,7 +332,7 @@ class RoidmiAdapter extends Adapter {
         } catch (error) {
             const message = error instanceof Error ? error.message : "Unknown property write error";
             this.log.warn("Robot setting failed: " + message);
-            await this.setStateAsync(stateId, { val: current?.val ?? 0, ack: true });
+            await this.setStateAsync(stateId, { val: previousValue, ack: true });
         } finally {
             this.commandRunning = false;
         }
