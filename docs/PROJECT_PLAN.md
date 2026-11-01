@@ -21,12 +21,13 @@
 - [x] Datenpunkte und protokollbasierte MIoT-Mappings für Start / Pause / Fortsetzen / Dock
 - [x] Fehler- und Verbindungsstatus als Datenpunkte
 - [ ] Saugmodus und Wasserstufe als Datenpunkte und Steuerung
-- [ ] Raumaufteilung bzw. Raumliste ermitteln
+- [x] Manueller, validierter Raumkarten-Import mit persistenter Speicherung und dynamischen Einzelraum-Datenpunkten (automatische Ermittlung bleibt offen)
+- [ ] Raumaufteilung bzw. Raumliste automatisch ermitteln
 - [ ] Aktuelle mapId und Raum-/Segment-IDs automatisch ermitteln und persistent ablegen
-- [ ] Räume mit stabilen Raum-IDs und lesbaren Namen als ioBroker-Objekte abbilden
+- [x] Importierte Räume mit stabilen Segment-IDs, lesbaren Namen und Einzelraum-Reinigungsbuttons als ioBroker-Objekte abbilden
 - [x] JSON-Schnittstelle für Einzelraumreinigung im Adapter bereitstellen (Geräteausführung noch offen)
 - [x] JSON-Schnittstelle für Mehrraumreinigung in einem Auftrag bereitstellen (Geräteausführung noch offen)
-- [ ] Raum-IDs und Zuordnungen dauerhaft erhalten; keine erneute manuelle Auswahl bei jedem Start
+- [x] Importierte Raum-IDs und Zuordnungen dauerhaft erhalten; Wiederherstellung beim Adapterstart
 - [ ] Verfügbarkeit und Grenzen der Raumsteuerung lokal gegenüber Cloud verifizieren
 
 ## Phase 3 – Weitere Erweiterungen
@@ -45,3 +46,6 @@
 - [ ] Optionale Anbindung an HomePilot
 
 **Wichtiger Statushinweis:** Grüne CI-Läufe bestätigen Build und Unit-Tests, nicht die reale Gerätekommunikation. Start-/Pause-/Fortsetzen-/Dock-Mappings sind anhand veröffentlichter V60-Profile hinterlegt und müssen am konkreten Gerät noch bestätigt werden.
+
+
+**Raumimport:** Siehe [ROOM_IMPORT.md](ROOM_IMPORT.md). Der Import ist bewusst manuell und erzeugt keine zusätzliche Roboterabfrage. Automatische Karten-/Raumerkennung sowie die reale Ausführung bleiben separate offene Punkte.
