@@ -100,12 +100,13 @@
         "en": "Step 1: Start sign-in and request code"
       },
       "jsonData": "{\"username\":\"${data.cloudUsername}\",\"password\":\"${data.cloudPassword}\",\"country\":\"${data.cloudCountry}\",\"token\":\"${data.token}\"}",
-      "showProcess": true,
-      "timeout": 60000,
+      "showProcess": false,
       "icon": "auth",
       "result": {
-        "de": "Anmeldung gestartet. Falls Xiaomi einen Code sendet, unten eingeben.",
-        "en": "Login started. If Xiaomi sends a code, enter it below."
+        "result1": {
+          "de": "Anfrage angenommen. Den Fortschritt und das Ergebnis findest du im Statusfeld darunter.",
+          "en": "Request accepted. Progress and result are shown in the status field below."
+        }
       },
       "help": {
         "de": "Zuerst hier klicken. Xiaomi sendet anschließend einen Bestätigungscode per SMS oder E-Mail. Erst danach den Code unten eingeben und Schritt 2 ausführen.",
@@ -115,6 +116,12 @@
       "controlStyle": {
         "minHeight": "44px",
         "fontWeight": 600
+      },
+      "error": {
+        "error1": {
+          "de": "Aktion konnte nicht gestartet werden. Bitte die Meldung im Statusfeld prüfen.",
+          "en": "The action could not be started. Check the status field for details."
+        }
       }
     },
     "_cloudVerificationCode": {
@@ -136,12 +143,13 @@
         "en": "Step 2: Verify code and sign in"
       },
       "jsonData": "{\"username\":\"${data.cloudUsername}\",\"password\":\"${data.cloudPassword}\",\"country\":\"${data.cloudCountry}\",\"token\":\"${data.token}\",\"code\":\"${data._cloudVerificationCode}\"}",
-      "showProcess": true,
-      "timeout": 60000,
+      "showProcess": false,
       "icon": "auth",
       "result": {
-        "de": "Bestätigung abgeschlossen.",
-        "en": "Verification completed."
+        "result1": {
+          "de": "Anfrage angenommen. Den Fortschritt und das Ergebnis findest du im Statusfeld darunter.",
+          "en": "Request accepted. Progress and result are shown in the status field below."
+        }
       },
       "help": {
         "de": "Erst anklicken, nachdem du den Bestätigungscode oben eingetragen hast. Damit wird die Anmeldung abgeschlossen und die Cloud-Sitzung gespeichert.",
@@ -151,7 +159,23 @@
       "controlStyle": {
         "minHeight": "44px",
         "fontWeight": 600
+      },
+      "error": {
+        "error1": {
+          "de": "Aktion konnte nicht gestartet werden. Bitte die Meldung im Statusfeld prüfen.",
+          "en": "The action could not be started. Check the status field for details."
+        }
       }
+    },
+    "cloudStatus": {
+      "type": "state",
+      "label": {
+        "de": "Aktueller Xiaomi-Cloud-Status",
+        "en": "Current Xiaomi Cloud status"
+      },
+      "oid": "map.cloudStatus",
+      "sm": 12,
+      "newLine": true
     }
   },
   "i18n": true

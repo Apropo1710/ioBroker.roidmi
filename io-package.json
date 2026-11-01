@@ -1,7 +1,7 @@
 {
   "common": {
     "name": "roidmi",
-    "version": "0.1.9",
+    "version": "0.1.10",
     "title": "Roidmi",
     "titleLang": {
       "en": "Roidmi",
@@ -65,6 +65,10 @@
       "0.1.9": {
         "en": "Clarified the Xiaomi two-factor sign-in flow with numbered steps and inline guidance",
         "de": "Xiaomi-Zwei-Faktor-Anmeldung durch nummerierte Schritte und direkte Erklärungen verständlicher gestaltet"
+      },
+      "0.1.10": {
+        "en": "Improved Xiaomi 2FA feedback with immediate button acknowledgements and live cloud status",
+        "de": "Xiaomi-2FA-Rückmeldung mit sofortiger Button-Bestätigung und laufender Cloud-Statusanzeige verbessert"
       }
     },
     "adminUI": {
