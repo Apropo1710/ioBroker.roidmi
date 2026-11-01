@@ -1,7 +1,7 @@
 import { Adapter } from "@iobroker/adapter-core";
 import { MiioClient } from "./lib/miio-client";
 
-interface RoidmiPilotConfig {
+interface RoidmiAdapterConfig {
     host?: string;
     did?: string;
     token?: string;
@@ -40,7 +40,7 @@ class RoidmiAdapter extends Adapter {
             native: {}
         });
 
-        const config = this.config as RoidmiPilotConfig;
+        const config = this.config as RoidmiAdapterConfig;
         const errors: string[] = [];
         if (config.host && !/^(?:\\d{1,3}\\.){3}\\d{1,3}$/.test(config.host)) errors.push("The configured host is not a valid IPv4 address.");
         if (config.did && !/^\\d{1,20}$/.test(config.did)) errors.push("The Xiaomi device DID must be numeric.");
@@ -149,7 +149,7 @@ class RoidmiAdapter extends Adapter {
     private async onStateChange(id: string, state: ioBroker.State | null | undefined): Promise<void> {
         if (!state || state.ack || state.val !== true || !id.startsWith(`${this.namespace}.control.`)) return;
         const command = id.slice(`${this.namespace}.control.`.length);
-        const config = this.config as RoidmiPilotConfig;
+        const config = this.config as RoidmiAdapterConfig;
         // Action IDs follow the Roidmi V60 MIoT mapping. Real-device validation is still pending.
         const actions: Record<string, MiotAction> = {
             start: { siid: 2, aiid: 1 },
