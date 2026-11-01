@@ -1,8 +1,8 @@
-# RoidmiPilot
+# ioBroker Roidmi Adapter
 
-Eigenständiger ioBroker-Adapter zur lokalen Steuerung und Überwachung des Roidmi EVE Plus.
+Eigenständiger ioBroker-Adapter zur lokalen Steuerung und Überwachung von Roidmi-Saugrobotern, mit Schwerpunkt auf dem Roidmi EVE Plus.
 
-> **Projektstatus:** Grundgerüst / Protokollvalidierung steht noch aus. Es wird ausdrücklich noch keine funktionierende Geräteverbindung behauptet.
+> **Projektstatus:** Entwicklung und Protokollvalidierung. Eine funktionierende Verbindung und Steuerung müssen noch am realen Gerät bestätigt werden.
 
 ## Ziele
 - Lokale Verbindung zum Roidmi EVE Plus, soweit das Gerät sie unterstützt
