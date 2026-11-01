@@ -20,13 +20,14 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - run: npm install
+      - run: npm install --package-lock-only
+      - run: npm ci
       - run: npm run build
       - name: Commit precompiled JavaScript
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add build/
+          git add build/ package-lock.json
           if ! git diff --cached --quiet; then
             git commit -m "Build precompiled adapter files"
             git push
