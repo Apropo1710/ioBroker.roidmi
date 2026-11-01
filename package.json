@@ -1,6 +1,6 @@
 {
   "name": "iobroker.roidmi",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "ioBroker adapter for Roidmi robot vacuums",
   "main": "build/main.js",
   "types": "build/main.d.ts",
@@ -10,22 +10,12 @@
     "lint": "tsc --noEmit -p .",
     "prepare": "npm run build"
   },
-  "keywords": [
-    "iobroker",
-    "roidmi",
-    "eve-plus",
-    "vacuum",
-    "robot-vacuum"
-  ],
+  "keywords": ["iobroker", "roidmi", "eve-plus", "vacuum", "robot-vacuum"],
   "author": "Apropo1710",
   "license": "UNLICENSED",
   "private": true,
-  "engines": {
-    "node": ">=20"
-  },
-  "dependencies": {
-    "@iobroker/adapter-core": "^3.4.3"
-  },
+  "engines": {"node": ">=20"},
+  "dependencies": {"@iobroker/adapter-core": "^3.4.3"},
   "devDependencies": {
     "@iobroker/types": "^7.0.0",
     "@types/node": "^22.0.0",
