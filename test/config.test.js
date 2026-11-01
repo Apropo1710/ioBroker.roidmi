@@ -10,6 +10,11 @@ test('rejects invalid IPv4 host strings', () => {
   assert.deepEqual(validateConfig({ host: 'robot.local' }), ['host must be an IPv4 address']);
 });
 
+test('validates numeric Xiaomi DID', () => {
+  assert.deepEqual(validateConfig({ did: 'not-a-device-id' }), ['did must be a numeric Xiaomi device ID']);
+  assert.deepEqual(validateConfig({ did: '441963123' }), []);
+});
+
 test('validates polling interval bounds', () => {
   assert.deepEqual(validateConfig({ pollIntervalSeconds: 2 }), [
     'pollIntervalSeconds must be an integer between 5 and 3600'
