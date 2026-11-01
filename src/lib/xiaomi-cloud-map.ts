@@ -31,7 +31,7 @@ function signedNonce(security:string,nonce:string):string {
     return createHash("sha256").update(Buffer.concat([Buffer.from(security,"base64"),Buffer.from(nonce,"base64")])).digest("base64");
 }
 function encSignature(url:string,method:string,signed:string,params:Record<string,string>):string {
-    const path=new URL(url).pathname.replace(/^\\/app\\//,"/");
+    const path=new URL(url).pathname.replace("/app/","/");
     return createHash("sha1").update([method.toUpperCase(),path,...Object.entries(params).map(([k,v])=>`${k}=${v}`),signed].join("&")).digest("base64");
 }
 export class XiaomiCloudMapClient {
