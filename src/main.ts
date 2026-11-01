@@ -8,7 +8,7 @@ interface RoidmiPilotConfig {
 }
 
 class RoidmiPilot extends Adapter {
-    private pollTimer?: NodeJS.Timeout;
+    private pollTimer?: NodeJS.Timeout;\n    private stopping = false;\n    private lastPollError = "";
     public constructor() {
         super({ name: "roidmipilot" });
         this.on("ready", () => void this.onReady());
@@ -100,7 +100,7 @@ class RoidmiPilot extends Adapter {
                 for (let index = 0; index < properties.length; index++) {
                     const item = result[index] as { code?: number; value?: unknown } | undefined;
                     if (item && item.code === 0 && typeof item.value === "number") {
-                        await this.setStateAsync(properties[index].id, { val: item.value, ack: true });
+                        await this.setStateChangedAsync(properties[index].id, { val: item.value, ack: true });
                     }
                 }
                 await this.setStateAsync("info.connection", { val: true, ack: true });
@@ -113,8 +113,24 @@ class RoidmiPilot extends Adapter {
             }
         };
 
+        // One-shot scheduling prevents overlapping polls. On errors the delay
+        // grows exponentially to reduce UDP traffic and device/host load.
+        const baseIntervalMs = (config.pollIntervalSeconds ?? 30) * 1000;
+        let consecutiveFailures = 0;
+        const scheduleNext = (delayMs: number): void => {
+            if (this.stopping) return;
+            this.pollTimer = setTimeout(async () => {
+                await poll();
+                if (this.lastPollError) consecutiveFailures++;
+                else consecutiveFailures = 0;
+                const backoffMs = Math.min(baseIntervalMs * (2 ** Math.min(consecutiveFailures, 6)), 300000);
+                scheduleNext(this.lastPollError ? backoffMs : baseIntervalMs);
+            }, delayMs);
+        };
+
+        // Initial poll runs immediately; the first regular poll follows after it completes.
         await poll();
-        this.pollTimer = setInterval(() => void poll(), (config.pollIntervalSeconds ?? 30) * 1000);
+        scheduleNext(this.lastPollError ? Math.min(baseIntervalMs * 2, 300000) : baseIntervalMs);
     }
 
     private onUnload(callback: () => void): void {
