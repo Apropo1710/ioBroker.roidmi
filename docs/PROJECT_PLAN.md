@@ -20,7 +20,7 @@
 - [x] Basisstatus, Akku und Ladezustand als Datenpunkte
 - [x] Datenpunkte und protokollbasierte MIoT-Mappings für Start / Pause / Fortsetzen / Dock
 - [x] Fehler- und Verbindungsstatus als Datenpunkte
-- [ ] Saugmodus und Wasserstufe als Datenpunkte und Steuerung
+- [x] Saugstufe, Reinigungsart und Wasserstufe als les-/schreibbare Datenpunkte mit Wertevalidierung (Geräteausführung noch offen)
 - [x] Manueller, validierter Raumkarten-Import mit persistenter Speicherung und dynamischen Einzelraum-Datenpunkten (automatische Ermittlung bleibt offen)
 - [ ] Raumaufteilung bzw. Raumliste automatisch ermitteln
 - [ ] Aktuelle mapId und Raum-/Segment-IDs automatisch ermitteln und persistent ablegen
