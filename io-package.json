@@ -1,9 +1,9 @@
 {
   "common": {
-    "name": "roidmipilot",
+    "name": "roidmi",
     "version": "0.1.0",
-    "title": "RoidmiPilot",
-    "titleLang": { "en": "RoidmiPilot", "de": "RoidmiPilot" },
+    "title": "Roidmi",
+    "titleLang": { "en": "Roidmi", "de": "Roidmi" },
     "desc": {
       "en": "Control and monitor Roidmi robot vacuums",
       "de": "Roidmi-Saugroboter steuern und überwachen"
