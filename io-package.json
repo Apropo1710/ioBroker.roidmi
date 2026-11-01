@@ -1,14 +1,19 @@
 {
   "common": {
     "name": "roidmi",
-    "version": "0.1.3",
+    "version": "0.1.4",
     "title": "Roidmi",
-    "titleLang": {"en": "Roidmi", "de": "Roidmi"},
+    "titleLang": {
+      "en": "Roidmi",
+      "de": "Roidmi"
+    },
     "desc": {
       "en": "Control and monitor Roidmi robot vacuums",
       "de": "Roidmi-Saugroboter steuern und überwachen"
     },
-    "authors": ["Apropo1710"],
+    "authors": [
+      "Apropo1710"
+    ],
     "mode": "daemon",
     "platform": "Javascript/Node.js",
     "enabled": true,
@@ -16,8 +21,14 @@
     "connectionType": "local",
     "dataSource": "poll",
     "type": "household",
-    "encryptedNative": ["token"],
+    "encryptedNative": [
+      "token"
+    ],
     "news": {
+      "0.1.4": {
+        "en": "Added local status polling diagnostics",
+        "de": "Lokale Diagnose für Statusabfragen ergänzt"
+      },
       "0.1.3": {
         "en": "Updated the adapter icon with a white Roidmi robot vacuum",
         "de": "Adaptersymbol auf einen weißen Roidmi-Saugroboter aktualisiert"
@@ -35,7 +46,9 @@
         "de": "Erstes Adapter-Grundgerüst"
       }
     },
-    "adminUI": {"config": "json"},
+    "adminUI": {
+      "config": "json"
+    },
     "icon": "roidmi.svg",
     "extIcon": "https://raw.githubusercontent.com/Apropo1710/ioBroker.roidmi/main/admin/roidmi.svg"
   },
