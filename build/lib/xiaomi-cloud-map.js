@@ -114,28 +114,34 @@ class XiaomiCloudMapClient {
         return { metadata: (0, roidmi_map_1.parseRoidmiMapArchive)(archive), mapName: o.mapName, deviceId, userId };
     }
     async startTwoFactor(notificationUrl) {
+        // Match Xiaomi's documented client flow: identity/list returns both the
+        // available verification flag and the identity_session cookie.
         const listUrl = notificationUrl.replace("/fe/service/identity/authStart", "/identity/list");
         const listResponse = await this.request(listUrl);
         const list = this.json(await listResponse.text());
-        const flag = String(list.flag ?? (Array.isArray(list.options) ? list.options[0] : ""));
-        if (list.code !== 0 || (flag !== "4" && flag !== "8") || !this.cookies.get("identity_session")) {
-            throw new Error("Xiaomi did not provide a supported two-factor method or identity session.");
+        const flagValue = list.flag ?? (Array.isArray(list.options) ? list.options[0] : "");
+        const flag = String(flagValue);
+        const identitySession = this.cookies.get("identity_session");
+        if ((flag !== "4" && flag !== "8") || !identitySession) {
+            const keys = Object.keys(list ?? {}).sort().join(", ") || "none";
+            throw new Error(`Xiaomi 2FA response incomplete (flag=${flag || "missing"}, identity_session=${identitySession ? "present" : "missing"}, response fields=${keys}).`);
         }
         this.pendingFlag = flag;
         const method = flag === "8" ? "Email" : "Phone";
-        const optionsResponse = await this.request("https://account.xiaomi.com/identity/auth/verify" + method, {
-            headers: { Cookie: "identity_session=" + this.cookies.get("identity_session") }
+        const cookieHeader = "identity_session=" + identitySession;
+        const optionsResponse = await this.request("https://account.xiaomi.com/identity/auth/verify" + method + "?_flag=" + flag + "&_json=true", {
+            headers: { Cookie: cookieHeader }
         });
         const options = this.json(await optionsResponse.text());
         this.maskedDestination = String(flag === "8" ? options.maskedEmail ?? "your email" : options.maskedPhone ?? "your phone");
-        const sent = await this.request("https://account.xiaomi.com/identity/auth/send" + method + "Ticket?_json=true", {
+        const sent = await this.request("https://account.xiaomi.com/identity/auth/send" + method + "Ticket", {
             method: "POST",
-            body: new URLSearchParams({ _flag: flag, retry: "0", _json: "true" }).toString(),
-            headers: { "Content-Type": "application/x-www-form-urlencoded", Cookie: "identity_session=" + this.cookies.get("identity_session") }
+            body: new URLSearchParams({ _json: "true", icode: "", retry: "0" }).toString(),
+            headers: { "Content-Type": "application/x-www-form-urlencoded", Cookie: cookieHeader }
         });
         const result = this.json(await sent.text());
         if (result.code !== 0)
-            throw new Error("Xiaomi could not send the verification code.");
+            throw new Error("Xiaomi could not send the verification code (code " + String(result.code ?? "unknown") + ").");
     }
     async finishLogin(location) {
         const response = await this.request(location);
