@@ -91,6 +91,49 @@
         "de": "Zweistelliger Regionscode des Kontos, z. B. de, fr, it, es oder cn.",
         "en": "Two-letter account region, e.g. de, fr, it, es or cn."
       }
+    },
+    "cloudStartLogin": {
+      "type": "sendTo",
+      "command": "cloudStartLogin",
+      "label": {
+        "de": "Xiaomi-Cloud anmelden / 2FA-Code anfordern",
+        "en": "Sign in to Xiaomi Cloud / request 2FA code"
+      },
+      "jsonData": "{\"username\":\"${data.cloudUsername}\",\"password\":\"${data.cloudPassword}\",\"country\":\"${data.cloudCountry}\",\"token\":\"${data.token}\"}",
+      "showProcess": true,
+      "timeout": 60000,
+      "icon": "auth",
+      "result": {
+        "de": "Anmeldung gestartet. Falls Xiaomi einen Code sendet, unten eingeben.",
+        "en": "Login started. If Xiaomi sends a code, enter it below."
+      }
+    },
+    "cloudVerificationCode": {
+      "type": "text",
+      "label": {
+        "de": "Xiaomi-Bestätigungscode (nur vorübergehend)",
+        "en": "Xiaomi verification code (temporary)"
+      },
+      "help": {
+        "de": "Code aus SMS oder E-Mail eingeben. Er wird nicht als Datenpunkt gespeichert.",
+        "en": "Enter the SMS or email code. It is not stored as a datapoint."
+      }
+    },
+    "cloudSubmitCode": {
+      "type": "sendTo",
+      "command": "cloudSubmitCode",
+      "label": {
+        "de": "Bestätigungscode prüfen und anmelden",
+        "en": "Verify code and sign in"
+      },
+      "jsonData": "{\"username\":\"${data.cloudUsername}\",\"password\":\"${data.cloudPassword}\",\"country\":\"${data.cloudCountry}\",\"token\":\"${data.token}\",\"code\":\"${data.cloudVerificationCode}\"}",
+      "showProcess": true,
+      "timeout": 60000,
+      "icon": "auth",
+      "result": {
+        "de": "Bestätigung abgeschlossen.",
+        "en": "Verification completed."
+      }
     }
   },
   "i18n": true

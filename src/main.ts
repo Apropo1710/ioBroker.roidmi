@@ -16,6 +16,7 @@ interface RoidmiAdapterConfig {
     cloudUsername?: string;
     cloudPassword?: string;
     cloudCountry?: string;
+    cloudSession?: string;
 }
 
 interface MiotPropertyWrite {
@@ -44,6 +45,7 @@ class RoidmiAdapter extends Adapter {
     public constructor() {
         super({ name: "roidmi" });
         this.on("ready", () => void this.onReady());
+        this.on("message", (obj) => void this.onMessage(obj));
         this.on("stateChange", (id, state) => void this.onStateChange(id, state));
         this.on("unload", (callback) => this.onUnload(callback));
     }
@@ -89,6 +91,15 @@ class RoidmiAdapter extends Adapter {
         }
 
         this.client = new MiioClient({ host: config.host, token: config.token });
+        if (config.cloudSession) {
+            try {
+                this.cloudMapClient.restoreSession(this.decrypt(config.cloudSession));
+                this.log.info("Stored Xiaomi Cloud session restored");
+            } catch {
+                this.cloudMapClient.clearSession();
+                this.log.warn("Stored Xiaomi Cloud session could not be restored; a new Xiaomi login is required");
+            }
+        }
 
         const properties = [
             { id: "battery", siid: 3, piid: 1, name: "Battery level", unit: "%" },
@@ -172,8 +183,8 @@ class RoidmiAdapter extends Adapter {
         await this.setObjectNotExistsAsync("control.refreshMap", { type: "state", common: { name: "Fetch map and rooms from Xiaomi Cloud (manual)", type: "boolean", role: "button", read: false, write: true, def: false }, native: {} });
         await this.subscribeStatesAsync("control.refreshMap");
         for (const [id, name, role] of [["map.cloudStatus","Xiaomi Cloud map retrieval status","text"],["map.cloudAuthUrl","Xiaomi two-factor authentication URL","text"],["map.cloudLastUpdate","Last successful Xiaomi Cloud map retrieval","date"]]) await this.setObjectNotExistsAsync(id,{type:"state",common:{name,type:"string",role,read:true,write:false},native:{}});
-        await this.setObjectNotExistsAsync("map.cloudVerificationCode", { type: "state", common: { name: "Xiaomi two-factor verification code (enter SMS/email code)", type: "string", role: "text", read: false, write: true, def: "" }, native: {} });
-        await this.subscribeStatesAsync("map.cloudVerificationCode");
+        // Remove the former 2FA datapoint; verification is handled in the adapter configuration UI.
+        await this.delObjectAsync("map.cloudVerificationCode").catch(() => undefined);
         const savedMap = await this.getStateAsync("map.config");
         if (savedMap && typeof savedMap.val === "string" && savedMap.val.trim()) {
             try {
@@ -298,12 +309,6 @@ class RoidmiAdapter extends Adapter {
             return;
         }
 
-        if (id === this.namespace + ".map.cloudVerificationCode") {
-            const code = typeof state.val === "string" ? state.val.trim() : "";
-            await this.setStateAsync("map.cloudVerificationCode", { val: "", ack: true });
-            if (code) await this.refreshCloudMap(code);
-            return;
-        }
         if (id === this.namespace + ".control.refreshMap") { if(state.val===true) await this.refreshCloudMap(); await this.setStateAsync("control.refreshMap",{val:false,ack:true}); return; }
         const refreshTimingId = this.namespace + ".control.refreshTiming";
         if (id === refreshTimingId) {
@@ -407,8 +412,40 @@ class RoidmiAdapter extends Adapter {
         }
     }
 
-    private async refreshCloudMap(verificationCode?: string): Promise<void> {
-        const config = this.config as RoidmiAdapterConfig;
+    private async onMessage(obj: ioBroker.Message): Promise<void> {
+        if (!obj || (obj.command !== "cloudStartLogin" && obj.command !== "cloudSubmitCode")) return;
+        const payload = (obj.message && typeof obj.message === "object" ? obj.message : {}) as Record<string, unknown>;
+        const credentials = {
+            username: typeof payload.username === "string" ? payload.username : "",
+            password: typeof payload.password === "string" ? payload.password : "",
+            country: typeof payload.country === "string" ? payload.country : "de",
+            token: typeof payload.token === "string" ? payload.token : ""
+        };
+        const code = obj.command === "cloudSubmitCode" && typeof payload.code === "string" ? payload.code.trim() : undefined;
+        try {
+            if (!credentials.username || !credentials.password || !credentials.token) {
+                throw new Error("Bitte Xiaomi-Benutzername, Passwort und Roboter-Token in der Adapterkonfiguration eintragen.");
+            }
+            if (obj.command === "cloudSubmitCode" && !code) throw new Error("Bitte zuerst den Xiaomi-Bestätigungscode eingeben.");
+            await this.refreshCloudMap(code, credentials);
+            const state = await this.getStateAsync("map.cloudStatus");
+            const message = typeof state?.val === "string" ? state.val : "Xiaomi-Cloud-Anfrage abgeschlossen.";
+            this.sendTo(obj.from, obj.command, { text: message, ok: !/fehlgeschlagen|abgelehnt|fehlt|ungültig/i.test(message) }, obj.callback);
+        } catch (error) {
+            const message = error instanceof Error ? error.message : "Xiaomi-Cloud-Anmeldung fehlgeschlagen.";
+            this.sendTo(obj.from, obj.command, { text: message, ok: false }, obj.callback);
+        }
+    }
+
+    private async persistCloudSession(): Promise<void> {
+        if (!this.cloudMapClient.hasSession()) return;
+        const encrypted = this.encrypt(this.cloudMapClient.exportSession());
+        await this.extendForeignObjectAsync("system.adapter." + this.namespace, { native: { cloudSession: encrypted } });
+        (this.config as RoidmiAdapterConfig).cloudSession = encrypted;
+    }
+
+    private async refreshCloudMap(verificationCode?: string, supplied?: { username: string; password: string; country: string; token: string }): Promise<void> {
+        const config = { ...(this.config as RoidmiAdapterConfig), ...(supplied ?? {}) };
         if (!config.cloudEnabled) {
             await this.setStateAsync("map.cloudStatus", { val: "Optional Xiaomi Cloud access is disabled in adapter settings.", ack: true });
             return;
@@ -473,6 +510,8 @@ class RoidmiAdapter extends Adapter {
                 this.log.warn("Xiaomi Cloud map retrieval failed: " + message);
             }
         } finally {
+            try { await this.persistCloudSession(); }
+            catch { this.log.warn("Xiaomi Cloud session could not be stored securely"); }
             this.commandRunning = false;
         }
     }

@@ -63,7 +63,10 @@
       "config": "json"
     },
     "icon": "roidmi.svg",
-    "extIcon": "https://raw.githubusercontent.com/Apropo1710/ioBroker.roidmi/main/admin/roidmi.svg"
+    "extIcon": "https://raw.githubusercontent.com/Apropo1710/ioBroker.roidmi/main/admin/roidmi.svg",
+    "protectedNative": [
+      "cloudSession"
+    ]
   },
   "native": {
     "host": "",
@@ -73,6 +76,7 @@
     "cloudEnabled": false,
     "cloudUsername": "",
     "cloudPassword": "",
-    "cloudCountry": "de"
+    "cloudCountry": "de",
+    "cloudSession": ""
   }
 }

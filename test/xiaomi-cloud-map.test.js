@@ -110,3 +110,27 @@ test('Xiaomi 2FA chooses email or phone from Xiaomi flag without logging the cod
   assert.ok(calls.some(c => c.url.endsWith('/identity/auth/sendEmailTicket') && c.method === 'POST'));
   assert.ok(calls.every(c => !c.body.includes('identity-secret')));
 });
+
+
+test('Xiaomi cloud session can be exported and restored without another login', async (t) => {
+  const originalFetch = global.fetch;
+  let loginRequests = 0;
+  global.fetch = async (url) => {
+    if (String(url).includes('/pass/serviceLogin')) loginRequests++;
+    if (String(url).startsWith('https://de.api.io.mi.com/app/home/device_list')) return response('not-valid-base64');
+    throw new Error('Unexpected network request: ' + String(url).split('?')[0]);
+  };
+  t.after(() => { global.fetch = originalFetch; });
+  const first = new XiaomiCloudMapClient();
+  // Restore a valid serialized session directly, as it would be loaded from encrypted adapter config.
+  first.restoreSession(JSON.stringify({
+    cookies: [['userId', '123'], ['serviceToken', 'svc']],
+    ssecurity: 'c2VjdXJpdHk=', userId: '123', serviceToken: 'svc', cUserId: '456', passToken: 'pass'
+  }));
+  const saved = first.exportSession();
+  const second = new XiaomiCloudMapClient();
+  second.restoreSession(saved);
+  assert.equal(second.hasSession(), true);
+  await assert.rejects(() => second.fetchMap(validOptions()), /unreadable encrypted response/);
+  assert.equal(loginRequests, 0);
+});
