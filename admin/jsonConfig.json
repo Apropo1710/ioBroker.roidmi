@@ -1,0 +1,23 @@
+{
+  "type": "panel",
+  "items": {
+    "host": {
+      "type": "text",
+      "label": "Robot IP address",
+      "default": "",
+      "help": "Local IPv4 address of the Roidmi EVE Plus"
+    },
+    "token": {
+      "type": "password",
+      "label": "MIoT / miIO token",
+      "help": "Stored encrypted by ioBroker. Never share this token."
+    },
+    "pollIntervalSeconds": {
+      "type": "number",
+      "label": "Polling interval (seconds)",
+      "min": 5,
+      "max": 3600,
+      "default": 30
+    }
+  }
+}
