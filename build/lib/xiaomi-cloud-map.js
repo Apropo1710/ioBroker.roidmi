@@ -149,7 +149,7 @@ class XiaomiCloudMapClient {
                 const auth = this.json(await login.text());
                 if (typeof auth.notificationUrl === "string") {
                     await this.startTwoFactor(auth.notificationUrl);
-                    throw new Error("XIAOMI_2FA_CODE:Code sent to " + this.maskedDestination + ". Enter it in map.cloudVerificationCode.");
+                    throw new Error("XIAOMI_2FA_CODE:Bestätigungscode wurde an " + this.maskedDestination + " gesendet. Bitte den Code im Adapter-Admin eingeben und anschließend Schritt 2 ausführen.");
                 }
                 if (typeof auth.location !== "string" || !auth.location) {
                     throw new Error("Xiaomi login failed. Check account, password and region.");
