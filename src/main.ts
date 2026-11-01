@@ -32,6 +32,7 @@ class RoidmiAdapter extends Adapter {
     private commandRunning = false;
     private client?: MiioClient;
     private roomMapConfig?: RoomMapConfig;
+    private readonly lastKnownSettings: Record<string, number> = {};
 
     public constructor() {
         super({ name: "roidmi" });
@@ -151,6 +152,7 @@ class RoidmiAdapter extends Adapter {
                     const item = result[0] as { code?: number; value?: unknown } | undefined;
                     if (item?.code === 0 && typeof item.value === "number") {
                         await this.setStateChangedAsync(property.id, { val: item.value, ack: true });
+                        if (getRoidmiSetting(property.id)) this.lastKnownSettings[property.id] = item.value;
                     } else if (item && typeof item.code === "number" && item.code !== 0) {
                         throw new Error(`MIoT property read failed (SIID ${property.siid}, PIID ${property.piid}, code ${item.code})`);
                     }
@@ -269,8 +271,7 @@ class RoidmiAdapter extends Adapter {
         if (property) {
             if (typeof state.val !== "number" || !Number.isInteger(state.val) || state.val < property.min || state.val > property.max) {
                 this.log.warn("Setting rejected: value out of range for " + id);
-                const current = await this.getStateAsync(id);
-                await this.setStateAsync(id, { val: current?.val ?? 0, ack: true });
+                await this.setStateAsync(id, { val: this.lastKnownSettings[propertyId] ?? 0, ack: true });
                 return;
             }
             await this.sendProperty(id, property, state.val);
@@ -308,10 +309,10 @@ class RoidmiAdapter extends Adapter {
 
     private async sendProperty(stateId: string, property: MiotPropertyWrite, value: number): Promise<void> {
         const config = this.config as RoidmiAdapterConfig;
-        const current = await this.getStateAsync(stateId);
+        const previousValue = this.lastKnownSettings[stateId.slice(this.namespace.length + 1)] ?? 0;
         if (!this.client || !config.did || this.commandRunning) {
             this.log.warn("Property write ignored because the device is unavailable or another command is running");
-            await this.setStateAsync(stateId, { val: current?.val ?? 0, ack: true });
+            await this.setStateAsync(stateId, { val: previousValue, ack: true });
             return;
         }
         this.commandRunning = true;
@@ -326,6 +327,7 @@ class RoidmiAdapter extends Adapter {
                 }
             }
             await this.setStateAsync(stateId, { val: value, ack: true });
+            this.lastKnownSettings[stateId.slice(this.namespace.length + 1)] = value;
             this.log.info("Robot setting updated: " + stateId.slice(this.namespace.length + 1) + " = " + value);
         } catch (error) {
             const message = error instanceof Error ? error.message : "Unknown property write error";
