@@ -1,6 +1,7 @@
 import { Adapter } from "@iobroker/adapter-core";
 import { MiioClient } from "./lib/miio-client";
 import { parseRoomCleaningRequest } from "./lib/room-cleaning";
+import { validateConfig } from "./lib/config";
 
 interface RoidmiAdapterConfig {
     host?: string;
@@ -42,13 +43,7 @@ class RoidmiAdapter extends Adapter {
         });
 
         const config = this.config as RoidmiAdapterConfig;
-        const errors: string[] = [];
-        if (config.host && !/^(?:\d{1,3}\.){3}\d{1,3}$/.test(config.host)) errors.push("The configured host is not a valid IPv4 address.");
-        if (config.did && !/^\d{1,20}$/.test(config.did)) errors.push("The Xiaomi device DID must be numeric.");
-        if (config.pollIntervalSeconds !== undefined &&
-            (!Number.isInteger(config.pollIntervalSeconds) || config.pollIntervalSeconds < 5 || config.pollIntervalSeconds > 3600)) {
-            errors.push("Polling interval must be between 5 and 3600 seconds.");
-        }
+        const errors = validateConfig(config);
 
         await this.setStateChangedAsync("info.connection", { val: false, ack: true });
         if (errors.length) {
@@ -215,6 +210,7 @@ class RoidmiAdapter extends Adapter {
             await this.setStateAsync("control." + command, { val: resetValue, ack: true });
         }
     }
+
     private onUnload(callback: () => void): void {
         this.stopping = true;
         if (this.pollTimer) clearTimeout(this.pollTimer);
