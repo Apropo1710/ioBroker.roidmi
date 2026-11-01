@@ -10,11 +10,11 @@ class MiioClient {
     constructor(options) {
         this.options = options;
     }
-    async call(method, params = []) {
+    async call(method, params = [], timeoutOverrideMs) {
         if (!method.trim())
             throw new Error("miIO method must not be empty");
         const port = this.options.port ?? 54321;
-        const timeoutMs = this.options.timeoutMs ?? 4000;
+        const timeoutMs = timeoutOverrideMs ?? this.options.timeoutMs ?? 4000;
         const socket = (0, node_dgram_1.createSocket)("udp4");
         return new Promise((resolve, reject) => {
             let finished = false;

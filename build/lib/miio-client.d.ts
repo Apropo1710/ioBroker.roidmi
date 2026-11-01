@@ -17,5 +17,5 @@ export declare class MiioClient {
     private readonly options;
     private requestId;
     constructor(options: MiioClientOptions);
-    call(method: string, params?: unknown[]): Promise<unknown>;
+    call(method: string, params?: unknown[], timeoutOverrideMs?: number): Promise<unknown>;
 }
