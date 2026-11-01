@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { buildRoomCleaningAction } = require('../build/lib/room-cleaning.js');
+const { buildRoomCleaningAction, parseRoomCleaningRequest } = require('../build/lib/room-cleaning.js');
 
 test('builds the documented single-room MIoT action', () => {
   assert.deepEqual(buildRoomCleaningAction(1627839123, [3]), {
