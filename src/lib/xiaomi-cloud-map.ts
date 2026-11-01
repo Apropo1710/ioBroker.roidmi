@@ -180,7 +180,8 @@ export class XiaomiCloudMapClient {
         const flag = String(list.flag ?? (Array.isArray(list.options) ? list.options[0] : ""));
         const identitySession = this.cookies.get("identity_session");
         if ((flag !== "4" && flag !== "8") || !identitySession) {
-            throw new Error("Xiaomi did not provide a supported two-factor method or identity session.");
+            const reason = (flag !== "4" && flag !== "8") ? "verification method missing" : "identity session missing";
+            throw new Error("Xiaomi 2FA response incomplete (" + reason + ").");
         }
         this.pendingFlag = flag;
         const method = flag === "8" ? "Email" : "Phone";
