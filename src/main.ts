@@ -164,6 +164,11 @@ class RoidmiAdapter extends Adapter {
             common: { name: "Persisted room map configuration", type: "string", role: "json", read: true, write: false },
             native: {}
         });
+        await this.setObjectNotExistsAsync("map.roomsJson", {
+            type: "state",
+            common: { name: "Imported room list", type: "string", role: "json", read: true, write: false },
+            native: {}
+        });
         await this.setObjectNotExistsAsync("control.refreshMap", { type: "state", common: { name: "Fetch map and rooms from Xiaomi Cloud (manual)", type: "boolean", role: "button", read: false, write: true, def: false }, native: {} });
         await this.subscribeStatesAsync("control.refreshMap");
         for (const [id, name, role] of [["map.cloudStatus","Xiaomi Cloud map retrieval status","text"],["map.cloudAuthUrl","Xiaomi two-factor authentication URL","text"],["map.cloudLastUpdate","Last successful Xiaomi Cloud map retrieval","date"]]) await this.setObjectNotExistsAsync(id,{type:"state",common:{name,type:"string",role,read:true,write:false},native:{}});
@@ -436,7 +441,6 @@ class RoidmiAdapter extends Adapter {
             const rooms = result.metadata.rooms;
             if (!rooms.length) throw new Error("Downloaded map contains no named rooms.");
 
-            await this.setStateChangedAsync("map.roomsJson", { val: JSON.stringify(rooms), ack: true });
             if (result.metadata.mapId) {
                 await this.applyRoomMapConfig({
                     mapId: result.metadata.mapId,
