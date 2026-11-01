@@ -4,7 +4,7 @@
 - [ ] Modell/Firmware und lokale Netzwerkadresse erfassen
 - [ ] MIoT-/miIO-Token sicher beschaffen und lokal halten
 - [ ] Read-only-Verbindung testen
-- [ ] Tatsächlich unterstützte Properties, Actions und Fehlercodes dokumentieren
+- [ ] Tatsächlich unterstützte Properties, Actions, Raum-IDs und Fehlercodes dokumentieren
 - [ ] Prüfen, welche Funktionen lokal und welche nur über Cloud verfügbar sind
 
 ## Phase 1 – Adapterbasis
@@ -15,14 +15,20 @@
 - [ ] Konfiguration, Verbindungsmanager, Polling und Backoff
 - [ ] Objekt-/State-Modell und Tests
 
-## Phase 2 – Kernsteuerung
+## Phase 2 – Kernsteuerung (inkl. priorisierter Raumsteuerung)
 - [ ] Status und Akkudaten
 - [ ] Start / Pause / Fortsetzen / Dock
 - [ ] Saugmodus und Wasserstufe
 - [ ] Fehler- und Verbindungsstatus
+- [ ] Raumaufteilung bzw. Raumliste vom Gerät abrufen, soweit das Protokoll es ermöglicht
+- [ ] Räume mit stabilen Raum-IDs und lesbaren Namen als ioBroker-Objekte abbilden
+- [ ] Reinigung eines einzelnen ausgewählten Raums starten
+- [ ] Reinigung mehrerer ausgewählter Räume in einem Auftrag starten
+- [ ] Raum-IDs und Zuordnungen dauerhaft erhalten; keine erneute manuelle Auswahl bei jedem Start
+- [ ] Verfügbarkeit und Grenzen der Raumsteuerung lokal gegenüber Cloud verifizieren
 
-## Phase 3 – Erweiterungen
-- [ ] Räume und Zonen
+## Phase 3 – Weitere Erweiterungen
+- [ ] Zonenreinigung
 - [ ] Karten und Reinigungsverlauf
 - [ ] Zeitpläne / Wartungsdaten, soweit verfügbar
 
