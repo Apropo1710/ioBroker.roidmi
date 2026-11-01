@@ -1,6 +1,7 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { parseRoidmiMapPayload } = require("../build/lib/roidmi-map.js");
+const { gzipSync } = require("node:zlib");
+const { parseRoidmiMapPayload, parseRoidmiMapArchive } = require("../build/lib/roidmi-map.js");
 
 function payload(metadata) {
     const json = Buffer.from(JSON.stringify(metadata), "utf8");
@@ -40,4 +41,14 @@ test("rejects malformed payloads and room entries", () => {
     assert.throws(() => parseRoidmiMapPayload(payload({
         width: 1, height: 1, resolution: 1, autoArea: [{ id: 0, name: "Bad" }]
     })), /room\[0\]\.id/);
+});
+
+test("decompresses and parses a gzip map archive", () => {
+    const raw = payload({
+        width: 20, height: 15, resolution: 0.05,
+        autoArea: [{ id: 4, name: "Flur" }]
+    });
+    const result = parseRoidmiMapArchive(gzipSync(raw));
+    assert.deepEqual(result.rooms, [{ id: 4, name: "Flur" }]);
+    assert.throws(() => parseRoidmiMapArchive(Buffer.from("not gzip")), /not valid gzip/);
 });
