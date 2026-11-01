@@ -27,5 +27,5 @@ test('never returns a configured token from redaction helper', () => {
 
 test('startup description does not expose credentials', () => {
   assert.equal(describeStartup({ host: '192.168.1.20', token: 'secret' }),
-    'RoidmiPilot scaffold ready; device host: 192.168.1.20');
+    'Roidmi adapter scaffold ready; device host: 192.168.1.20');
 });
