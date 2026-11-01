@@ -6,6 +6,16 @@ function response(body = '{}', status = 200, headers = {}) {
   return new Response(body, { status, headers });
 }
 
+function validOptions() {
+  return {
+    username: 'account@example.test',
+    password: 'not-a-real-password',
+    country: 'de',
+    token: '0123456789abcdef0123456789abcdef',
+    mapName: '0',
+  };
+}
+
 test('Xiaomi login preserves session cookies and Extension-Pragma across every STS redirect', async (t) => {
   const calls = [];
   const originalFetch = global.fetch;
@@ -18,10 +28,7 @@ test('Xiaomi login preserves session cookies and Extension-Pragma across every S
       return response('&&&START&&&{"location":"https://sts.example/first","ssecurity":"c2VjdXJpdHk=","userId":"123"}');
     }
     if (String(url) === 'https://sts.example/first') {
-      return response('', 302, {
-        location: 'https://sts.example/second',
-        'set-cookie': 'userId=123; Path=/',
-      });
+      return response('', 302, { location: 'https://sts.example/second', 'set-cookie': 'userId=123; Path=/' });
     }
     if (String(url) === 'https://sts.example/second') {
       return response('', 302, {
@@ -33,26 +40,24 @@ test('Xiaomi login preserves session cookies and Extension-Pragma across every S
     if (String(url) === 'https://sts.example/final') {
       return response('', 200, { 'set-cookie': 'serviceToken=svc; Path=/' });
     }
-    throw new Error('Unexpected mocked URL: ' + String(url));
+    if (String(url).startsWith('https://de.api.io.mi.com/app/home/device_list')) {
+      // Invalid encrypted response is intentional: reaching this endpoint proves
+      // authentication completed and all required session values were accepted.
+      return response('not-valid-base64');
+    }
+    throw new Error('Unexpected mocked URL: ' + String(url).split('?')[0]);
   };
   t.after(() => { global.fetch = originalFetch; });
 
-  // Stop after login by returning an API-shaped encrypted response is not
-  // necessary here: assert the session failure is not raised. Replace the map
-  // API crypto response with an empty archive is covered by the expected API path.
-  // The direct auth flow is exercised using invalid base64 as a predictable API error.
   await assert.rejects(
-    () => new XiaomiCloudMapClient().fetchMap({
-      username: 'account@example.test',
-      password: 'not-a-real-password',
-      country: 'de',
-      token: '0123456789abcdef0123456789abcdef',
-      mapName: '0',
-    }),
-    /Xiaomi cloud API request failed|unreadable encrypted response/,
+    () => new XiaomiCloudMapClient().fetchMap(validOptions()),
+    /unreadable encrypted response/,
   );
   assert.ok(calls.some(c => c.url === 'https://sts.example/second'));
-  assert.ok(calls.some(c => c.cookie?.includes('userId=123') && c.cookie?.includes('cUserId=456')));
+  const secondHop = calls.find(c => c.url === 'https://sts.example/final');
+  assert.ok(secondHop.cookie?.includes('userId=123'));
+  assert.ok(secondHop.cookie?.includes('cUserId=456'));
+  assert.ok(calls.some(c => c.url.startsWith('https://de.api.io.mi.com/app/home/device_list')));
 });
 
 test('Xiaomi 2FA does not expose verification data when identity session is missing', async (t) => {
@@ -65,14 +70,11 @@ test('Xiaomi 2FA does not expose verification data when identity session is miss
       return response('&&&START&&&{"notificationUrl":"https://account.xiaomi.com/fe/service/identity/authStart?x=1"}');
     }
     if (String(url).includes('/identity/list')) return response('&&&START&&&{"flag":8}');
-    throw new Error('Unexpected mocked URL: ' + String(url));
+    throw new Error('Unexpected mocked URL: ' + String(url).split('?')[0]);
   };
   t.after(() => { global.fetch = originalFetch; });
   await assert.rejects(
-    () => new XiaomiCloudMapClient().fetchMap({
-      username: 'account@example.test', password: 'not-a-real-password',
-      country: 'de', token: '0123456789abcdef0123456789abcdef', mapName: '0',
-    }),
+    () => new XiaomiCloudMapClient().fetchMap(validOptions()),
     /identity session missing/,
   );
 });
@@ -97,14 +99,11 @@ test('Xiaomi 2FA chooses email or phone from Xiaomi flag without logging the cod
     if (String(url).endsWith('/identity/auth/sendEmailTicket')) {
       return response('&&&START&&&{"code":0}');
     }
-    throw new Error('Unexpected mocked URL: ' + String(url));
+    throw new Error('Unexpected mocked URL: ' + String(url).split('?')[0]);
   };
   t.after(() => { global.fetch = originalFetch; });
   await assert.rejects(
-    () => new XiaomiCloudMapClient().fetchMap({
-      username: 'account@example.test', password: 'not-a-real-password',
-      country: 'de', token: '0123456789abcdef0123456789abcdef', mapName: '0',
-    }),
+    () => new XiaomiCloudMapClient().fetchMap(validOptions()),
     /Code sent to a\*\*\*@example\.test/,
   );
   assert.ok(calls.some(c => c.url.includes('/identity/auth/verifyEmail')));
