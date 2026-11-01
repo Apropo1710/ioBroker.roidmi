@@ -7,6 +7,8 @@ export interface XiaomiCloudMapResult { metadata: RoidmiMapMetadata; mapName: st
 class CookieStore {
     private readonly values = new Map<string, string>();
     public add(headers: Headers): void {
+        // Node 20 exposes getSetCookie(). Keep the fallback for compatible runtimes,
+        // while never logging cookie contents.
         const lines = typeof headers.getSetCookie === "function" ? headers.getSetCookie() : [headers.get("set-cookie") ?? ""];
         for (const line of lines) {
             const first = line.split(";")[0], index = first.indexOf("=");
@@ -35,41 +37,78 @@ function encSignature(url:string,method:string,signed:string,params:Record<strin
     return createHash("sha1").update([method.toUpperCase(),path,...Object.entries(params).map(([k,v])=>`${k}=${v}`),signed].join("&")).digest("base64");
 }
 export class XiaomiCloudMapClient {
-    private readonly cookies=new CookieStore(); private ssecurity=""; private userId=""; private serviceToken="";
-    private pendingFlag = "";
-    private maskedDestination = "";
+    private readonly cookies=new CookieStore();
+    private ssecurity="";
+    private userId="";
+    private serviceToken="";
+    private cUserId="";
+    private passToken="";
+    private pendingFlag="";
+    private maskedDestination="";
     private readonly agent="Android-7.1.1-1.0.0-ROIDMIIOBROKER APP/xiaomi.smarthome APPV/62830";
+
     public async fetchMap(o:XiaomiCloudMapOptions, verificationCode?: string):Promise<XiaomiCloudMapResult>{
         if(!o.username.trim()||!o.password||!o.mapName.trim())throw new Error("Xiaomi cloud username, password and map name are required");
         if (!this.serviceToken || !this.ssecurity) {
             if (this.pendingFlag) {
                 if (!verificationCode?.trim()) throw new Error("XIAOMI_2FA_CODE:Enter the verification code sent by Xiaomi.");
                 const method = this.pendingFlag === "8" ? "Email" : "Phone";
+                // Xiaomi's reference flow uses the exact URL-encoded _flag/ticket/trust fields
+                // and the identity_session cookie established by identity/list.
                 const verify = await this.request("https://account.xiaomi.com/identity/auth/verify" + method, {
                     method: "POST",
                     body: new URLSearchParams({ _flag: this.pendingFlag, ticket: verificationCode.trim(), trust: "false", _json: "true" }).toString(),
-                    headers: { "Content-Type": "application/x-www-form-urlencoded", Cookie: "identity_session=" + this.cookies.get("identity_session") }
+                    headers: { "Content-Type": "application/x-www-form-urlencoded", Cookie: this.identityCookie() }
                 });
                 const verified = this.json(await verify.text());
-                if (typeof verified.location !== "string") throw new Error("Xiaomi rejected the verification code. Please request a new code.");
+                if (typeof verified.location !== "string" || !verified.location) {
+                    throw new Error("Xiaomi rejected the verification code. Please request a new code.");
+                }
                 await this.finishLogin(verified.location);
                 this.pendingFlag = "";
             } else {
-                const first=await this.request("https://account.xiaomi.com/pass/serviceLogin?sid=xiaomiio&_json=true",{headers:{Cookie:`userId=${encodeURIComponent(o.username)}`}});
-                const init=this.json(await first.text()); if(typeof init._sign!=="string")throw new Error("Xiaomi login could not be initialized");
-                const fields=new URLSearchParams({sid:"xiaomiio",hash:createHash("md5").update(o.password).digest("hex").toUpperCase(),callback:"https://sts.api.io.mi.com/sts",qs:"%3Fsid%3Dxiaomiio%26_json%3Dtrue",user:o.username,_sign:init._sign,_json:"true"});
-                const login=await this.request("https://account.xiaomi.com/pass/serviceLoginAuth2",{method:"POST",body:fields.toString(),headers:{"Content-Type":"application/x-www-form-urlencoded"}});
+                // Use Xiaomi's returned qs/callback/sid values instead of hard-coded
+                // equivalents, and provide the deviceId cookie expected by Xiaomi.
+                const deviceId = randomBytes(8).toString("hex");
+                const first=await this.request("https://account.xiaomi.com/pass/serviceLogin?_json=true&sid=xiaomiio",{
+                    headers:{Cookie:`userId=${encodeURIComponent(o.username)}; deviceId=${deviceId}`}
+                });
+                const init=this.json(await first.text());
+                if(typeof init._sign!=="string" || typeof init.sid!=="string" || typeof init.callback!=="string" || typeof init.qs!=="string") {
+                    throw new Error("Xiaomi login initialization response was incomplete");
+                }
+                const fields=new URLSearchParams({
+                    _json:"true",
+                    hash:createHash("md5").update(o.password).digest("hex").toUpperCase(),
+                    sid:init.sid,
+                    callback:init.callback,
+                    _sign:init._sign,
+                    qs:init.qs,
+                    user:o.username
+                });
+                const login=await this.request("https://account.xiaomi.com/pass/serviceLoginAuth2",{
+                    method:"POST",
+                    body:fields.toString(),
+                    headers:{"Content-Type":"application/x-www-form-urlencoded",Cookie:`deviceId=${deviceId}`}
+                });
                 const auth=this.json(await login.text());
                 if (typeof auth.notificationUrl === "string") {
                     await this.startTwoFactor(auth.notificationUrl);
                     throw new Error("XIAOMI_2FA_CODE:Code sent to " + this.maskedDestination + ". Enter it in map.cloudVerificationCode.");
                 }
-                if(typeof auth.ssecurity!=="string" || typeof auth.location!=="string") throw new Error("Xiaomi login failed. Check account, password and region.");
-                this.ssecurity=auth.ssecurity; this.userId=String(auth.userId??"");
+                if(typeof auth.location!=="string" || !auth.location) {
+                    throw new Error("Xiaomi login failed. Check account, password and region.");
+                }
+                if(typeof auth.ssecurity==="string") this.ssecurity=auth.ssecurity;
+                if(typeof auth.userId==="string" || typeof auth.userId==="number") this.userId=String(auth.userId);
+                if(typeof auth.passToken==="string") this.passToken=auth.passToken;
                 await this.finishLogin(auth.location);
             }
         }
-        if(!this.serviceToken || !this.ssecurity) throw new Error("Xiaomi login did not provide valid cloud session tokens");
+        if(!this.serviceToken || !this.ssecurity || !this.userId) {
+            const missing = [!this.ssecurity && "ssecurity", !this.serviceToken && "serviceToken", !this.userId && "userId"].filter(Boolean).join(", ");
+            throw new Error("Xiaomi login session is incomplete (missing " + missing + ")");
+        }
         const base=`https://${o.country==="cn"?"":o.country+"."}api.io.mi.com/app`;
         const devices=await this.api(base+"/home/device_list",{data:'{"getVirtualModel":false,"getHuamiDevices":0}'});
         const list=devices?.result?.list;
@@ -84,22 +123,26 @@ export class XiaomiCloudMapClient {
         if(!archive.length||archive.length>20*1024*1024)throw new Error("Downloaded map archive has an invalid size");
         return {metadata:parseRoidmiMapArchive(archive),mapName:o.mapName,deviceId,userId};
     }
+
+    private identityCookie(): string {
+        const value = this.cookies.get("identity_session");
+        if (!value) throw new Error("Xiaomi 2FA session expired. Start the cloud login again.");
+        return "identity_session=" + value;
+    }
+
     private async startTwoFactor(notificationUrl: string): Promise<void> {
-        // Match Xiaomi's documented client flow: identity/list returns both the
-        // available verification flag and the identity_session cookie.
         const listUrl = notificationUrl.replace("/fe/service/identity/authStart", "/identity/list");
         const listResponse = await this.request(listUrl);
         const list = this.json(await listResponse.text());
-        const flagValue = list.flag ?? (Array.isArray(list.options) ? list.options[0] : "");
-        const flag = String(flagValue);
+        const flag = String(list.flag ?? "");
         const identitySession = this.cookies.get("identity_session");
         if ((flag !== "4" && flag !== "8") || !identitySession) {
-            const keys = Object.keys(list ?? {}).sort().join(", ") || "none";
-            throw new Error(`Xiaomi 2FA response incomplete (flag=${flag || "missing"}, identity_session=${identitySession ? "present" : "missing"}, response fields=${keys}).`);
+            // Do not include response content, URLs, cookie values or credentials.
+            throw new Error(`Xiaomi 2FA response incomplete (verification method ${flag === "4" || flag === "8" ? "available" : "missing"}, identity session ${identitySession ? "present" : "missing"}).`);
         }
         this.pendingFlag = flag;
         const method = flag === "8" ? "Email" : "Phone";
-        const cookieHeader = "identity_session=" + identitySession;
+        const cookieHeader = this.identityCookie();
         const optionsResponse = await this.request("https://account.xiaomi.com/identity/auth/verify" + method + "?_flag=" + flag + "&_json=true", {
             headers: { Cookie: cookieHeader }
         });
@@ -113,20 +156,21 @@ export class XiaomiCloudMapClient {
         const result = this.json(await sent.text());
         if (result.code !== 0) throw new Error("Xiaomi could not send the verification code (code " + String(result.code ?? "unknown") + ").");
     }
+
     private async finishLogin(location: string): Promise<void> {
-        const response = await this.request(location);
-        const extension = response.headers.get("Extension-Pragma");
-        if (extension) {
-            try {
-                const parsed = JSON.parse(extension);
-                if (typeof parsed.ssecurity === "string") this.ssecurity = parsed.ssecurity;
-            } catch { /* Ignore malformed optional header. */ }
-        }
-        this.serviceToken = this.cookies.get("serviceToken") ?? "";
+        // request() walks redirects manually, retaining every Set-Cookie and
+        // Extension-Pragma header. This mirrors go2rtc's response history scan.
+        await this.request(location);
         this.userId = this.cookies.get("userId") ?? this.userId;
-        if (!this.ssecurity) throw new Error("Xiaomi verification completed but no cloud security token was returned.");
-        if (!this.serviceToken) throw new Error("Xiaomi verification completed but no service token was returned.");
+        this.cUserId = this.cookies.get("cUserId") ?? this.cUserId;
+        this.serviceToken = this.cookies.get("serviceToken") ?? "";
+        this.passToken = this.cookies.get("passToken") ?? this.passToken;
+        const missing = [!this.ssecurity && "ssecurity", !this.serviceToken && "serviceToken", !this.userId && "userId"];
+        if (missing.some(Boolean)) {
+            throw new Error("Xiaomi verification completed but session data is incomplete (missing " + missing.filter(Boolean).join(", ") + ").");
+        }
     }
+
     private async api(url:string,params:Record<string,string>):Promise<any>{
         const millis=Date.now(),nonce=Buffer.concat([randomBytes(8),Buffer.from(Math.floor(millis/60000).toString(16).padStart(8,"0"),"hex")]).toString("base64");
         const signed=signedNonce(this.ssecurity,nonce),enc={...params};
@@ -134,33 +178,52 @@ export class XiaomiCloudMapClient {
         for(const [k,v] of Object.entries(enc))enc[k]=crypt(signed,Buffer.from(v)).toString("base64");
         const signature=encSignature(url,"POST",signed,enc);
         const query=new URLSearchParams({...enc,signature,ssecurity:this.ssecurity,_nonce:nonce});
-        const response=await this.request(url+"?"+query.toString(),{method:"POST",headers:{"Accept-Encoding":"identity","Content-Type":"application/x-www-form-urlencoded","x-xiaomi-protocal-flag-cli":"PROTOCAL-HTTP2","MIOT-ENCRYPT-ALGORITHM":"ENCRYPT-RC4",Cookie:`userId=${this.userId}; yetAnotherServiceToken=${this.serviceToken}; serviceToken=${this.serviceToken}; locale=en_GB; timezone=GMT+01:00; channel=MI_APP_STORE`}});
+        const cookieHeader = [
+            `userId=${this.userId}`,
+            ...(this.cUserId ? [`cUserId=${this.cUserId}`] : []),
+            `yetAnotherServiceToken=${this.serviceToken}`,
+            `serviceToken=${this.serviceToken}`,
+            "locale=en_GB", "timezone=GMT+01:00", "channel=MI_APP_STORE"
+        ].join("; ");
+        const response=await this.request(url+"?"+query.toString(),{
+            method:"POST",
+            headers:{"Accept-Encoding":"identity","Content-Type":"application/x-www-form-urlencoded","x-xiaomi-protocal-flag-cli":"PROTOCAL-HTTP2","MIOT-ENCRYPT-ALGORITHM":"ENCRYPT-RC4",Cookie:cookieHeader}
+        });
         const plain=crypt(signed,Buffer.from(await response.text(),"base64"),true).toString("utf8");
-        try{return JSON.parse(plain);}catch{throw new Error("Xiaomi cloud returned an unreadable encrypted response");}
+        let parsed:any;
+        try{parsed=JSON.parse(plain);}catch{throw new Error("Xiaomi cloud returned an unreadable encrypted response");}
+        if(parsed?.code !== 0) throw new Error("Xiaomi cloud API request failed (code " + String(parsed?.code ?? "unknown") + ").");
+        return parsed;
     }
+
     private async request(url:string,init:RequestInit={}):Promise<Response>{
         const headers=new Headers(init.headers);headers.set("User-Agent",this.agent);
         const cookie=this.cookies.header();if(cookie&&!headers.has("Cookie"))headers.set("Cookie",cookie);
         let current=url;
-        for(let hop=0;hop<6;hop++){
-            const response=await fetch(current,{...init,headers,redirect:"manual",signal:AbortSignal.timeout(15000)});
+        let requestInit: RequestInit = {...init};
+        for(let hop=0;hop<10;hop++){
+            const response=await fetch(current,{...requestInit,headers,redirect:"manual",signal:AbortSignal.timeout(15000)});
             this.cookies.add(response.headers);
-            // Xiaomi may send ssecurity on an intermediate STS redirect rather
-            // than on the final response. Capture it on every hop, as official
-            // Xiaomi clients do while walking the redirect chain.
-            const extension = response.headers.get("Extension-Pragma");
-            if (extension) {
-                try {
-                    const parsed = JSON.parse(extension);
-                    if (typeof parsed.ssecurity === "string") this.ssecurity = parsed.ssecurity;
-                } catch { /* Ignore malformed optional header. */ }
+            // Preserve all account and STS cookies; Xiaomi can place security
+            // state on a non-final redirect response.
+            const extension=response.headers.get("Extension-Pragma");
+            if(extension){
+                try{
+                    const parsed=JSON.parse(extension);
+                    if(typeof parsed.ssecurity==="string")this.ssecurity=parsed.ssecurity;
+                }catch{
+                    throw new Error("Xiaomi returned an invalid cloud security header");
+                }
             }
             if([301,302,303,307,308].includes(response.status)){
                 const location=response.headers.get("location");
                 if(!location)throw new Error("Xiaomi authentication redirect had no location");
                 current=new URL(location,current).toString();
-                if(response.status===303||(response.status===302&&init.method==="POST")){init={...init,method:"GET",body:undefined};}
-                const updatedCookie=this.cookies.header();if(updatedCookie)headers.set("Cookie",updatedCookie);
+                if(response.status===303||((response.status===301||response.status===302)&&requestInit.method==="POST")){
+                    requestInit={...requestInit,method:"GET",body:undefined};
+                }
+                const updatedCookie=this.cookies.header();
+                if(updatedCookie)headers.set("Cookie",updatedCookie);
                 continue;
             }
             if(!response.ok)throw new Error(`Xiaomi cloud request failed (HTTP ${response.status})`);
@@ -168,5 +231,9 @@ export class XiaomiCloudMapClient {
         }
         throw new Error("Xiaomi authentication redirected too many times");
     }
-    private json(text:string):any{try{return JSON.parse(text.replace(/^&&&START&&&/,""));}catch{throw new Error("Xiaomi account returned an invalid login response");}}
+
+    private json(text:string):any{
+        try{return JSON.parse(text.replace(/^&&&START&&&/,""));}
+        catch{throw new Error("Xiaomi account returned an invalid login response");}
+    }
 }
