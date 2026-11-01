@@ -53,6 +53,17 @@ class RoidmiAdapter extends Adapter {
             common: { name: "Connection status", type: "string", role: "text", read: true, write: false },
             native: {}
         });
+        await this.setObjectNotExistsAsync("info.lastPoll", {
+            type: "state",
+            common: { name: "Last successful status poll", type: "string", role: "date", read: true, write: false },
+            native: {}
+        });
+        await this.setObjectNotExistsAsync("info.pollCount", {
+            type: "state",
+            common: { name: "Successful status polls since adapter start", type: "number", role: "value", read: true, write: false },
+            native: {}
+        });
+        let successfulPollCount = 0;
 
         const config = this.config as RoidmiAdapterConfig;
         const errors = validateConfig(config);
@@ -177,6 +188,9 @@ class RoidmiAdapter extends Adapter {
                         throw new Error(`MIoT property read failed (SIID ${property.siid}, PIID ${property.piid}, code ${item.code})`);
                     }
                 }
+                successfulPollCount++;
+                await this.setStateChangedAsync("info.lastPoll", { val: new Date().toISOString(), ack: true });
+                await this.setStateChangedAsync("info.pollCount", { val: successfulPollCount, ack: true });
                 await this.setStateChangedAsync("info.connection", { val: true, ack: true });
                 await this.setStateChangedAsync("info.connectionText", { val: "Local miIO connection established", ack: true });
                 this.lastPollError = "";
