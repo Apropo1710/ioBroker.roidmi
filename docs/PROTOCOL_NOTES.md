@@ -33,3 +33,22 @@ Quellen:
 - Token niemals in Git, Screenshots oder ungeschützte Logs übernehmen.
 - Bei Debug-Ausgaben Payloads mit Authentifizierungsdaten redigieren.
 - Erste Gerätetests ausschließlich lesend durchführen.
+
+
+## Roidmi map metadata and room discovery
+
+The Xiaomi Cloud Map Extractor implementation for `roidmi.vacuum.v60` confirms
+that the Roidmi map archive is gzip-compressed. After decompression it contains
+a 16-byte prefix, raster map bytes, the two-byte marker `7f 7b`, and JSON map
+metadata. Room definitions are read from `autoArea` (fallback:
+`autoAreaValue`); each entry contains an integer `id` and a display `name`.
+The map metadata also contains dimensions and resolution. This is sufficient
+to discover room IDs and names without manually entering them once the adapter
+can retrieve the map archive.
+
+The adapter now has a tested parser for this decompressed payload. The map ID
+used by the room-cleaning action may be separate from the map metadata (for
+example, it is also associated with the Xiaomi cloud map/file context), so it
+must not be guessed. Automatic map archive retrieval and map-ID resolution
+remain outstanding. Cloud map access requires Xiaomi account authentication;
+credentials and tokens must never be logged or committed.
