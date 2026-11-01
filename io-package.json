@@ -1,7 +1,7 @@
 {
   "common": {
     "name": "roidmi",
-    "version": "0.1.6",
+    "version": "0.1.7",
     "title": "Roidmi",
     "titleLang": {
       "en": "Roidmi",
@@ -53,6 +53,10 @@
       "0.1.6": {
         "en": "Install faster using precompiled JavaScript",
         "de": "Schnellere Installation durch vorcompiliertes JavaScript"
+      },
+      "0.1.7": {
+        "en": "Localized adapter configuration in German and English",
+        "de": "Adapter-Konfiguration auf Deutsch und Englisch lokalisiert"
       }
     },
     "adminUI": {

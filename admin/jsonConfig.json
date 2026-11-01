@@ -3,49 +3,94 @@
   "items": {
     "host": {
       "type": "text",
-      "label": "Robot IP address",
+      "label": {
+        "de": "Roboter-IP-Adresse",
+        "en": "Robot IP address"
+      },
       "default": "",
-      "help": "Local IPv4 address of the Roidmi EVE Plus"
+      "help": {
+        "de": "Lokale IPv4-Adresse des Roidmi EVE Plus",
+        "en": "Local IPv4 address of the Roidmi EVE Plus"
+      }
     },
     "did": {
       "type": "text",
-      "label": "Xiaomi device DID",
+      "label": {
+        "de": "Xiaomi-Geräte-DID",
+        "en": "Xiaomi device DID"
+      },
       "default": "",
-      "help": "Numeric device ID (DID) from the Xiaomi device details or MIoT logs. Required for MIoT requests."
+      "help": {
+        "de": "Numerische Geräte-ID (DID) aus den Xiaomi-Gerätedetails oder den MIoT-Protokollen. Für MIoT-Anfragen erforderlich.",
+        "en": "Numeric device ID (DID) from Xiaomi device details or MIoT logs. Required for MIoT requests."
+      }
     },
     "token": {
       "type": "password",
-      "label": "MIoT / miIO token",
-      "help": "Stored encrypted by ioBroker. Never share this token."
+      "label": {
+        "de": "MIoT-/miIO-Token",
+        "en": "MIoT / miIO token"
+      },
+      "help": {
+        "de": "Wird von ioBroker verschlüsselt gespeichert. Gib diesen Token niemals weiter.",
+        "en": "Stored encrypted by ioBroker. Never share this token."
+      }
     },
     "pollIntervalSeconds": {
       "type": "number",
-      "label": "Polling interval (seconds)",
+      "label": {
+        "de": "Abfrageintervall (Sekunden)",
+        "en": "Polling interval (seconds)"
+      },
       "min": 5,
       "max": 3600,
       "default": 30
     },
     "cloudEnabled": {
       "type": "checkbox",
-      "label": "Optional: Enable Xiaomi Cloud map retrieval",
+      "label": {
+        "de": "Optional: Xiaomi-Cloud-Kartenabruf aktivieren",
+        "en": "Optional: Enable Xiaomi Cloud map retrieval"
+      },
       "default": false,
-      "help": "Only needed to automatically download saved maps and room names/IDs. Local robot control and status polling work without this option. Cloud access is only used when control.refreshMap is pressed."
+      "help": {
+        "de": "Nur erforderlich, um gespeicherte Karten sowie Raumnamen und Raum-IDs automatisch herunterzuladen. Die lokale Robotersteuerung und Statusabfrage funktionieren auch ohne diese Option. Die Cloud wird nur beim Auslösen von control.refreshMap verwendet.",
+        "en": "Only needed to automatically download saved maps and room names/IDs. Local robot control and status polling work without this option. Cloud access is only used when control.refreshMap is pressed."
+      }
     },
     "cloudUsername": {
       "type": "text",
-      "label": "Xiaomi account username (optional)",
-      "help": "Only used for optional Xiaomi Cloud map retrieval."
+      "label": {
+        "de": "Xiaomi-Konto – Benutzername (optional)",
+        "en": "Xiaomi account username (optional)"
+      },
+      "help": {
+        "de": "Wird nur für den optionalen Kartenabruf über die Xiaomi Cloud verwendet.",
+        "en": "Only used for optional Xiaomi Cloud map retrieval."
+      }
     },
     "cloudPassword": {
       "type": "password",
-      "label": "Xiaomi account password (optional)",
-      "help": "Stored encrypted by ioBroker. Never share it in chat or logs."
+      "label": {
+        "de": "Xiaomi-Konto – Passwort (optional)",
+        "en": "Xiaomi account password (optional)"
+      },
+      "help": {
+        "de": "Wird von ioBroker verschlüsselt gespeichert. Teile es niemals im Chat oder in Protokollen.",
+        "en": "Stored encrypted by ioBroker. Never share it in chat or logs."
+      }
     },
     "cloudCountry": {
       "type": "text",
-      "label": "Xiaomi Cloud region",
+      "label": {
+        "de": "Xiaomi-Cloud-Region",
+        "en": "Xiaomi Cloud region"
+      },
       "default": "de",
-      "help": "Two-letter account region, e.g. de, fr, it, es or cn."
+      "help": {
+        "de": "Zweistelliger Regionscode des Kontos, z. B. de, fr, it, es oder cn.",
+        "en": "Two-letter account region, e.g. de, fr, it, es or cn."
+      }
     }
   }
 }
