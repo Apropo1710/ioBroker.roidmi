@@ -4,7 +4,6 @@ import { MiioClient } from "./lib/miio-client";
 interface RoidmiPilotConfig {
     host?: string;
     did?: string;
-    did?: string;
     token?: string;
     pollIntervalSeconds?: number;
 }
@@ -15,7 +14,7 @@ interface MiotAction {
     in?: unknown[];
 }
 
-class RoidmiPilot extends Adapter {
+class RoidmiAdapter extends Adapter {
     private pollTimer?: NodeJS.Timeout;
     private stopping = false;
     private lastPollError = "";
@@ -23,7 +22,7 @@ class RoidmiPilot extends Adapter {
     private client?: MiioClient;
 
     public constructor() {
-        super({ name: "roidmipilot" });
+        super({ name: "roidmi" });
         this.on("ready", () => void this.onReady());
         this.on("stateChange", (id, state) => void this.onStateChange(id, state));
         this.on("unload", (callback) => this.onUnload(callback));
@@ -195,5 +194,5 @@ class RoidmiPilot extends Adapter {
     }
 }
 
-export default RoidmiPilot;
-new RoidmiPilot();
+export default RoidmiAdapter;
+new RoidmiAdapter();
