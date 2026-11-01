@@ -11,6 +11,7 @@ class RoidmiPilot extends Adapter {
     private pollTimer?: NodeJS.Timeout;
     private stopping = false;
     private lastPollError = "";
+
     public constructor() {
         super({ name: "roidmipilot" });
         this.on("ready", () => void this.onReady());
@@ -20,24 +21,12 @@ class RoidmiPilot extends Adapter {
     private async onReady(): Promise<void> {
         await this.setObjectNotExistsAsync("info.connection", {
             type: "state",
-            common: {
-                name: "Device connection",
-                type: "boolean",
-                role: "indicator.reachable",
-                read: true,
-                write: false
-            },
+            common: { name: "Device connection", type: "boolean", role: "indicator.reachable", read: true, write: false },
             native: {}
         });
         await this.setObjectNotExistsAsync("info.connectionText", {
             type: "state",
-            common: {
-                name: "Connection status",
-                type: "string",
-                role: "text",
-                read: true,
-                write: false
-            },
+            common: { name: "Connection status", type: "string", role: "text", read: true, write: false },
             native: {}
         });
 
@@ -47,33 +36,30 @@ class RoidmiPilot extends Adapter {
             errors.push("The configured host is not a valid IPv4 address.");
         }
         if (config.pollIntervalSeconds !== undefined &&
-            (!Number.isInteger(config.pollIntervalSeconds) ||
-             config.pollIntervalSeconds < 5 ||
-             config.pollIntervalSeconds > 3600)) {
+            (!Number.isInteger(config.pollIntervalSeconds) || config.pollIntervalSeconds < 5 || config.pollIntervalSeconds > 3600)) {
             errors.push("Polling interval must be between 5 and 3600 seconds.");
         }
 
-        await this.setStateAsync("info.connection", { val: false, ack: true });
+        await this.setStateChangedAsync("info.connection", { val: false, ack: true });
         if (errors.length > 0) {
             const message = errors.join(" ");
-            await this.setStateAsync("info.connectionText", { val: message, ack: true });
+            await this.setStateChangedAsync("info.connectionText", { val: message, ack: true });
             this.log.error(message);
             return;
         }
-
         if (!config.host || !config.token) {
             const message = "Configuration incomplete: enter the robot IP address and MIoT/miIO token.";
-            await this.setStateAsync("info.connectionText", { val: message, ack: true });
+            await this.setStateChangedAsync("info.connectionText", { val: message, ack: true });
             this.log.info(message);
             return;
         }
 
         const client = new MiioClient({ host: config.host, token: config.token });
         const properties = [
-            { id: "battery", siid: 3, piid: 1, name: "Battery level", type: "number", unit: "%" },
-            { id: "charging", siid: 3, piid: 2, name: "Charging state", type: "number" },
-            { id: "state", siid: 2, piid: 1, name: "Vacuum state", type: "number" },
-            { id: "errorCode", siid: 2, piid: 2, name: "Error code", type: "number" }
+            { id: "battery", siid: 3, piid: 1, name: "Battery level", unit: "%" },
+            { id: "charging", siid: 3, piid: 2, name: "Charging state" },
+            { id: "state", siid: 2, piid: 1, name: "Vacuum state" },
+            { id: "errorCode", siid: 2, piid: 2, name: "Error code" }
         ] as const;
 
         for (const property of properties) {
@@ -81,9 +67,9 @@ class RoidmiPilot extends Adapter {
                 type: "state",
                 common: {
                     name: property.name,
-                    type: property.type,
+                    type: "number",
                     role: "value",
-                    unit: "unit" in property ? property.unit : undefined,
+                    ...( "unit" in property ? { unit: property.unit } : {}),
                     read: true,
                     write: false
                 },
@@ -99,24 +85,26 @@ class RoidmiPilot extends Adapter {
                     piid: property.piid
                 })));
                 if (!Array.isArray(result)) throw new Error("Robot returned an unexpected MIoT property response");
+
                 for (let index = 0; index < properties.length; index++) {
                     const item = result[index] as { code?: number; value?: unknown } | undefined;
                     if (item && item.code === 0 && typeof item.value === "number") {
                         await this.setStateChangedAsync(properties[index].id, { val: item.value, ack: true });
                     }
                 }
-                await this.setStateAsync("info.connection", { val: true, ack: true });
-                await this.setStateAsync("info.connectionText", { val: "Local miIO connection established", ack: true });
+                await this.setStateChangedAsync("info.connection", { val: true, ack: true });
+                await this.setStateChangedAsync("info.connectionText", { val: "Local miIO connection established", ack: true });
+                this.lastPollError = "";
             } catch (error) {
                 const message = error instanceof Error ? error.message : "Unknown local miIO error";
-                await this.setStateAsync("info.connection", { val: false, ack: true });
-                await this.setStateAsync("info.connectionText", { val: message, ack: true });
-                this.log.warn(message);
+                await this.setStateChangedAsync("info.connection", { val: false, ack: true });
+                await this.setStateChangedAsync("info.connectionText", { val: message, ack: true });
+                if (message !== this.lastPollError) this.log.warn(message);
+                this.lastPollError = message;
             }
         };
 
-        // One-shot scheduling prevents overlapping polls. On errors the delay
-        // grows exponentially to reduce UDP traffic and device/host load.
+        // Schedule only after the previous poll completes: no overlapping RPCs.
         const baseIntervalMs = (config.pollIntervalSeconds ?? 30) * 1000;
         let consecutiveFailures = 0;
         const scheduleNext = (delayMs: number): void => {
@@ -125,17 +113,20 @@ class RoidmiPilot extends Adapter {
                 await poll();
                 if (this.lastPollError) consecutiveFailures++;
                 else consecutiveFailures = 0;
-                const backoffMs = Math.min(baseIntervalMs * (2 ** Math.min(consecutiveFailures, 6)), 300000);
-                scheduleNext(this.lastPollError ? backoffMs : baseIntervalMs);
+                const nextDelay = this.lastPollError
+                    ? Math.min(baseIntervalMs * (2 ** Math.min(consecutiveFailures, 6)), 300000)
+                    : baseIntervalMs;
+                scheduleNext(nextDelay);
             }, delayMs);
         };
 
-        // Initial poll runs immediately; the first regular poll follows after it completes.
         await poll();
         scheduleNext(this.lastPollError ? Math.min(baseIntervalMs * 2, 300000) : baseIntervalMs);
     }
 
     private onUnload(callback: () => void): void {
+        this.stopping = true;
+        if (this.pollTimer) clearTimeout(this.pollTimer);
         this.setState("info.connection", false, true);
         callback();
     }
