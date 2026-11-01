@@ -1,7 +1,7 @@
 {
   "common": {
     "name": "roidmi",
-    "version": "0.1.13",
+    "version": "0.1.14",
     "title": "Roidmi",
     "titleLang": {
       "en": "Roidmi",
@@ -81,6 +81,10 @@
       "0.1.13": {
         "en": "Added safe step-by-step Xiaomi 2FA diagnostics",
         "de": "Sichere Schritt-für-Schritt-Diagnose für Xiaomi-2FA ergänzt"
+      },
+      "0.1.14": {
+        "en": "Restore synchronous Xiaomi sign-in flow and matching admin callbacks",
+        "de": "Synchronen Xiaomi-Anmeldeablauf und passende Admin-Rückmeldungen wiederhergestellt"
       }
     },
     "adminUI": {
