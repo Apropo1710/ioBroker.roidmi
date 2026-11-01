@@ -406,57 +406,25 @@ class RoidmiAdapter extends adapter_core_1.Adapter {
             token: typeof payload.token === "string" ? payload.token : ""
         };
         const code = obj.command === "cloudSubmitCode" && typeof payload.code === "string" ? payload.code.trim() : undefined;
-        if (!credentials.username || !credentials.password || !credentials.token) {
-            await this.setStateAsync("map.cloudStatus", {
-                val: "Fehlende Zugangsdaten: Bitte Xiaomi-Benutzername, Passwort und Roboter-Token prüfen.",
-                ack: true
-            });
-            this.sendTo(obj.from, obj.command, { error1: true }, obj.callback);
-            return;
-        }
-        if (obj.command === "cloudSubmitCode" && !code) {
-            await this.setStateAsync("map.cloudStatus", {
-                val: "Bitte zuerst den Xiaomi-Bestätigungscode eingeben.",
-                ack: true
-            });
-            this.sendTo(obj.from, obj.command, { error1: true }, obj.callback);
-            return;
-        }
-        if (this.cloudLoginRunning) {
-            await this.setStateAsync("map.cloudStatus", {
-                val: "Eine Xiaomi-Cloud-Anmeldung läuft bereits. Bitte warten, bis der Status aktualisiert wurde.",
-                ack: true
-            });
-            this.sendTo(obj.from, obj.command, { error1: true }, obj.callback);
-            return;
-        }
-        this.cloudLoginRunning = true;
-        await this.setStateAsync("map.cloudStatus", {
-            val: obj.command === "cloudStartLogin"
-                ? "Anmeldung wird gestartet. Bitte auf die Rückmeldung von Xiaomi warten …"
-                : "Bestätigungscode wird geprüft. Bitte warten …",
-            ack: true
-        });
-        // Acknowledge the UI action immediately. The longer Xiaomi network flow
-        // continues in the background and reports progress through map.cloudStatus.
-        this.sendTo(obj.from, obj.command, { result1: true }, obj.callback);
-        void (async () => {
-            try {
-                if (obj.command === "cloudStartLogin") {
-                    this.cloudMapClient.clearSession();
-                    await this.clearPersistedCloudSession();
-                }
-                await this.refreshCloudMap(code, credentials);
+        try {
+            if (obj.command === "cloudStartLogin") {
+                this.cloudMapClient.clearSession();
+                await this.clearPersistedCloudSession();
             }
-            catch (error) {
-                const message = error instanceof Error ? error.message : "Xiaomi-Cloud-Anmeldung fehlgeschlagen.";
-                await this.setStateAsync("map.cloudStatus", { val: "Anmeldung fehlgeschlagen: " + message, ack: true });
-                this.log.warn("Xiaomi Cloud sign-in failed: " + message);
+            if (!credentials.username || !credentials.password || !credentials.token) {
+                throw new Error("Bitte Xiaomi-Benutzername, Passwort und Roboter-Token in der Adapterkonfiguration eintragen.");
             }
-            finally {
-                this.cloudLoginRunning = false;
-            }
-        })();
+            if (obj.command === "cloudSubmitCode" && !code)
+                throw new Error("Bitte zuerst den Xiaomi-Bestätigungscode eingeben.");
+            await this.refreshCloudMap(code, credentials);
+            const state = await this.getStateAsync("map.cloudStatus");
+            const message = typeof state?.val === "string" ? state.val : "Xiaomi-Cloud-Anfrage abgeschlossen.";
+            this.sendTo(obj.from, obj.command, { text: message, ok: !/fehlgeschlagen|abgelehnt|fehlt|ungültig/i.test(message) }, obj.callback);
+        }
+        catch (error) {
+            const message = error instanceof Error ? error.message : "Xiaomi-Cloud-Anmeldung fehlgeschlagen.";
+            this.sendTo(obj.from, obj.command, { text: message, ok: false }, obj.callback);
+        }
     }
     async persistCloudSession() {
         if (!this.cloudMapClient.hasSession())
