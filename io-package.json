@@ -1,7 +1,7 @@
 {
   "common": {
     "name": "roidmi",
-    "version": "0.1.10",
+    "version": "0.1.11",
     "title": "Roidmi",
     "titleLang": {
       "en": "Roidmi",
@@ -69,6 +69,10 @@
       "0.1.10": {
         "en": "Improved Xiaomi 2FA feedback with immediate button acknowledgements and live cloud status",
         "de": "Xiaomi-2FA-Rückmeldung mit sofortiger Button-Bestätigung und laufender Cloud-Statusanzeige verbessert"
+      },
+      "0.1.11": {
+        "en": "Restored reliable Xiaomi sign-in request handling with completion feedback",
+        "de": "Zuverlässige Xiaomi-Anmeldung mit Rückmeldung nach Abschluss wiederhergestellt"
       }
     },
     "adminUI": {

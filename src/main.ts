@@ -457,24 +457,27 @@ class RoidmiAdapter extends Adapter {
             ack: true
         });
 
-        // Acknowledge the UI action immediately. The longer Xiaomi network flow
-        // continues in the background and reports progress through map.cloudStatus.
-        this.sendTo(obj.from, obj.command, { result1: true }, obj.callback);
-        void (async (): Promise<void> => {
-            try {
-                if (obj.command === "cloudStartLogin") {
-                    this.cloudMapClient.clearSession();
-                    await this.clearPersistedCloudSession();
-                }
-                await this.refreshCloudMap(code, credentials);
-            } catch (error) {
-                const message = error instanceof Error ? error.message : "Xiaomi-Cloud-Anmeldung fehlgeschlagen.";
-                await this.setStateAsync("map.cloudStatus", { val: "Anmeldung fehlgeschlagen: " + message, ack: true });
-                this.log.warn("Xiaomi Cloud sign-in failed: " + message);
-            } finally {
-                this.cloudLoginRunning = false;
+        // Keep the original request/response lifecycle: the Admin button remains
+        // pending until the Xiaomi flow has really completed. This avoids
+        // acknowledging success while the background authentication is still stuck.
+        try {
+            if (obj.command === "cloudStartLogin") {
+                this.cloudMapClient.clearSession();
+                await this.clearPersistedCloudSession();
             }
-        })();
+            await this.refreshCloudMap(code, credentials);
+            const state = await this.getStateAsync("map.cloudStatus");
+            const message = typeof state?.val === "string" ? state.val : "Xiaomi-Cloud-Anfrage abgeschlossen.";
+            const failed = /fehlgeschlagen|abgelehnt|fehlt|ungültig|nicht möglich|disabled|missing/i.test(message);
+            this.sendTo(obj.from, obj.command, { text: message, ok: !failed }, obj.callback);
+        } catch (error) {
+            const message = error instanceof Error ? error.message : "Xiaomi-Cloud-Anmeldung fehlgeschlagen.";
+            await this.setStateAsync("map.cloudStatus", { val: "Anmeldung fehlgeschlagen: " + message, ack: true });
+            this.log.warn("Xiaomi Cloud sign-in failed: " + message);
+            this.sendTo(obj.from, obj.command, { text: message, ok: false }, obj.callback);
+        } finally {
+            this.cloudLoginRunning = false;
+        }
     }
 
     private async persistCloudSession(): Promise<void> {
