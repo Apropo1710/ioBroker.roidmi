@@ -92,5 +92,6 @@
         "en": "Two-letter account region, e.g. de, fr, it, es or cn."
       }
     }
-  }
+  },
+  "i18n": true
 }
