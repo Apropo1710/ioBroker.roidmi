@@ -1,7 +1,7 @@
 {
   "common": {
     "name": "roidmi",
-    "version": "0.1.19",
+    "version": "0.1.20",
     "title": "Roidmi",
     "titleLang": {
       "en": "Roidmi",
@@ -102,9 +102,9 @@
         "en": "Restore original Xiaomi two-factor request sequence",
         "de": "Ursprünglichen Xiaomi-Zwei-Faktor-Anmeldeablauf wiederhergestellt"
       },
-      "0.1.19": {
-        "en": "Restore required Xiaomi verification method parameters",
-        "de": "Erforderliche Parameter für die Xiaomi-Verifizierung wiederhergestellt"
+      "0.1.20": {
+        "en": "Restore complete Xiaomi verification ticket request including ick and icode",
+        "de": "Vollständige Xiaomi-Codeanfrage einschließlich ick und icode wiederhergestellt"
       }
     },
     "adminUI": {

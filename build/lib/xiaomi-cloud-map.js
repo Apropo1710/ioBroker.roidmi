@@ -208,7 +208,7 @@ class XiaomiCloudMapClient {
         const method = flag === "8" ? "Email" : "Phone";
         const cookieHeader = "identity_session=" + identitySession;
         onProgress?.("Xiaomi 2FA: " + (flag === "8" ? "E-Mail-Adresse" : "Telefonnummer") + " wird ermittelt …");
-        const optionsResponse = await this.request("https://account.xiaomi.com/identity/auth/verify" + method + "?_flag=" + flag + "&_json=true", {
+        const optionsResponse = await this.request("https://account.xiaomi.com/identity/auth/verify" + method, {
             headers: { Cookie: cookieHeader }
         });
         const options = this.json(await optionsResponse.text());
