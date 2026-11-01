@@ -193,13 +193,14 @@ export class XiaomiCloudMapClient {
         const options = this.json(await optionsResponse.text());
         this.maskedDestination = String(flag === "8" ? options.maskedEmail ?? "your email" : options.maskedPhone ?? "your phone");
         onProgress?.("Xiaomi 2FA: Codeversand wird bei Xiaomi angefordert …");
-        const sendCookies = this.cookies.get("ick")
-            ? cookieHeader + "; ick=" + this.cookies.get("ick")
-            : cookieHeader;
-        const sent = await this.request("https://account.xiaomi.com/identity/auth/send" + method + "Ticket", {
+        // Xiaomi requires a cache-busting timestamp on the ticket request.
+        // Keep the same identity_session obtained from identity/list; the code
+        // must be sent into this exact session so the subsequent verification works.
+        const sendUrl = "https://account.xiaomi.com/identity/auth/send" + method + "Ticket?_dc=" + Date.now();
+        const sent = await this.request(sendUrl, {
             method: "POST",
-            body: new URLSearchParams({ _json: "true", _flag: flag, icode: "", retry: "0" }).toString(),
-            headers: { "Content-Type": "application/x-www-form-urlencoded", Cookie: sendCookies }
+            body: new URLSearchParams({ _flag: flag, retry: "0", _json: "true" }).toString(),
+            headers: { "Content-Type": "application/x-www-form-urlencoded", Cookie: cookieHeader }
         });
         const result = this.json(await sent.text());
         if (typeof result.captchaURL === "string" && result.captchaURL) {

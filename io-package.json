@@ -1,7 +1,7 @@
 {
   "common": {
     "name": "roidmi",
-    "version": "0.1.16",
+    "version": "0.1.17",
     "title": "Roidmi",
     "titleLang": {
       "en": "Roidmi",
@@ -93,6 +93,10 @@
       "0.1.16": {
         "en": "Improve Xiaomi 2FA ticket request parameters and detect CAPTCHA challenges",
         "de": "Xiaomi-2FA-Codeanfrage korrigiert und CAPTCHA-Anforderungen erkannt"
+      },
+      "0.1.17": {
+        "en": "Fix Xiaomi 2FA ticket request with cache-busting timestamp and session reuse",
+        "de": "Xiaomi-2FA-Codeanfrage mit Zeitstempel und unveränderter Sitzung korrigiert"
       }
     },
     "adminUI": {

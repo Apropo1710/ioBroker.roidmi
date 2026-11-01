@@ -96,7 +96,7 @@ test('Xiaomi 2FA chooses email or phone from Xiaomi flag without logging the cod
     if (String(url).includes('/identity/auth/verifyEmail?')) {
       return response('&&&START&&&{"maskedEmail":"a***@example.test"}');
     }
-    if (String(url).endsWith('/identity/auth/sendEmailTicket')) {
+    if (String(url).startsWith('https://account.xiaomi.com/identity/auth/sendEmailTicket?_dc=')) {
       return response('&&&START&&&{"code":0}');
     }
     throw new Error('Unexpected mocked URL: ' + String(url).split('?')[0]);
@@ -107,7 +107,13 @@ test('Xiaomi 2FA chooses email or phone from Xiaomi flag without logging the cod
     /Bestätigungscode wurde an a\*\*\*@example\.test gesendet/,
   );
   assert.ok(calls.some(c => c.url.includes('/identity/auth/verifyEmail')));
-  assert.ok(calls.some(c => c.url.endsWith('/identity/auth/sendEmailTicket') && c.method === 'POST'));
+  const sendCall = calls.find(c => c.url.startsWith('https://account.xiaomi.com/identity/auth/sendEmailTicket?_dc='));
+  assert.ok(sendCall && sendCall.method === 'POST');
+  assert.match(sendCall.url, /_dc=[0-9]+/);
+  assert.match(sendCall.body, /_flag=8/);
+  assert.match(sendCall.body, /retry=0/);
+  assert.match(sendCall.body, /_json=true/);
+  assert.equal(sendCall.cookie, 'identity_session=identity-secret');
   assert.ok(calls.every(c => !c.body.includes('identity-secret')));
 });
 
