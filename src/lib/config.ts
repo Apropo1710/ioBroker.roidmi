@@ -28,5 +28,5 @@ export function redactSecret(value: string | undefined): string {
 
 export function describeStartup(config: AdapterConfig): string {
     const host = config.host || "not configured";
-    return `RoidmiPilot scaffold ready; device host: ${host}`;
+    return `Roidmi adapter scaffold ready; device host: ${host}`;
 }
