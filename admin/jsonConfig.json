@@ -110,6 +110,11 @@
       "help": {
         "de": "Zuerst hier klicken. Xiaomi sendet anschließend einen Bestätigungscode per SMS oder E-Mail. Erst danach den Code unten eingeben und Schritt 2 ausführen.",
         "en": "Click here first. Xiaomi will then send a verification code by SMS or email. Only after that, enter the code below and complete step 2."
+      },
+      "variant": "contained",
+      "controlStyle": {
+        "minHeight": "44px",
+        "fontWeight": 600
       }
     },
     "_cloudVerificationCode": {
@@ -141,6 +146,11 @@
       "help": {
         "de": "Erst anklicken, nachdem du den Bestätigungscode oben eingetragen hast. Damit wird die Anmeldung abgeschlossen und die Cloud-Sitzung gespeichert.",
         "en": "Click only after entering the verification code above. This completes sign-in and saves the cloud session."
+      },
+      "variant": "contained",
+      "controlStyle": {
+        "minHeight": "44px",
+        "fontWeight": 600
       }
     }
   },
