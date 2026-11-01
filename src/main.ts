@@ -8,7 +8,9 @@ interface RoidmiPilotConfig {
 }
 
 class RoidmiPilot extends Adapter {
-    private pollTimer?: NodeJS.Timeout;\n    private stopping = false;\n    private lastPollError = "";
+    private pollTimer?: NodeJS.Timeout;
+    private stopping = false;
+    private lastPollError = "";
     public constructor() {
         super({ name: "roidmipilot" });
         this.on("ready", () => void this.onReady());
