@@ -149,6 +149,7 @@ class RoidmiAdapter extends Adapter {
     private async onStateChange(id: string, state: ioBroker.State | null | undefined): Promise<void> {
         if (!state || state.ack || state.val !== true || !id.startsWith(`${this.namespace}.control.`)) return;
         const command = id.slice(`${this.namespace}.control.`.length);
+        const config = this.config as RoidmiPilotConfig;
         // Action IDs follow the Roidmi V60 MIoT mapping. Real-device validation is still pending.
         const actions: Record<string, MiotAction> = {
             start: { siid: 2, aiid: 1 },
@@ -157,7 +158,7 @@ class RoidmiAdapter extends Adapter {
             dock: { siid: 8, aiid: 9 }
         };
         const action = actions[command];
-        if (!action || !this.client || !this.config.did) {
+        if (!action || !this.client || !config.did) {
             this.log.warn(`Control command ignored: ${command} is unavailable`);
             await this.setStateAsync(`control.${command}`, { val: false, ack: true });
             return;
@@ -171,7 +172,7 @@ class RoidmiAdapter extends Adapter {
         this.commandRunning = true;
         try {
             const result = await this.client.call("action", [{
-                did: this.config.did, siid: action.siid, aiid: action.aiid,
+                did: config.did, siid: action.siid, aiid: action.aiid,
                 ...(action.in ? { in: action.in } : {})
             }]);
             this.log.info(`Robot command '${command}' sent`);
