@@ -38,7 +38,7 @@ Ohne gültige IP-Adresse, DID und Token startet der Adapter, bleibt aber getrenn
 
 MIoT-/miIO-Zugangsdaten und Tokens dürfen niemals eingecheckt oder in Logs ausgegeben werden. Zugangsdaten gehören ausschließlich in die Adapterkonfiguration bzw. geschützte Laufzeitdaten.
 
-Die Statusabfrage erfolgt standardmäßig alle 30 Sekunden. Eigenschaften werden einzeln und ohne parallele Polling-Zyklen abgefragt. Bei Fehlern verlängert der Adapter das Intervall automatisch. Zeitpläne werden nur auf ausdrückliche Anforderung gelesen; sie sind nicht Teil des regelmäßigen Pollings.
+Die Statusabfrage erfolgt standardmäßig alle 30 Sekunden. Alle sieben aktuell unterstützten Status- und Einstellungswerte werden in einer gebündelten MIoT-Anfrage gelesen. Dadurch sinkt die Zahl der Status-RPCs pro Polling-Zyklus von sieben auf eine. Polling-Zyklen überlappen nicht; bei Fehlern verlängert der Adapter das Intervall automatisch. Zeitpläne werden nur auf ausdrückliche Anforderung gelesen und sind nicht Teil des regelmäßigen Pollings.
 
 ## Entwicklungsstand
 
