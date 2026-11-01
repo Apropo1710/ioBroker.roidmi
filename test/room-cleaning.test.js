@@ -23,3 +23,17 @@ test('rejects missing or invalid map and room identifiers', () => {
   assert.throws(() => buildRoomCleaningAction(1, []), /At least one/);
   assert.throws(() => buildRoomCleaningAction(1, [1, 0]), /segment ID/);
 });
+
+
+test("parses the writable JSON command for one or multiple rooms", () => {
+  assert.deepEqual(parseRoomCleaningRequest('{"mapId":12345,"roomIds":[2,4]}'), {
+    siid: 14,
+    aiid: 1,
+    params: [2, '{"mapId":12345,"segmentId":[2,4]}']
+  });
+});
+
+test("rejects malformed room-cleaning JSON and missing room IDs", () => {
+  assert.throws(() => parseRoomCleaningRequest("{broken"), /valid JSON/);
+  assert.throws(() => parseRoomCleaningRequest('{"mapId":12345}'), /roomIds array/);
+});

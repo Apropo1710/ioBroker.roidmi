@@ -1,5 +1,6 @@
 import { Adapter } from "@iobroker/adapter-core";
 import { MiioClient } from "./lib/miio-client";
+import { parseRoomCleaningRequest } from "./lib/room-cleaning";
 
 interface RoidmiAdapterConfig {
     host?: string;
@@ -99,6 +100,13 @@ class RoidmiAdapter extends Adapter {
             await this.subscribeStatesAsync(`control.${control.id}`);
         }
 
+        await this.setObjectNotExistsAsync("control.cleanRooms", {
+            type: "state",
+            common: { name: "Clean selected rooms (JSON: mapId and roomIds)", type: "string", role: "json", read: false, write: true, def: "" },
+            native: {}
+        });
+        await this.subscribeStatesAsync("control.cleanRooms");
+
         const poll = async (): Promise<void> => {
             if (!this.client || this.stopping) return;
             try {
@@ -147,25 +155,46 @@ class RoidmiAdapter extends Adapter {
     }
 
     private async onStateChange(id: string, state: ioBroker.State | null | undefined): Promise<void> {
-        if (!state || state.ack || state.val !== true || !id.startsWith(`${this.namespace}.control.`)) return;
-        const command = id.slice(`${this.namespace}.control.`.length);
+        const prefix = this.namespace + ".control.";
+        if (!state || state.ack || !id.startsWith(prefix)) return;
+
+        const command = id.slice(prefix.length);
         const config = this.config as RoidmiAdapterConfig;
-        // Action IDs follow the Roidmi V60 MIoT mapping. Real-device validation is still pending.
-        const actions: Record<string, MiotAction> = {
-            start: { siid: 2, aiid: 1 },
-            pause: { siid: 8, aiid: 8 },
-            resume: { siid: 8, aiid: 5 },
-            dock: { siid: 8, aiid: 9 }
-        };
-        const action = actions[command];
+        let action: MiotAction | undefined;
+        let resetValue: boolean | string;
+
+        if (command === "cleanRooms") {
+            resetValue = "";
+            if (typeof state.val !== "string" || !state.val.trim()) return;
+            try {
+                const roomAction = parseRoomCleaningRequest(state.val);
+                action = { siid: roomAction.siid, aiid: roomAction.aiid, in: roomAction.params };
+            } catch (error) {
+                const message = error instanceof Error ? error.message : "Invalid room-cleaning request";
+                this.log.warn("Room-cleaning request rejected: " + message);
+                await this.setStateAsync("control.cleanRooms", { val: "", ack: true });
+                return;
+            }
+        } else {
+            if (state.val !== true) return;
+            resetValue = false;
+            const actions: Record<string, MiotAction> = {
+                start: { siid: 2, aiid: 1 },
+                pause: { siid: 8, aiid: 8 },
+                resume: { siid: 8, aiid: 5 },
+                dock: { siid: 8, aiid: 9 }
+            };
+            action = actions[command];
+        }
+
         if (!action || !this.client || !config.did) {
-            this.log.warn(`Control command ignored: ${command} is unavailable`);
-            await this.setStateAsync(`control.${command}`, { val: false, ack: true });
+            this.log.warn("Control command ignored: " + command + " is unavailable");
+            await this.setStateAsync("control." + command, { val: resetValue, ack: true });
             return;
         }
         if (this.commandRunning) {
             this.log.warn("Control command ignored because another command is still running");
-            await this.setStateAsync(`control.${command}`, { val: false, ack: true });
+            await this.setStateAsync("control." + command, { val: resetValue, ack: true });
             return;
         }
 
@@ -175,18 +204,17 @@ class RoidmiAdapter extends Adapter {
                 did: config.did, siid: action.siid, aiid: action.aiid,
                 ...(action.in ? { in: action.in } : {})
             }]);
-            this.log.info(`Robot command '${command}' sent`);
-            this.log.debug(`MIoT action response: ${JSON.stringify(result)}`);
+            this.log.info("Robot command " + command + " sent");
+            this.log.debug("MIoT action response: " + JSON.stringify(result));
         } catch (error) {
             const message = error instanceof Error ? error.message : "Unknown command error";
-            this.log.warn(`Robot command '${command}' failed: ${message}`);
+            this.log.warn("Robot command " + command + " failed: " + message);
             await this.setStateChangedAsync("info.connectionText", { val: message, ack: true });
         } finally {
             this.commandRunning = false;
-            await this.setStateAsync(`control.${command}`, { val: false, ack: true });
+            await this.setStateAsync("control." + command, { val: resetValue, ack: true });
         }
     }
-
     private onUnload(callback: () => void): void {
         this.stopping = true;
         if (this.pollTimer) clearTimeout(this.pollTimer);

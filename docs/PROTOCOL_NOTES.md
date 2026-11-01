@@ -13,7 +13,7 @@
 - Eingabeparameter: `[2, JSON.stringify({ mapId, segmentId: [roomId, ...] })]`
 - Mehrere Räume werden als mehrere IDs in demselben `segmentId`-Array übergeben.
 - `did` ist die numerische Xiaomi-Gerätekennung; `mapId` stammt aus der aktiven Xiaomi-Karte.
-- Die Raumreinigungs-Payload ist implementiert, aber Ausführung und mapId-/Raumermittlung sind am realen Gerät noch nicht validiert.
+- Der Adapter stellt den Schreib-Datenpunkt `control.cleanRooms` bereit. Er erwartet JSON im Format `{"mapId":12345,"roomIds":[1,3]}` und setzt die Raum-IDs in `segmentId` um. Die Aktion wird über MIoT `action` mit SIID 14 / AIID 1 und `in: [2, JSON.stringify({mapId, segmentId})]` gesendet. Die Payload-Erzeugung ist getestet; Ausführung und mapId-/Raumermittlung sind am realen Gerät noch nicht validiert. Die automatische Beschaffung der aktiven Karte und Raumliste ist weiterhin offen.
 
 Quellen:
 - https://community.home-assistant.io/t/roidmi-eva-integration/450084

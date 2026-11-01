@@ -24,8 +24,8 @@
 - [ ] Raumaufteilung bzw. Raumliste vom Gerät abrufen, soweit das Protokoll es ermöglicht
 - [ ] Aktuelle mapId und Raum-/Segment-IDs automatisch ermitteln und persistent ablegen
 - [ ] Räume mit stabilen Raum-IDs und lesbaren Namen als ioBroker-Objekte abbilden
-- [ ] Reinigung eines einzelnen ausgewählten Raums starten
-- [ ] Reinigung mehrerer ausgewählter Räume in einem Auftrag starten
+- [x] JSON-Schnittstelle für Einzelraumreinigung im Adapter bereitstellen (Geräteausführung noch offen)
+- [x] JSON-Schnittstelle für Mehrraumreinigung in einem Auftrag bereitstellen (Geräteausführung noch offen)
 - [ ] Raum-IDs und Zuordnungen dauerhaft erhalten; keine erneute manuelle Auswahl bei jedem Start
 - [ ] Verfügbarkeit und Grenzen der Raumsteuerung lokal gegenüber Cloud verifizieren
 

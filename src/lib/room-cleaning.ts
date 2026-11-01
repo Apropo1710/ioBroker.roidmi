@@ -29,3 +29,22 @@ export function buildRoomCleaningAction(mapId: number, segmentIds: number[]): Ro
         params: [2, JSON.stringify({ mapId, segmentId: [...new Set(segmentIds)] })]
     };
 }
+
+
+/** Parse the writable control.cleanRooms JSON payload. */
+export function parseRoomCleaningRequest(value: string): RoomCleaningAction {
+    let parsed: unknown;
+    try {
+        parsed = JSON.parse(value);
+    } catch {
+        throw new Error("Room-cleaning command must be valid JSON");
+    }
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+        throw new Error("Room-cleaning command must be a JSON object");
+    }
+    const request = parsed as Record<string, unknown>;
+    if (!Array.isArray(request.roomIds)) {
+        throw new Error("Room-cleaning command requires a roomIds array");
+    }
+    return buildRoomCleaningAction(request.mapId as number, request.roomIds as number[]);
+}
