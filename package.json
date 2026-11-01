@@ -7,13 +7,22 @@
   "scripts": {
     "build": "tsc -p .",
     "test": "node --test",
-    "lint": "tsc --noEmit -p ."
+    "lint": "tsc --noEmit -p .",
+    "prepare": "npm run build"
   },
-  "keywords": ["iobroker", "roidmi", "eve-plus", "vacuum", "robot-vacuum"],
+  "keywords": [
+    "iobroker",
+    "roidmi",
+    "eve-plus",
+    "vacuum",
+    "robot-vacuum"
+  ],
   "author": "Apropo1710",
   "license": "UNLICENSED",
   "private": true,
-  "engines": { "node": ">=20" },
+  "engines": {
+    "node": ">=20"
+  },
   "dependencies": {
     "@iobroker/adapter-core": "^3.4.3"
   },
