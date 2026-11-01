@@ -410,36 +410,16 @@ class RoidmiAdapter extends Adapter {
         this.commandRunning = true;
         await this.setStateAsync("map.cloudAuthUrl", { val: "", ack: true });
         try {
-            // This RPC is only used for an explicit map refresh. Give the robot more
-            // time than the regular status poll and retry once; normal polling is unchanged.
-            await this.setStateAsync("map.cloudStatus", { val: "Reading current map name from robot (local miIO)…", ack: true });
-            let mapName = "";
-            let lastError: Error | undefined;
-            for (let attempt = 1; attempt <= 2; attempt++) {
-                try {
-                    const raw = await this.client.call("get_map_v1", [], 12000);
-                    mapName = Array.isArray(raw) && typeof raw[0] === "string" ? raw[0] : "";
-                    if (!mapName || mapName === "retry") {
-                        throw new Error("Robot did not return a current map name.");
-                    }
-                    lastError = undefined;
-                    break;
-                } catch (error) {
-                    lastError = error instanceof Error ? error : new Error("Unknown local map request error");
-                    if (attempt < 2) {
-                        await this.setStateAsync("map.cloudStatus", {
-                            val: "Local map request did not respond; one retry in progress…",
-                            ack: true
-                        });
-                        await new Promise((resolve) => setTimeout(resolve, 1500));
-                    }
-                }
-            }
-            if (lastError) {
-                throw new Error(`Could not read map name from robot after 2 attempts: ${lastError.message}`);
-            }
-
-            await this.setStateAsync("map.cloudStatus", { val: "Robot map found. Connecting to Xiaomi Cloud…", ack: true });
+            // Roidmi V60 (EVE Plus) uses the Xiaomi Cloud V2 map API.
+            // The upstream Xiaomi Cloud Map Extractor explicitly does not query a
+            // map name from the robot for this API (should_get_map_from_vacuum=false);
+            // the cloud archive key uses "0". Avoiding get_map_v1 also prevents a
+            // firmware-specific user-ack timeout and saves an unnecessary robot RPC.
+            const mapName = "0";
+            await this.setStateAsync("map.cloudStatus", {
+                val: "Roidmi V60 cloud map: connecting to Xiaomi Cloud…",
+                ack: true
+            });
             const result = await new XiaomiCloudMapClient().fetchMap({
                 username: config.cloudUsername,
                 password: config.cloudPassword,
