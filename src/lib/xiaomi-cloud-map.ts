@@ -177,35 +177,27 @@ export class XiaomiCloudMapClient {
         onProgress?.("Xiaomi 2FA: Bestätigungsmethoden werden abgefragt …");
         const listResponse = await this.request(listUrl);
         const list = this.json(await listResponse.text());
-        const flag = String(list.flag ?? "");
+        const flag = String(list.flag ?? (Array.isArray(list.options) ? list.options[0] : ""));
         const identitySession = this.cookies.get("identity_session");
         if ((flag !== "4" && flag !== "8") || !identitySession) {
-            // Do not include response content, URLs, cookie values or credentials.
-            throw new Error(`Xiaomi 2FA response incomplete (verification method ${flag === "4" || flag === "8" ? "available" : "missing"}, identity session ${identitySession ? "present" : "missing"}).`);
+            throw new Error("Xiaomi did not provide a supported two-factor method or identity session.");
         }
         this.pendingFlag = flag;
         const method = flag === "8" ? "Email" : "Phone";
-        const cookieHeader = this.identityCookie();
+        const cookieHeader = "identity_session=" + identitySession;
         onProgress?.("Xiaomi 2FA: " + (flag === "8" ? "E-Mail-Adresse" : "Telefonnummer") + " wird ermittelt …");
-        const optionsResponse = await this.request("https://account.xiaomi.com/identity/auth/verify" + method + "?_flag=" + flag + "&_json=true", {
+        const optionsResponse = await this.request("https://account.xiaomi.com/identity/auth/verify" + method, {
             headers: { Cookie: cookieHeader }
         });
         const options = this.json(await optionsResponse.text());
         this.maskedDestination = String(flag === "8" ? options.maskedEmail ?? "your email" : options.maskedPhone ?? "your phone");
         onProgress?.("Xiaomi 2FA: Codeversand wird bei Xiaomi angefordert …");
-        // Xiaomi requires a cache-busting timestamp on the ticket request.
-        // Keep the same identity_session obtained from identity/list; the code
-        // must be sent into this exact session so the subsequent verification works.
-        const sendUrl = "https://account.xiaomi.com/identity/auth/send" + method + "Ticket?_dc=" + Date.now();
-        const sent = await this.request(sendUrl, {
+        const sent = await this.request("https://account.xiaomi.com/identity/auth/send" + method + "Ticket?_json=true", {
             method: "POST",
             body: new URLSearchParams({ _flag: flag, retry: "0", _json: "true" }).toString(),
             headers: { "Content-Type": "application/x-www-form-urlencoded", Cookie: cookieHeader }
         });
         const result = this.json(await sent.text());
-        if (typeof result.captchaURL === "string" && result.captchaURL) {
-            throw new Error("Xiaomi requires an additional CAPTCHA before sending the verification code. The current adapter version cannot yet display this CAPTCHA.");
-        }
         if (result.code !== 0) throw new Error("Xiaomi could not send the verification code (code " + String(result.code ?? "unknown") + ").");
         onProgress?.("Xiaomi hat den Codeversand angenommen. Ziel: " + this.maskedDestination + ". Bitte Posteingang und Spam prüfen.");
     }

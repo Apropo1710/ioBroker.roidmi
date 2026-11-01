@@ -109,7 +109,7 @@ test('Xiaomi 2FA chooses email or phone from Xiaomi flag without logging the cod
   assert.ok(calls.some(c => c.url.includes('/identity/auth/verifyEmail')));
   const sendCall = calls.find(c => c.url.includes('/identity/auth/sendEmailTicket'));
   assert.ok(sendCall && sendCall.method === 'POST');
-  assert.match(sendCall.url, /_json=true/);
+  assert.equal(sendCall.url, 'https://account.xiaomi.com/identity/auth/sendEmailTicket?_json=true');
   assert.match(sendCall.body, /_flag=8/);
   assert.match(sendCall.body, /retry=0/);
   assert.match(sendCall.body, /_json=true/);
