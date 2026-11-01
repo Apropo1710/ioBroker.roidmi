@@ -20,10 +20,10 @@ export class MiioClient {
 
     public constructor(private readonly options: MiioClientOptions) {}
 
-    public async call(method: string, params: unknown[] = []): Promise<unknown> {
+    public async call(method: string, params: unknown[] = [], timeoutOverrideMs?: number): Promise<unknown> {
         if (!method.trim()) throw new Error("miIO method must not be empty");
         const port = this.options.port ?? 54321;
-        const timeoutMs = this.options.timeoutMs ?? 4000;
+        const timeoutMs = timeoutOverrideMs ?? this.options.timeoutMs ?? 4000;
         const socket = createSocket("udp4");
 
         return new Promise<unknown>((resolve, reject) => {

@@ -396,22 +396,93 @@ class RoidmiAdapter extends Adapter {
         }
     }
 
-    private async refreshCloudMap():Promise<void>{
-        const c=this.config as RoidmiAdapterConfig;
-        if(!c.cloudEnabled){await this.setStateAsync("map.cloudStatus",{val:"Optional Xiaomi Cloud access is disabled in adapter settings.",ack:true});return;}
-        if(!c.cloudUsername||!c.cloudPassword||!c.token||!this.client||this.commandRunning){await this.setStateAsync("map.cloudStatus",{val:"Cloud credentials, local robot token or an idle adapter are missing.",ack:true});return;}
-        this.commandRunning=true;await this.setStateAsync("map.cloudAuthUrl",{val:"",ack:true});
-        try{
-            const raw=await this.client.call("get_map_v1",[]);const mapName=Array.isArray(raw)&&typeof raw[0]==="string"?raw[0]:"";
-            if(!mapName||mapName==="retry")throw new Error("Robot did not return a current map name. Check local connectivity and try again.");
-            const result=await new XiaomiCloudMapClient().fetchMap({username:c.cloudUsername,password:c.cloudPassword,country:c.cloudCountry||"de",token:c.token,mapName});
-            const rooms=result.metadata.rooms;if(!rooms.length)throw new Error("Downloaded map contains no named rooms.");
-            await this.setStateChangedAsync("map.roomsJson",{val:JSON.stringify(rooms),ack:true});
-            if(result.metadata.mapId){await this.applyRoomMapConfig({mapId:result.metadata.mapId,rooms:rooms.map(({id,name})=>({id,name}))});await this.setStateAsync("map.cloudStatus",{val:`Map and ${rooms.length} rooms imported. Map ID: ${result.metadata.mapId}`,ack:true});}
-            else await this.setStateAsync("map.cloudStatus",{val:`Found ${rooms.length} rooms. The archive lacks the separate cleaning mapId; enter that ID once via control.importRooms to enable room-clean buttons.`,ack:true});
-            await this.setStateChangedAsync("map.cloudLastUpdate",{val:new Date().toISOString(),ack:true});this.log.info(`Xiaomi Cloud map read succeeded: ${rooms.length} rooms`);
-        }catch(e){const msg=e instanceof Error?e.message:"Unknown Xiaomi Cloud map error";if(msg.startsWith("XIAOMI_2FA:")){await this.setStateAsync("map.cloudAuthUrl",{val:msg.slice(11),ack:true});await this.setStateAsync("map.cloudStatus",{val:"Two-factor authentication required. Open map.cloudAuthUrl from a device on the same internet connection, complete verification, then press refreshMap again.",ack:true});}else{await this.setStateAsync("map.cloudStatus",{val:msg,ack:true});this.log.warn("Xiaomi Cloud map retrieval failed: "+msg);}}
-        finally{this.commandRunning=false;}
+    private async refreshCloudMap(): Promise<void> {
+        const config = this.config as RoidmiAdapterConfig;
+        if (!config.cloudEnabled) {
+            await this.setStateAsync("map.cloudStatus", { val: "Optional Xiaomi Cloud access is disabled in adapter settings.", ack: true });
+            return;
+        }
+        if (!config.cloudUsername || !config.cloudPassword || !config.token || !this.client || this.commandRunning) {
+            await this.setStateAsync("map.cloudStatus", { val: "Cloud credentials, local robot token or an idle adapter are missing.", ack: true });
+            return;
+        }
+
+        this.commandRunning = true;
+        await this.setStateAsync("map.cloudAuthUrl", { val: "", ack: true });
+        try {
+            // This RPC is only used for an explicit map refresh. Give the robot more
+            // time than the regular status poll and retry once; normal polling is unchanged.
+            await this.setStateAsync("map.cloudStatus", { val: "Reading current map name from robot (local miIO)…", ack: true });
+            let mapName = "";
+            let lastError: Error | undefined;
+            for (let attempt = 1; attempt <= 2; attempt++) {
+                try {
+                    const raw = await this.client.call("get_map_v1", [], 12000);
+                    mapName = Array.isArray(raw) && typeof raw[0] === "string" ? raw[0] : "";
+                    if (!mapName || mapName === "retry") {
+                        throw new Error("Robot did not return a current map name.");
+                    }
+                    lastError = undefined;
+                    break;
+                } catch (error) {
+                    lastError = error instanceof Error ? error : new Error("Unknown local map request error");
+                    if (attempt < 2) {
+                        await this.setStateAsync("map.cloudStatus", {
+                            val: "Local map request did not respond; one retry in progress…",
+                            ack: true
+                        });
+                        await new Promise((resolve) => setTimeout(resolve, 1500));
+                    }
+                }
+            }
+            if (lastError) {
+                throw new Error(`Could not read map name from robot after 2 attempts: ${lastError.message}`);
+            }
+
+            await this.setStateAsync("map.cloudStatus", { val: "Robot map found. Connecting to Xiaomi Cloud…", ack: true });
+            const result = await new XiaomiCloudMapClient().fetchMap({
+                username: config.cloudUsername,
+                password: config.cloudPassword,
+                country: config.cloudCountry || "de",
+                token: config.token,
+                mapName
+            });
+            const rooms = result.metadata.rooms;
+            if (!rooms.length) throw new Error("Downloaded map contains no named rooms.");
+
+            await this.setStateChangedAsync("map.roomsJson", { val: JSON.stringify(rooms), ack: true });
+            if (result.metadata.mapId) {
+                await this.applyRoomMapConfig({
+                    mapId: result.metadata.mapId,
+                    rooms: rooms.map(({ id, name }) => ({ id, name }))
+                });
+                await this.setStateAsync("map.cloudStatus", {
+                    val: `Map and ${rooms.length} rooms imported. Map ID: ${result.metadata.mapId}`,
+                    ack: true
+                });
+            } else {
+                await this.setStateAsync("map.cloudStatus", {
+                    val: `Found ${rooms.length} rooms. The archive lacks the separate cleaning mapId; enter that ID once via control.importRooms to enable room-clean buttons.`,
+                    ack: true
+                });
+            }
+            await this.setStateChangedAsync("map.cloudLastUpdate", { val: new Date().toISOString(), ack: true });
+            this.log.info(`Xiaomi Cloud map read succeeded: ${rooms.length} rooms`);
+        } catch (error) {
+            const message = error instanceof Error ? error.message : "Unknown Xiaomi Cloud map error";
+            if (message.startsWith("XIAOMI_2FA:")) {
+                await this.setStateAsync("map.cloudAuthUrl", { val: message.slice(11), ack: true });
+                await this.setStateAsync("map.cloudStatus", {
+                    val: "Two-factor authentication required. Open map.cloudAuthUrl from a device on the same internet connection, complete verification, then press refreshMap again.",
+                    ack: true
+                });
+            } else {
+                await this.setStateAsync("map.cloudStatus", { val: message, ack: true });
+                this.log.warn("Xiaomi Cloud map retrieval failed: " + message);
+            }
+        } finally {
+            this.commandRunning = false;
+        }
     }
 
     private async sendProperty(stateId: string, property: MiotPropertyWrite, value: number): Promise<void> {
