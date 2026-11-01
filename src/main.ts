@@ -12,7 +12,7 @@ interface RoidmiAdapterConfig {
     pollIntervalSeconds?: number;
 }
 
-interface MiotAction {
+interface MiotPropertyWrite {\n    siid: number;\n    piid: number;\n    value: number;\n}\n\ninterface MiotAction {
     siid: number;
     aiid: number;
     in?: unknown[];
@@ -68,16 +68,16 @@ class RoidmiAdapter extends Adapter {
             { id: "battery", siid: 3, piid: 1, name: "Battery level", unit: "%" },
             { id: "charging", siid: 3, piid: 2, name: "Charging state" },
             { id: "state", siid: 2, piid: 1, name: "Vacuum state" },
-            { id: "errorCode", siid: 2, piid: 2, name: "Error code" }
+            { id: "errorCode", siid: 2, piid: 2, name: "Error code" },\n            { id: "fanSpeed", siid: 2, piid: 4, name: "Suction power", min: 0, max: 4 },\n            { id: "sweepType", siid: 2, piid: 8, name: "Cleaning type", min: 0, max: 2 },\n            { id: "waterLevel", siid: 8, piid: 11, name: "Water level", min: 0, max: 4 }
         ] as const;
 
         for (const property of properties) {
             await this.setObjectNotExistsAsync(property.id, {
                 type: "state",
                 common: {
-                    name: property.name, type: "number", role: "value",
+                    name: property.name, type: "number", role: "level",\n                    ...("min" in property ? { min: property.min, max: property.max } : {}),
                     ...("unit" in property ? { unit: property.unit } : {}),
-                    read: true, write: false
+                    read: true, write: "min" in property
                 },
                 native: { siid: property.siid, piid: property.piid }
             });
@@ -279,6 +279,36 @@ class RoidmiAdapter extends Adapter {
             return;
         }
         await this.setStateAsync("control." + command, { val: false, ack: true });
+    }
+
+    private async sendProperty(stateId: string, property: MiotPropertyWrite, value: number): Promise<void> {
+        const config = this.config as RoidmiAdapterConfig;
+        const current = await this.getStateAsync(stateId);
+        if (!this.client || !config.did || this.commandRunning) {
+            this.log.warn("Property write ignored because the device is unavailable or another command is running");
+            await this.setStateAsync(stateId, { val: current?.val ?? 0, ack: true });
+            return;
+        }
+        this.commandRunning = true;
+        try {
+            const result = await this.client.call("set_properties", [{
+                did: config.did, siid: property.siid, piid: property.piid, value
+            }]);
+            if (Array.isArray(result)) {
+                const item = result[0] as { code?: number } | undefined;
+                if (item && typeof item.code === "number" && item.code !== 0) {
+                    throw new Error(`MIoT property write failed (SIID ${property.siid}, PIID ${property.piid}, code ${item.code})`);
+                }
+            }
+            await this.setStateAsync(stateId, { val: value, ack: true });
+            this.log.info("Robot setting updated: " + stateId.slice(this.namespace.length + 1) + " = " + value);
+        } catch (error) {
+            const message = error instanceof Error ? error.message : "Unknown property write error";
+            this.log.warn("Robot setting failed: " + message);
+            await this.setStateAsync(stateId, { val: current?.val ?? 0, ack: true });
+        } finally {
+            this.commandRunning = false;
+        }
     }
 
     private async sendAction(command: string, action: MiotAction, stateId: string, resetValue: boolean | string = false): Promise<void> {
