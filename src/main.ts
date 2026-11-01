@@ -4,6 +4,7 @@ import { MiioClient } from "./lib/miio-client";
 interface RoidmiPilotConfig {
     host?: string;
     did?: string;
+    did?: string;
     token?: string;
     pollIntervalSeconds?: number;
 }
