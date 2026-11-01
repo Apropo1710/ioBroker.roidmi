@@ -37,6 +37,7 @@ class RoidmiAdapter extends Adapter {
     private lastPollError = "";
     private commandRunning = false;
     private client?: MiioClient;
+    private readonly cloudMapClient = new XiaomiCloudMapClient();
     private roomMapConfig?: RoomMapConfig;
     private readonly lastKnownSettings: Record<string, number> = {};
 
@@ -117,8 +118,7 @@ class RoidmiAdapter extends Adapter {
             { id: "start", name: "Start full cleaning" },
             { id: "pause", name: "Pause cleaning" },
             { id: "resume", name: "Resume cleaning" },
-            { id: "dock", name: "Return to charging dock" },
-            { id: "stop", name: "Stop cleaning" }
+            { id: "dock", name: "Return to charging dock" },            { id: "stop", name: "Stop cleaning" }
         ] as const;
         for (const control of controls) {
             await this.setObjectNotExistsAsync(`control.${control.id}`, {
@@ -167,6 +167,8 @@ class RoidmiAdapter extends Adapter {
         await this.setObjectNotExistsAsync("control.refreshMap", { type: "state", common: { name: "Fetch map and rooms from Xiaomi Cloud (manual)", type: "boolean", role: "button", read: false, write: true, def: false }, native: {} });
         await this.subscribeStatesAsync("control.refreshMap");
         for (const [id, name, role] of [["map.cloudStatus","Xiaomi Cloud map retrieval status","text"],["map.cloudAuthUrl","Xiaomi two-factor authentication URL","text"],["map.cloudLastUpdate","Last successful Xiaomi Cloud map retrieval","date"]]) await this.setObjectNotExistsAsync(id,{type:"state",common:{name,type:"string",role,read:true,write:false},native:{}});
+        await this.setObjectNotExistsAsync("map.cloudVerificationCode", { type: "state", common: { name: "Xiaomi two-factor verification code (enter SMS/email code)", type: "string", role: "text", read: false, write: true, def: "" }, native: {} });
+        await this.subscribeStatesAsync("map.cloudVerificationCode");
         const savedMap = await this.getStateAsync("map.config");
         if (savedMap && typeof savedMap.val === "string" && savedMap.val.trim()) {
             try {
@@ -237,8 +239,7 @@ class RoidmiAdapter extends Adapter {
         this.roomMapConfig = config;
         await this.setObjectNotExistsAsync("map.mapId", {
             type: "state",
-            common: { name: "Active map ID", type: "number", role: "value", read: true, write: false },
-            native: {}
+            common: { name: "Active map ID", type: "number", role: "value", read: true, write: false },            native: {}
         });
         await this.setObjectNotExistsAsync("map.roomsJson", {
             type: "state",
@@ -292,6 +293,12 @@ class RoidmiAdapter extends Adapter {
             return;
         }
 
+        if (id === this.namespace + ".map.cloudVerificationCode") {
+            const code = typeof state.val === "string" ? state.val.trim() : "";
+            await this.setStateAsync("map.cloudVerificationCode", { val: "", ack: true });
+            if (code) await this.refreshCloudMap(code);
+            return;
+        }
         if (id === this.namespace + ".control.refreshMap") { if(state.val===true) await this.refreshCloudMap(); await this.setStateAsync("control.refreshMap",{val:false,ack:true}); return; }
         const refreshTimingId = this.namespace + ".control.refreshTiming";
         if (id === refreshTimingId) {
@@ -358,7 +365,6 @@ class RoidmiAdapter extends Adapter {
         }
         await this.setStateAsync("control." + command, { val: false, ack: true });
     }
-
     /**
      * Read the stored schedule JSON only when explicitly requested.
      * This is deliberately excluded from the fast status polling cycle.
@@ -396,7 +402,7 @@ class RoidmiAdapter extends Adapter {
         }
     }
 
-    private async refreshCloudMap(): Promise<void> {
+    private async refreshCloudMap(verificationCode?: string): Promise<void> {
         const config = this.config as RoidmiAdapterConfig;
         if (!config.cloudEnabled) {
             await this.setStateAsync("map.cloudStatus", { val: "Optional Xiaomi Cloud access is disabled in adapter settings.", ack: true });
@@ -420,13 +426,13 @@ class RoidmiAdapter extends Adapter {
                 val: "Roidmi V60 cloud map: connecting to Xiaomi Cloud…",
                 ack: true
             });
-            const result = await new XiaomiCloudMapClient().fetchMap({
+            const result = await this.cloudMapClient.fetchMap({
                 username: config.cloudUsername,
                 password: config.cloudPassword,
                 country: config.cloudCountry || "de",
                 token: config.token,
                 mapName
-            });
+            }, verificationCode);
             const rooms = result.metadata.rooms;
             if (!rooms.length) throw new Error("Downloaded map contains no named rooms.");
 
@@ -450,14 +456,15 @@ class RoidmiAdapter extends Adapter {
             this.log.info(`Xiaomi Cloud map read succeeded: ${rooms.length} rooms`);
         } catch (error) {
             const message = error instanceof Error ? error.message : "Unknown Xiaomi Cloud map error";
-            if (message.startsWith("XIAOMI_2FA:")) {
+            if (message.startsWith("XIAOMI_2FA_CODE:")) {
+                await this.setStateAsync("map.cloudStatus", { val: message.slice("XIAOMI_2FA_CODE:".length), ack: true });
+            } else if (message.startsWith("XIAOMI_2FA:")) {
                 await this.setStateAsync("map.cloudAuthUrl", { val: message.slice(11), ack: true });
                 await this.setStateAsync("map.cloudStatus", {
                     val: "Two-factor authentication required. Open map.cloudAuthUrl from a device on the same internet connection, complete verification, then press refreshMap again.",
                     ack: true
                 });
-            } else {
-                await this.setStateAsync("map.cloudStatus", { val: message, ack: true });
+            } else {                await this.setStateAsync("map.cloudStatus", { val: message, ack: true });
                 this.log.warn("Xiaomi Cloud map retrieval failed: " + message);
             }
         } finally {
