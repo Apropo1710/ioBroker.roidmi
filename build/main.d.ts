@@ -5,6 +5,7 @@ declare class RoidmiAdapter extends Adapter {
     private lastPollError;
     private commandRunning;
     private client?;
+    private readonly cloudMapClient;
     private roomMapConfig?;
     private readonly lastKnownSettings;
     constructor();
