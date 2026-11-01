@@ -159,9 +159,10 @@ class RoidmiAdapter extends Adapter {
         }
 
         const poll = async (): Promise<void> => {
-            if (!this.client || this.stopping) return;
+            if (!this.client || this.stopping || this.commandRunning) return;
+            this.commandRunning = true;
             try {
-                // Conservative V60 profile: one property per RPC, no overlapping cycles.
+                // Conservative V60 profile: one property per RPC, no overlapping cycles or commands.
                 for (const property of properties) {
                     const result = await this.client.call("get_properties", [{
                         did: config.did, siid: property.siid, piid: property.piid
@@ -184,6 +185,8 @@ class RoidmiAdapter extends Adapter {
                 await this.setStateChangedAsync("info.connectionText", { val: message, ack: true });
                 if (message !== this.lastPollError) this.log.warn(message);
                 this.lastPollError = message;
+            } finally {
+                this.commandRunning = false;
             }
         };
 
