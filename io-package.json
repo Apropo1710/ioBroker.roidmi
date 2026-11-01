@@ -1,7 +1,7 @@
 {
   "common": {
     "name": "roidmi",
-    "version": "0.1.5",
+    "version": "0.1.6",
     "title": "Roidmi",
     "titleLang": {
       "en": "Roidmi",
@@ -49,6 +49,10 @@
       "0.1.5": {
         "en": "Added optional on-demand Xiaomi Cloud map and room discovery",
         "de": "Optionale Karten- und Raumerkennung über Xiaomi Cloud auf Abruf ergänzt"
+      },
+      "0.1.6": {
+        "en": "Install faster using precompiled JavaScript",
+        "de": "Schnellere Installation durch vorcompiliertes JavaScript"
       }
     },
     "adminUI": {

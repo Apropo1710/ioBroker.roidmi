@@ -1,14 +1,13 @@
 {
   "name": "iobroker.roidmi",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "ioBroker adapter for Roidmi robot vacuums",
   "main": "build/main.js",
   "types": "build/main.d.ts",
   "scripts": {
     "build": "tsc -p .",
     "test": "node --test",
-    "lint": "tsc --noEmit -p .",
-    "prepare": "npm run build"
+    "lint": "tsc --noEmit -p ."
   },
   "keywords": [
     "iobroker",
