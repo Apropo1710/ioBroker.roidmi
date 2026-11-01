@@ -96,8 +96,8 @@
       "type": "sendTo",
       "command": "cloudStartLogin",
       "label": {
-        "de": "Xiaomi-Cloud anmelden / 2FA-Code anfordern",
-        "en": "Sign in to Xiaomi Cloud / request 2FA code"
+        "de": "1. Schritt: Anmeldung starten und Code anfordern",
+        "en": "Step 1: Start sign-in and request code"
       },
       "jsonData": "{\"username\":\"${data.cloudUsername}\",\"password\":\"${data.cloudPassword}\",\"country\":\"${data.cloudCountry}\",\"token\":\"${data.token}\"}",
       "showProcess": true,
@@ -106,14 +106,29 @@
       "result": {
         "de": "Anmeldung gestartet. Falls Xiaomi einen Code sendet, unten eingeben.",
         "en": "Login started. If Xiaomi sends a code, enter it below."
+      },
+      "help": {
+        "de": "Zuerst hier klicken. Xiaomi sendet anschließend einen Bestätigungscode per SMS oder E-Mail. Erst danach den Code unten eingeben und Schritt 2 ausführen.",
+        "en": "Click here first. Xiaomi will then send a verification code by SMS or email. Only after that, enter the code below and complete step 2."
+      }
+    },
+    "_cloudVerificationCode": {
+      "type": "password",
+      "label": {
+        "de": "Bestätigungscode aus SMS oder E-Mail",
+        "en": "Verification code from SMS or email"
+      },
+      "help": {
+        "de": "Den von Xiaomi erhaltenen Code hier eingeben. Danach direkt darunter auf „2. Schritt: Code prüfen und anmelden“ klicken. Der Code wird nicht als Datenpunkt gespeichert.",
+        "en": "Enter the code received from Xiaomi here. Then click “Step 2: Verify code and sign in” directly below. The code is not stored as a datapoint."
       }
     },
     "cloudSubmitCode": {
       "type": "sendTo",
       "command": "cloudSubmitCode",
       "label": {
-        "de": "Bestätigungscode prüfen und anmelden",
-        "en": "Verify code and sign in"
+        "de": "2. Schritt: Bestätigungscode prüfen und anmelden",
+        "en": "Step 2: Verify code and sign in"
       },
       "jsonData": "{\"username\":\"${data.cloudUsername}\",\"password\":\"${data.cloudPassword}\",\"country\":\"${data.cloudCountry}\",\"token\":\"${data.token}\",\"code\":\"${data._cloudVerificationCode}\"}",
       "showProcess": true,
@@ -122,17 +137,10 @@
       "result": {
         "de": "Bestätigung abgeschlossen.",
         "en": "Verification completed."
-      }
-    },
-    "_cloudVerificationCode": {
-      "type": "password",
-      "label": {
-        "de": "Xiaomi-Bestätigungscode (nur vorübergehend)",
-        "en": "Xiaomi verification code (temporary)"
       },
       "help": {
-        "de": "Code aus SMS oder E-Mail eingeben. Er wird nicht als Datenpunkt gespeichert.",
-        "en": "Enter the SMS or email code. It is not stored as a datapoint."
+        "de": "Erst anklicken, nachdem du den Bestätigungscode oben eingetragen hast. Damit wird die Anmeldung abgeschlossen und die Cloud-Sitzung gespeichert.",
+        "en": "Click only after entering the verification code above. This completes sign-in and saves the cloud session."
       }
     }
   },

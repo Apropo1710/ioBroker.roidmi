@@ -1,7 +1,7 @@
 {
   "common": {
     "name": "roidmi",
-    "version": "0.1.8",
+    "version": "0.1.9",
     "title": "Roidmi",
     "titleLang": {
       "en": "Roidmi",
@@ -61,6 +61,10 @@
       "0.1.8": {
         "en": "Added configuration-based Xiaomi 2FA and encrypted persistent cloud sessions",
         "de": "Xiaomi-2FA direkt in der Adapterkonfiguration und dauerhaft verschlüsselte Cloud-Sitzungen ergänzt"
+      },
+      "0.1.9": {
+        "en": "Clarified the Xiaomi two-factor sign-in flow with numbered steps and inline guidance",
+        "de": "Xiaomi-Zwei-Faktor-Anmeldung durch nummerierte Schritte und direkte Erklärungen verständlicher gestaltet"
       }
     },
     "adminUI": {
