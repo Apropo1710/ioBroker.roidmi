@@ -1,7 +1,7 @@
 {
   "common": {
     "name": "roidmi",
-    "version": "0.1.11",
+    "version": "0.1.12",
     "title": "Roidmi",
     "titleLang": {
       "en": "Roidmi",
@@ -73,6 +73,10 @@
       "0.1.11": {
         "en": "Restored reliable Xiaomi sign-in request handling with completion feedback",
         "de": "Zuverlässige Xiaomi-Anmeldung mit Rückmeldung nach Abschluss wiederhergestellt"
+      },
+      "0.1.12": {
+        "en": "Restored the previously working Xiaomi 2FA button and background login flow",
+        "de": "Zuvor funktionierenden Xiaomi-2FA-Button und Hintergrund-Anmeldeablauf wiederhergestellt"
       }
     },
     "adminUI": {
