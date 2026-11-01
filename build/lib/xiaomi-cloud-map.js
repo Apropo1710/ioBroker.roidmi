@@ -208,16 +208,21 @@ class XiaomiCloudMapClient {
         const method = flag === "8" ? "Email" : "Phone";
         const cookieHeader = "identity_session=" + identitySession;
         onProgress?.("Xiaomi 2FA: " + (flag === "8" ? "E-Mail-Adresse" : "Telefonnummer") + " wird ermittelt …");
-        const optionsResponse = await this.request("https://account.xiaomi.com/identity/auth/verify" + method, {
+        const optionsResponse = await this.request("https://account.xiaomi.com/identity/auth/verify" + method + "?_flag=" + flag + "&_json=true", {
             headers: { Cookie: cookieHeader }
         });
         const options = this.json(await optionsResponse.text());
         this.maskedDestination = String(flag === "8" ? options.maskedEmail ?? "your email" : options.maskedPhone ?? "your phone");
         onProgress?.("Xiaomi 2FA: Codeversand wird bei Xiaomi angefordert …");
-        const sent = await this.request("https://account.xiaomi.com/identity/auth/send" + method + "Ticket?_json=true", {
+        // Preserve the complete ticket request used by the earlier working adapter flow.
+        // Xiaomi requires the optional ick cookie and the empty icode field on this endpoint.
+        const sendCookies = this.cookies.get("ick")
+            ? cookieHeader + "; ick=" + this.cookies.get("ick")
+            : cookieHeader;
+        const sent = await this.request("https://account.xiaomi.com/identity/auth/send" + method + "Ticket", {
             method: "POST",
-            body: new URLSearchParams({ _flag: flag, retry: "0", _json: "true" }).toString(),
-            headers: { "Content-Type": "application/x-www-form-urlencoded", Cookie: cookieHeader }
+            body: new URLSearchParams({ _json: "true", _flag: flag, icode: "", retry: "0" }).toString(),
+            headers: { "Content-Type": "application/x-www-form-urlencoded", Cookie: sendCookies }
         });
         const result = this.json(await sent.text());
         if (result.code !== 0)
