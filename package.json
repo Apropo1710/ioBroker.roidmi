@@ -9,19 +9,16 @@
     "test": "node --test",
     "lint": "tsc --noEmit -p ."
   },
-  "keywords": [
-    "iobroker",
-    "roidmi",
-    "eve-plus",
-    "vacuum"
-  ],
+  "keywords": ["iobroker", "roidmi", "eve-plus", "vacuum"],
   "author": "Apropo1710",
   "license": "UNLICENSED",
   "private": true,
-  "engines": {
-    "node": ">=20"
+  "engines": { "node": ">=20" },
+  "dependencies": {
+    "@iobroker/adapter-core": "^3.4.3"
   },
   "devDependencies": {
+    "@iobroker/types": "^7.0.0",
     "@types/node": "^22.0.0",
     "typescript": "^5.7.0"
   }
