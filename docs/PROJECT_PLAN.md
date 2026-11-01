@@ -29,6 +29,7 @@
 - [x] JSON-Schnittstelle für Mehrraumreinigung in einem Auftrag bereitstellen (Geräteausführung noch offen)
 - [x] Importierte Raum-IDs und Zuordnungen dauerhaft erhalten; Wiederherstellung beim Adapterstart
 - [ ] Verfügbarkeit und Grenzen der Raumsteuerung lokal gegenüber Cloud verifizieren
+- [ ] Raumprofile pro Segment (Saugstufe/Reinigungsart/Wasserstufe) anhand des tatsächlichen Original-App-Aufrufs protokollseitig verifizieren
 
 ## Phase 3 – Weitere Erweiterungen
 - [ ] Zonenreinigung
