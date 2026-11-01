@@ -37,7 +37,7 @@ test("supports autoAreaValue and optional mapId", () => {
 
 test("rejects malformed payloads and room entries", () => {
     assert.throws(() => parseRoidmiMapPayload(Buffer.alloc(8)), /too short/);
-    assert.throws(() => parseRoidmiMapPayload(Buffer.concat([Buffer.alloc(16), Buffer.from([1, 2])])), /marker/);
+    assert.throws(() => parseRoidmiMapPayload(Buffer.concat([Buffer.alloc(18), Buffer.from([1, 2])])), /marker/);
     assert.throws(() => parseRoidmiMapPayload(payload({
         width: 1, height: 1, resolution: 1, autoArea: [{ id: 0, name: "Bad" }]
     })), /room\[0\]\.id/);
