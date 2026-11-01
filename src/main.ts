@@ -441,6 +441,7 @@ class RoidmiAdapter extends Adapter {
             const rooms = result.metadata.rooms;
             if (!rooms.length) throw new Error("Downloaded map contains no named rooms.");
 
+            await this.setStateChangedAsync("map.roomsJson", { val: JSON.stringify(rooms), ack: true });
             if (result.metadata.mapId) {
                 await this.applyRoomMapConfig({
                     mapId: result.metadata.mapId,
