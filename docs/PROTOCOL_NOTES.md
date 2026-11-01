@@ -44,3 +44,11 @@ Diese IDs sind Profil-/Quellenwerte und noch nicht mit dem konkreten EVE-Plus-Ge
 ## Weitere Rechercheansätze
 - `python-miio`, Home Assistant und openHAB liefern Referenzprofile für weitere Eigenschaften und Aktionen.
 - Lokale und Cloud-Funktionen müssen getrennt ausgewiesen werden.
+
+
+## Roidmi-Kartenformat
+
+Der Roidmi-EVE-Plus-Kartenparser folgt dem Format des Xiaomi Cloud Map Extractors:
+Nach dem 16-Byte-Präfix und dem Rasterbereich markiert das Byte `0x7f` den Beginn der JSON-Metadaten. Das direkt folgende Byte ist bereits die öffnende geschweifte Klammer der JSON-Struktur. Die Metadaten enthalten unter anderem `width`, `height`, `resolution`, `x_min`, `y_min` und `autoArea`/ `autoAreaValue`.
+
+Der Kartenparser verarbeitet ausschließlich explizit übergebene Archive. Kartenabrufe gehören nicht in den regelmäßigen Status-Polling-Zyklus. Eine automatische Xiaomi-Cloud-Beschaffung ist separat zu implementieren und optional zu halten.

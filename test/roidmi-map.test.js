@@ -5,7 +5,7 @@ const { parseRoidmiMapPayload, parseRoidmiMapArchive } = require("../build/lib/r
 
 function payload(metadata) {
     const json = Buffer.from(JSON.stringify(metadata), "utf8");
-    return Buffer.concat([Buffer.alloc(16), Buffer.from([0x01, 0x02, 0x7f, 0x7b]), json]);
+    return Buffer.concat([Buffer.alloc(16), Buffer.from([0x01, 0x02, 0x7f]), json]);
 }
 
 test("parses room IDs and names from autoArea", () => {
@@ -13,6 +13,8 @@ test("parses room IDs and names from autoArea", () => {
         width: 120,
         height: 80,
         resolution: 0.05,
+        x_min: -2.5,
+        y_min: -1.25,
         autoArea: [
             { id: 3, name: "Wohnzimmer", pos: [10, 20] },
             { id: 7, name: "Küche" }
@@ -24,6 +26,8 @@ test("parses room IDs and names from autoArea", () => {
     ]);
     assert.equal(result.width, 120);
     assert.equal(result.height, 80);
+    assert.equal(result.xMin, -2.5);
+    assert.equal(result.yMin, -1.25);
 });
 
 test("supports autoAreaValue and optional mapId", () => {

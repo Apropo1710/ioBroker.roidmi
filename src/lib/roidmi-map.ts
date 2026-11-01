@@ -19,6 +19,8 @@ export interface RoidmiMapMetadata {
     height: number;
     resolution: number;
     mapId?: number;
+    xMin?: number;
+    yMin?: number;
     rooms: RoidmiMapRoom[];
 }
 
@@ -32,7 +34,8 @@ export function parseRoidmiMapPayload(payload: Uint8Array): RoidmiMapMetadata {
         throw new Error("Roidmi map metadata marker was not found");
     }
 
-    const jsonStart = marker + 2;
+    // The 0x7f marker is followed directly by the opening '{' byte.
+    const jsonStart = marker + 1;
     let raw: unknown;
     try {
         raw = JSON.parse(new TextDecoder().decode(payload.subarray(jsonStart)));
@@ -47,6 +50,8 @@ export function parseRoidmiMapPayload(payload: Uint8Array): RoidmiMapMetadata {
     const width = positiveInteger(data.width, "width");
     const height = positiveInteger(data.height, "height");
     const resolution = positiveNumber(data.resolution, "resolution");
+    const xMin = finiteOptionalNumber(data.x_min);
+    const yMin = finiteOptionalNumber(data.y_min);
 
     const areas = Array.isArray(data.autoArea)
         ? data.autoArea
@@ -74,7 +79,15 @@ export function parseRoidmiMapPayload(payload: Uint8Array): RoidmiMapMetadata {
         ? data.mapId
         : undefined;
 
-    return { width, height, resolution, ...(mapId === undefined ? {} : { mapId }), rooms };
+    return {
+        width,
+        height,
+        resolution,
+        ...(mapId === undefined ? {} : { mapId }),
+        ...(xMin === undefined ? {} : { xMin }),
+        ...(yMin === undefined ? {} : { yMin }),
+        rooms
+    };
 }
 
 function findMarker(data: Uint8Array, start: number): number {
@@ -89,6 +102,10 @@ function positiveInteger(value: unknown, field: string): number {
         throw new Error(`Roidmi map ${field} must be a positive integer`);
     }
     return value;
+}
+
+function finiteOptionalNumber(value: unknown): number | undefined {
+    return typeof value === "number" && Number.isFinite(value) ? value : undefined;
 }
 
 function positiveNumber(value: unknown, field: string): number {
