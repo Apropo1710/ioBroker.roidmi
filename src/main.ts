@@ -3,6 +3,7 @@ import { MiioClient } from "./lib/miio-client";
 
 interface RoidmiPilotConfig {
     host?: string;
+    did?: string;
     token?: string;
     pollIntervalSeconds?: number;
 }
@@ -41,7 +42,8 @@ class RoidmiPilot extends Adapter {
 
         const config = this.config as RoidmiPilotConfig;
         const errors: string[] = [];
-        if (config.host && !/^(?:\d{1,3}\.){3}\d{1,3}$/.test(config.host)) errors.push("The configured host is not a valid IPv4 address.");
+        if (config.host && !/^(?:\\d{1,3}\\.){3}\\d{1,3}$/.test(config.host)) errors.push("The configured host is not a valid IPv4 address.");
+        if (config.did && !/^\\d{1,20}$/.test(config.did)) errors.push("The Xiaomi device DID must be numeric.");
         if (config.pollIntervalSeconds !== undefined &&
             (!Number.isInteger(config.pollIntervalSeconds) || config.pollIntervalSeconds < 5 || config.pollIntervalSeconds > 3600)) {
             errors.push("Polling interval must be between 5 and 3600 seconds.");
@@ -54,8 +56,8 @@ class RoidmiPilot extends Adapter {
             this.log.error(message);
             return;
         }
-        if (!config.host || !config.token) {
-            const message = "Configuration incomplete: enter the robot IP address and MIoT/miIO token.";
+        if (!config.host || !config.did || !config.token) {
+            const message = "Configuration incomplete: enter robot IP, numeric Xiaomi device DID and MIoT/miIO token.";
             await this.setStateChangedAsync("info.connectionText", { val: message, ack: true });
             this.log.info(message);
             return;
@@ -100,11 +102,10 @@ class RoidmiPilot extends Adapter {
         const poll = async (): Promise<void> => {
             if (!this.client || this.stopping) return;
             try {
-                // This V60 profile is known to be sensitive to large property batches.
-                // Read one property per RPC and keep the cycle non-overlapping.
+                // Conservative V60 profile: one property per RPC, no overlapping cycles.
                 for (const property of properties) {
                     const result = await this.client.call("get_properties", [{
-                        did: "roidmipilot", siid: property.siid, piid: property.piid
+                        did: config.did, siid: property.siid, piid: property.piid
                     }]);
                     if (!Array.isArray(result)) throw new Error("Unexpected MIoT property response");
                     const item = result[0] as { code?: number; value?: unknown } | undefined;
@@ -148,14 +149,15 @@ class RoidmiPilot extends Adapter {
     private async onStateChange(id: string, state: ioBroker.State | null | undefined): Promise<void> {
         if (!state || state.ack || state.val !== true || !id.startsWith(`${this.namespace}.control.`)) return;
         const command = id.slice(`${this.namespace}.control.`.length);
+        // Action IDs follow the Roidmi V60 MIoT mapping. Real-device validation is still pending.
         const actions: Record<string, MiotAction> = {
-            start: { siid: 14, aiid: 1, in: [1, ""] },
+            start: { siid: 2, aiid: 1 },
             pause: { siid: 8, aiid: 8 },
             resume: { siid: 8, aiid: 5 },
-            dock: { siid: 3, aiid: 1 }
+            dock: { siid: 8, aiid: 9 }
         };
         const action = actions[command];
-        if (!action || !this.client) {
+        if (!action || !this.client || !this.config.did) {
             this.log.warn(`Control command ignored: ${command} is unavailable`);
             await this.setStateAsync(`control.${command}`, { val: false, ack: true });
             return;
@@ -169,7 +171,7 @@ class RoidmiPilot extends Adapter {
         this.commandRunning = true;
         try {
             const result = await this.client.call("action", [{
-                did: "roidmipilot", siid: action.siid, aiid: action.aiid,
+                did: this.config.did, siid: action.siid, aiid: action.aiid,
                 ...(action.in ? { in: action.in } : {})
             }]);
             this.log.info(`Robot command '${command}' sent`);
