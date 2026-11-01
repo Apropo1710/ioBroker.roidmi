@@ -16,3 +16,21 @@
 5. optionale Karten-/Raum-/Verlaufserweiterungen
 
 Die konkrete Implementierung wird erst nach Validierung der realen Geräteantworten festgelegt.
+
+
+## Performance- und Polling-Leitlinien
+
+Ziel ist eine möglichst geringe Datenlatenz bei minimaler Last für Roboter und ioBroker.
+
+- MIoT-Eigenschaften nach Möglichkeit gebündelt mit einem `get_properties`-Aufruf lesen, nicht je Datenpunkt einen UDP-Aufruf senden.
+- Polling standardmäßig moderat (30 Sekunden); die Frequenz muss konfigurierbar bleiben.
+- Keine überlappenden Polling-Durchläufe: der nächste Lauf wird erst nach Abschluss des vorherigen geplant.
+- Bei erfolgreicher Abfrage nur geänderte Werte mit `setStateChangedAsync` schreiben, damit unnötige Datenbank- und Event-Last vermieden wird.
+- Bei Verbindungsfehlern exponentiell zurückschalten, mit Obergrenze von fünf Minuten; nach erfolgreicher Abfrage zum normalen Intervall zurückkehren.
+- Wiederholte identische Fehler nicht in jedem Poll-Zyklus erneut protokollieren.
+- Schnelle Statuswerte (Roboterzustand, Fehler) und langsam veränderliche Werte (z. B. Wartungs-/Lebensdauerwerte) später in getrennte Polling-Gruppen mit unterschiedlichen Intervallen aufteilen.
+- Karten, Historie und umfangreiche Daten nur bei Bedarf oder bei expliziter Aktualisierung laden, nicht im normalen Status-Polling.
+- Keine unnötigen Objekte/Datenpunkte pro Poll neu anlegen.
+- Polling-Takt, Anzahl der RPC-Aufrufe und Antwortzeiten später messbar machen, ohne Tokens oder sensible Nutzdaten zu protokollieren.
+
+Die aktuelle Implementierung bündelt vier Basis-Eigenschaften in einem Aufruf, schreibt nur geänderte Werte und verwendet ein nicht überlappendes Polling mit Fehler-Backoff. Die Intervalle werden anhand echter Geräteantworten weiter optimiert.
