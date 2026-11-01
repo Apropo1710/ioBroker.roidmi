@@ -1,7 +1,7 @@
 {
   "common": {
     "name": "roidmi",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "title": "Roidmi",
     "titleLang": {
       "en": "Roidmi",
@@ -25,6 +25,10 @@
       "token"
     ],
     "news": {
+      "0.1.1": {
+        "en": "Reduced status polling to one batched MIoT request",
+        "de": "Statusabfrage auf eine gebündelte MIoT-Anfrage reduziert"
+      },
       "0.1.0": {
         "en": "Initial adapter foundation",
         "de": "Erstes Adapter-Grundgerüst"
