@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { validateConfig, redactSecret, describeStartup } = require('../build/main.js');
+const { validateConfig, redactSecret, describeStartup } = require('../build/lib/config.js');
 
 test('accepts an empty initial configuration', () => {
   assert.deepEqual(validateConfig({}), []);
