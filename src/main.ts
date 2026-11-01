@@ -39,7 +39,7 @@ class RoidmiPilot extends Adapter {
 
         const config = this.config as RoidmiPilotConfig;
         const errors: string[] = [];
-        if (config.host && !/^(?:\\d{1,3}\\.){3}\\d{1,3}$/.test(config.host)) {
+        if (config.host && !/^(?:\d{1,3}\.){3}\d{1,3}$/.test(config.host)) {
             errors.push("The configured host is not a valid IPv4 address.");
         }
         if (config.pollIntervalSeconds !== undefined &&
