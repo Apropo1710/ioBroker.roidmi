@@ -1,0 +1,28 @@
+{
+  "name": "iobroker.roidmipilot",
+  "version": "0.1.0",
+  "description": "ioBroker adapter for Roidmi EVE Plus",
+  "main": "build/main.js",
+  "types": "build/main.d.ts",
+  "scripts": {
+    "build": "tsc -p .",
+    "test": "node --test",
+    "lint": "tsc --noEmit -p ."
+  },
+  "keywords": [
+    "iobroker",
+    "roidmi",
+    "eve-plus",
+    "vacuum"
+  ],
+  "author": "Apropo1710",
+  "license": "UNLICENSED",
+  "private": true,
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.7.0"
+  }
+}
