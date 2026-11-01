@@ -19,6 +19,7 @@ declare class RoidmiAdapter extends Adapter {
     private refreshTiming;
     private onMessage;
     private persistCloudSession;
+    private clearPersistedCloudSession;
     private refreshCloudMap;
     private sendProperty;
     private sendAction;

@@ -406,6 +406,10 @@ class RoidmiAdapter extends adapter_core_1.Adapter {
         };
         const code = obj.command === "cloudSubmitCode" && typeof payload.code === "string" ? payload.code.trim() : undefined;
         try {
+            if (obj.command === "cloudStartLogin") {
+                this.cloudMapClient.clearSession();
+                await this.clearPersistedCloudSession();
+            }
             if (!credentials.username || !credentials.password || !credentials.token) {
                 throw new Error("Bitte Xiaomi-Benutzername, Passwort und Roboter-Token in der Adapterkonfiguration eintragen.");
             }
@@ -427,6 +431,10 @@ class RoidmiAdapter extends adapter_core_1.Adapter {
         const encrypted = this.encrypt(this.cloudMapClient.exportSession());
         await this.extendForeignObjectAsync("system.adapter." + this.namespace, { native: { cloudSession: encrypted } });
         this.config.cloudSession = encrypted;
+    }
+    async clearPersistedCloudSession() {
+        await this.extendForeignObjectAsync("system.adapter." + this.namespace, { native: { cloudSession: "" } });
+        this.config.cloudSession = "";
     }
     async refreshCloudMap(verificationCode, supplied) {
         const config = { ...this.config, ...(supplied ?? {}) };
