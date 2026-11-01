@@ -3,12 +3,17 @@
     "name": "roidmi",
     "version": "0.1.0",
     "title": "Roidmi",
-    "titleLang": { "en": "Roidmi", "de": "Roidmi" },
+    "titleLang": {
+      "en": "Roidmi",
+      "de": "Roidmi"
+    },
     "desc": {
       "en": "Control and monitor Roidmi robot vacuums",
       "de": "Roidmi-Saugroboter steuern und überwachen"
     },
-    "authors": ["Apropo1710"],
+    "authors": [
+      "Apropo1710"
+    ],
     "mode": "daemon",
     "platform": "Javascript/Node.js",
     "enabled": true,
@@ -16,12 +21,17 @@
     "connectionType": "local",
     "dataSource": "poll",
     "type": "household",
-    "encryptedNative": ["token"],
+    "encryptedNative": [
+      "token"
+    ],
     "news": {
       "0.1.0": {
         "en": "Initial adapter foundation",
         "de": "Erstes Adapter-Grundgerüst"
       }
+    },
+    "adminUI": {
+      "config": "json"
     }
   },
   "native": {
