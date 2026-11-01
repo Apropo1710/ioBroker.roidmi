@@ -177,6 +177,16 @@ class RoidmiAdapter extends Adapter {
     private async applyRoomMapConfig(config: RoomMapConfig): Promise<void> {
         const previous = this.roomMapConfig;
         this.roomMapConfig = config;
+        await this.setObjectNotExistsAsync("map.mapId", {
+            type: "state",
+            common: { name: "Active map ID", type: "number", role: "value", read: true, write: false },
+            native: {}
+        });
+        await this.setObjectNotExistsAsync("map.roomsJson", {
+            type: "state",
+            common: { name: "Imported room list", type: "string", role: "json", read: true, write: false },
+            native: {}
+        });
         await this.setStateAsync("map.config", { val: JSON.stringify(config), ack: true });
         await this.setStateChangedAsync("map.mapId", { val: config.mapId, ack: true });
         await this.setStateChangedAsync("map.roomsJson", { val: JSON.stringify(config.rooms), ack: true });
@@ -238,7 +248,7 @@ class RoidmiAdapter extends Adapter {
             await this.sendAction("room-" + room.name, {
                 siid: 14, aiid: 1,
                 in: [2, JSON.stringify({ mapId: this.roomMapConfig.mapId, segmentId: [room.id] })]
-            }, id);
+            }, `rooms.${room.id}.clean`);
             return;
         }
 
