@@ -77,8 +77,22 @@ export class XiaomiCloudMapClient {
     private async request(url:string,init:RequestInit={}):Promise<Response>{
         const headers=new Headers(init.headers);headers.set("User-Agent",this.agent);
         const cookie=this.cookies.header();if(cookie&&!headers.has("Cookie"))headers.set("Cookie",cookie);
-        const response=await fetch(url,{...init,headers,redirect:"follow",signal:AbortSignal.timeout(15000)});
-        this.cookies.add(response.headers);if(!response.ok)throw new Error(`Xiaomi cloud request failed (HTTP ${response.status})`);return response;
+        let current=url;
+        for(let hop=0;hop<6;hop++){
+            const response=await fetch(current,{...init,headers,redirect:"manual",signal:AbortSignal.timeout(15000)});
+            this.cookies.add(response.headers);
+            if([301,302,303,307,308].includes(response.status)){
+                const location=response.headers.get("location");
+                if(!location)throw new Error("Xiaomi authentication redirect had no location");
+                current=new URL(location,current).toString();
+                if(response.status===303||(response.status===302&&init.method==="POST")){init={...init,method:"GET",body:undefined};}
+                const updatedCookie=this.cookies.header();if(updatedCookie)headers.set("Cookie",updatedCookie);
+                continue;
+            }
+            if(!response.ok)throw new Error(`Xiaomi cloud request failed (HTTP ${response.status})`);
+            return response;
+        }
+        throw new Error("Xiaomi authentication redirected too many times");
     }
     private json(text:string):any{try{return JSON.parse(text.replace(/^&&&START&&&/,""));}catch{throw new Error("Xiaomi account returned an invalid login response");}}
 }
