@@ -1,7 +1,7 @@
 {
   "common": {
     "name": "roidmi",
-    "version": "0.1.14",
+    "version": "0.1.15",
     "title": "Roidmi",
     "titleLang": {
       "en": "Roidmi",
@@ -85,6 +85,10 @@
       "0.1.14": {
         "en": "Restore synchronous Xiaomi sign-in flow and matching admin callbacks",
         "de": "Synchronen Xiaomi-Anmeldeablauf und passende Admin-Rückmeldungen wiederhergestellt"
+      },
+      "0.1.15": {
+        "en": "Prevent adapter self-restart during Xiaomi 2FA login",
+        "de": "Adapter-Neustart während der Xiaomi-2FA-Anmeldung verhindert"
       }
     },
     "adminUI": {
