@@ -3,17 +3,12 @@
     "name": "roidmipilot",
     "version": "0.1.0",
     "title": "RoidmiPilot",
-    "titleLang": {
-      "en": "RoidmiPilot",
-      "de": "RoidmiPilot"
-    },
+    "titleLang": { "en": "RoidmiPilot", "de": "RoidmiPilot" },
     "desc": {
       "en": "Control and monitor Roidmi robot vacuums",
       "de": "Roidmi-Saugroboter steuern und überwachen"
     },
-    "authors": [
-      "Apropo1710"
-    ],
+    "authors": ["Apropo1710"],
     "mode": "daemon",
     "platform": "Javascript/Node.js",
     "icon": "roidmipilot.png",
@@ -22,9 +17,7 @@
     "connectionType": "local",
     "dataSource": "poll",
     "type": "household",
-    "encryptedNative": [
-      "token"
-    ],
+    "encryptedNative": ["token"],
     "news": {
       "0.1.0": {
         "en": "Initial adapter foundation",
@@ -34,6 +27,7 @@
   },
   "native": {
     "host": "",
+    "did": "",
     "token": "",
     "pollIntervalSeconds": 30
   }
