@@ -188,6 +188,18 @@ class XiaomiCloudMapClient {
         for (let hop = 0; hop < 6; hop++) {
             const response = await fetch(current, { ...init, headers, redirect: "manual", signal: AbortSignal.timeout(15000) });
             this.cookies.add(response.headers);
+            // Xiaomi may send ssecurity on an intermediate STS redirect rather
+            // than on the final response. Capture it on every hop, as official
+            // Xiaomi clients do while walking the redirect chain.
+            const extension = response.headers.get("Extension-Pragma");
+            if (extension) {
+                try {
+                    const parsed = JSON.parse(extension);
+                    if (typeof parsed.ssecurity === "string")
+                        this.ssecurity = parsed.ssecurity;
+                }
+                catch { /* Ignore malformed optional header. */ }
+            }
             if ([301, 302, 303, 307, 308].includes(response.status)) {
                 const location = response.headers.get("location");
                 if (!location)
