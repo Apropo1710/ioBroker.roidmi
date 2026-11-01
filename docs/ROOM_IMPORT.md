@@ -29,9 +29,11 @@ Use the Xiaomi map ID and the segment/room IDs belonging to the currently active
 
 Importing an updated list updates names and removes controls for rooms that were present in the previous imported configuration but are no longer present. A room command is one MIoT action; no additional polling is performed.
 
-## Important limitation
+## Optional Xiaomi Cloud discovery
 
-The adapter does not yet discover map IDs or room IDs automatically. Obtain them from a supported map export / Xiaomi Cloud Map Extractor or Mi Home diagnostic data, then import them here. Room-cleaning action execution must still be tested against the physical EVE Plus and its firmware.
+Xiaomi Cloud access is optional and disabled by default. It downloads the saved map archive and discovers room IDs/names. Local control and normal status polling do not depend on it. Configure the Xiaomi account username, password and region, enable the option, then write `true` to `control.refreshMap`. This is on demand only, not regular polling. The adapter obtains the current map name locally, finds the matching device in the Xiaomi account by its MIoT token and downloads the map archive. The parser extracts room IDs and names. If the archive does not contain the separate `mapId` needed by room cleaning, rooms are shown in `map.roomsJson`, but that map ID must still be supplied once via `control.importRooms`. Xiaomi may require two-factor authentication; open `map.cloudAuthUrl` on a device using the same internet connection, complete verification, then press `control.refreshMap` again. Credentials are encrypted in ioBroker and never logged.
+
+Room-cleaning action execution must still be tested against the physical EVE Plus and its firmware.
 
 
 ## Saved schedule / room profile inspection

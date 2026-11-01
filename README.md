@@ -25,6 +25,10 @@ Die Installation aus GitHub ist eine Entwicklungsversion und erhält keine Prüf
 
 Ohne gültige IP-Adresse, DID und Token startet der Adapter, bleibt aber getrennt und zeigt den Grund unter `info.connectionText` an.
 
+## Optionale Xiaomi-Cloud-Kartenerkennung
+
+Die Xiaomi-Cloud-Anbindung ist **optional** und standardmäßig ausgeschaltet. Sie wird ausschließlich benötigt, um die gespeicherte Karte sowie Raum-IDs und Raumnamen automatisch aus dem Xiaomi-Konto abzurufen. Ohne diese Funktion bleiben lokale Statusabfragen und die lokale Robotersteuerung nutzbar. Die Cloud wird nicht periodisch abgefragt: Der Abruf startet nur, wenn `control.refreshMap` manuell ausgelöst wird. Xiaomi-Benutzername und Passwort werden nur bei aktivierter Funktion verwendet und in ioBroker verschlüsselt gespeichert. Je nach Xiaomi-Konto kann eine Zwei-Faktor-Bestätigung erforderlich sein.
+
 ## Ziele
 
 - Lokale Verbindung zum Roidmi EVE Plus, soweit das Gerät sie unterstützt

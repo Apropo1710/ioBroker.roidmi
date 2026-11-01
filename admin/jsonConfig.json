@@ -24,6 +24,28 @@
       "min": 5,
       "max": 3600,
       "default": 30
+    },
+    "cloudEnabled": {
+      "type": "checkbox",
+      "label": "Optional: Enable Xiaomi Cloud map retrieval",
+      "default": false,
+      "help": "Only needed to automatically download saved maps and room names/IDs. Local robot control and status polling work without this option. Cloud access is only used when control.refreshMap is pressed."
+    },
+    "cloudUsername": {
+      "type": "text",
+      "label": "Xiaomi account username (optional)",
+      "help": "Only used for optional Xiaomi Cloud map retrieval."
+    },
+    "cloudPassword": {
+      "type": "password",
+      "label": "Xiaomi account password (optional)",
+      "help": "Stored encrypted by ioBroker. Never share it in chat or logs."
+    },
+    "cloudCountry": {
+      "type": "text",
+      "label": "Xiaomi Cloud region",
+      "default": "de",
+      "help": "Two-letter account region, e.g. de, fr, it, es or cn."
     }
   }
 }
