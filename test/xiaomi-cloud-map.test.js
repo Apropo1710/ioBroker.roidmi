@@ -106,7 +106,9 @@ test('Xiaomi 2FA chooses email or phone from Xiaomi flag without logging the cod
     () => new XiaomiCloudMapClient().fetchMap(validOptions()),
     /Bestätigungscode wurde an a\*\*\*@example\.test gesendet/,
   );
-  assert.ok(calls.some(c => c.url.includes('/identity/auth/verifyEmail')));
+  const verifyCall = calls.find(c => c.url.includes('/identity/auth/verifyEmail'));
+  assert.ok(verifyCall && verifyCall.method === 'GET');
+  assert.equal(verifyCall.url, 'https://account.xiaomi.com/identity/auth/verifyEmail?_flag=8&_json=true');
   const sendCall = calls.find(c => c.url.includes('/identity/auth/sendEmailTicket'));
   assert.ok(sendCall && sendCall.method === 'POST');
   assert.equal(sendCall.url, 'https://account.xiaomi.com/identity/auth/sendEmailTicket?_json=true');

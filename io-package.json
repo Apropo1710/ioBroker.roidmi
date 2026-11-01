@@ -1,7 +1,7 @@
 {
   "common": {
     "name": "roidmi",
-    "version": "0.1.18",
+    "version": "0.1.19",
     "title": "Roidmi",
     "titleLang": {
       "en": "Roidmi",
@@ -97,6 +97,14 @@
       "0.1.17": {
         "en": "Fix Xiaomi 2FA ticket request with cache-busting timestamp and session reuse",
         "de": "Xiaomi-2FA-Codeanfrage mit Zeitstempel und unveränderter Sitzung korrigiert"
+      },
+      "0.1.18": {
+        "en": "Restore original Xiaomi two-factor request sequence",
+        "de": "Ursprünglichen Xiaomi-Zwei-Faktor-Anmeldeablauf wiederhergestellt"
+      },
+      "0.1.19": {
+        "en": "Restore required Xiaomi verification method parameters",
+        "de": "Erforderliche Parameter für die Xiaomi-Verifizierung wiederhergestellt"
       }
     },
     "adminUI": {
