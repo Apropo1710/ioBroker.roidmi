@@ -36,7 +36,9 @@
     },
     "adminUI": {
       "config": "json"
-    }
+    },
+    "icon": "roidmi.svg",
+    "extIcon": "https://raw.githubusercontent.com/Apropo1710/ioBroker.roidmi/main/admin/roidmi.svg"
   },
   "native": {
     "host": "",
