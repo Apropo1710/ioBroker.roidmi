@@ -6,13 +6,24 @@ test('accepts an empty initial configuration', () => {
   assert.deepEqual(validateConfig({}), []);
 });
 
-test('rejects invalid IPv4 host strings', () => {
-  assert.deepEqual(validateConfig({ host: 'robot.local' }), ['host must be an IPv4 address']);
+test('rejects hostnames and invalid IPv4 octets', () => {
+  assert.deepEqual(validateConfig({ host: 'robot.local' }), ['host must be a valid IPv4 address']);
+  assert.deepEqual(validateConfig({ host: '192.168.1.999' }), ['host must be a valid IPv4 address']);
+  assert.deepEqual(validateConfig({ host: '256.1.1.1' }), ['host must be a valid IPv4 address']);
+  assert.deepEqual(validateConfig({ host: '192.168.1' }), ['host must be a valid IPv4 address']);
+  assert.deepEqual(validateConfig({ host: '192.168.1.20' }), []);
 });
 
 test('validates numeric Xiaomi DID', () => {
   assert.deepEqual(validateConfig({ did: 'not-a-device-id' }), ['did must be a numeric Xiaomi device ID']);
   assert.deepEqual(validateConfig({ did: '441963123' }), []);
+});
+
+test('validates a 32-character hexadecimal miIO token', () => {
+  assert.deepEqual(validateConfig({ token: 'not-a-token' }), [
+    'token must contain exactly 32 hexadecimal characters'
+  ]);
+  assert.deepEqual(validateConfig({ token: '0123456789abcdef0123456789abcdef' }), []);
 });
 
 test('validates polling interval bounds', () => {
