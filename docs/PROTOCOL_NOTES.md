@@ -33,7 +33,7 @@ Diese Zuordnungen stammen aus dem veröffentlichten MIoT-Profil und dem openHAB-
 - Saugstufe: SIID 2 / PIID 4.
 - Reinigungsart: SIID 2 / PIID 8.
 - Wischaufsatz vorhanden: SIID 8 / PIID 1.
-- Wasserstufe: SIID 8 / PIID 11.
+- Wasserstufe: SIID 8 / PIID 11, Werte 0=Aus, 1=Gering, 2=Mittel, 3=MAX, 4=Stufe 4.
 - Karten-/Raumfunktionen liegen im Service SIID 13; viele Properties dort sind nicht als lesbar ausgewiesen.
 - Das openHAB-V60-Profil setzt ausdrücklich `maxProperties: 1`. Der Adapter liest daher eine Property pro RPC und vermeidet parallele/gebündelte Anfragen.
 
