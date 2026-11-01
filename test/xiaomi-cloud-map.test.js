@@ -121,6 +121,31 @@ test('Xiaomi 2FA chooses email or phone from Xiaomi flag without logging the cod
 });
 
 
+test('Xiaomi 2FA reports sanitized server tips without exposing response data', async (t) => {
+  const originalFetch = global.fetch;
+  global.fetch = async (url) => {
+    if (String(url).includes('/pass/serviceLogin?')) {
+      return response('&&&START&&&{"_sign":"sig","sid":"xiaomiio","callback":"https://sts.api.io.mi.com/sts","qs":"?sid=xiaomiio&_json=true"}');
+    }
+    if (String(url).endsWith('/pass/serviceLoginAuth2')) {
+      return response('&&&START&&&{"notificationUrl":"https://account.xiaomi.com/fe/service/identity/authStart?x=1"}');
+    }
+    if (String(url).includes('/identity/list')) {
+      return response('&&&START&&&{"code":0,"flag":8}', 200, { 'set-cookie': 'identity_session=identity-secret; Path=/' });
+    }
+    if (String(url).includes('/identity/auth/verifyEmail')) return response('&&&START&&&{"maskedEmail":"a***@example.test"}');
+    if (String(url).includes('/identity/auth/sendEmailTicket')) {
+      return response('&&&START&&&{"code":70022,"tips":"Please try again later <b>soon</b>"}');
+    }
+    throw new Error('Unexpected mocked URL: ' + String(url).split('?')[0]);
+  };
+  t.after(() => { global.fetch = originalFetch; });
+  await assert.rejects(
+    () => new XiaomiCloudMapClient().fetchMap(validOptions()),
+    /code 70022: Please try again later soon/,
+  );
+});
+
 test('Xiaomi cloud session can be exported and restored without another login', async (t) => {
   const originalFetch = global.fetch;
   let loginRequests = 0;
