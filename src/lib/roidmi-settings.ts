@@ -18,7 +18,7 @@ export function getRoidmiSetting(id: string): RoidmiSetting | undefined {
 }
 
 export function buildSettingWrite(did: string, id: string, value: unknown): { method: "set_properties"; params: [{ did: string; siid: number; piid: number; value: number }] } {
-    if (!/^\\d+$/.test(did)) throw new Error("DID must be numeric");
+    if (!/^\d+$/.test(did)) throw new Error("DID must be numeric");
     const setting = getRoidmiSetting(id);
     if (!setting) throw new Error("Unknown Roidmi setting");
     if (typeof value !== "number" || !Number.isInteger(value) || value < setting.min || value > setting.max) {
