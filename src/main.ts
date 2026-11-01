@@ -2,6 +2,7 @@ import { Adapter } from "@iobroker/adapter-core";
 import { MiioClient } from "./lib/miio-client";
 import { parseRoomCleaningRequest } from "./lib/room-cleaning";
 import { validateConfig } from "./lib/config";
+import { buildVacuumAction } from "./lib/roidmi-actions";
 
 interface RoidmiAdapterConfig {
     host?: string;
@@ -173,13 +174,9 @@ class RoidmiAdapter extends Adapter {
         } else {
             if (state.val !== true) return;
             resetValue = false;
-            const actions: Record<string, MiotAction> = {
-                start: { siid: 2, aiid: 1 },
-                pause: { siid: 8, aiid: 8 },
-                resume: { siid: 8, aiid: 5 },
-                dock: { siid: 8, aiid: 9 }
-            };
-            action = actions[command];
+            if (command === "start" || command === "pause" || command === "resume" || command === "dock" || command === "stop") {
+                action = buildVacuumAction(command);
+            }
         }
 
         if (!action || !this.client || !config.did) {
