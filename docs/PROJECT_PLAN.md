@@ -1,27 +1,27 @@
 # Projektplan
 
 ## Phase 0 – Gerät und Protokoll validieren
-- [ ] Modell/Firmware und lokale Netzwerkadresse erfassen
+- [ ] Modell/Firmware und lokale Netzwerkadresse am realen Gerät erfassen
 - [ ] MIoT-/miIO-Token sicher beschaffen und lokal halten
-- [ ] Read-only-Verbindung testen
-- [ ] Tatsächlich unterstützte Properties, Actions, Raum-IDs und Fehlercodes am Gerät dokumentieren
+- [ ] Read-only-Verbindung am realen Gerät testen
 - [x] Dokumentiertes MIoT-Format für Einzel- und Mehrraumreinigung als getesteten Payload-Builder abbilden
+- [ ] Tatsächlich unterstützte Properties, Actions, Raum-IDs und Fehlercodes am Gerät dokumentieren
 - [ ] Prüfen, welche Funktionen lokal und welche nur über Cloud verfügbar sind
 
 ## Phase 1 – Adapterbasis
 - [x] TypeScript-Projektgerüst
-- [x] Konfigurationsvalidierung als erste isolierte Funktion
+- [x] Konfigurationsvalidierung einschließlich IPv4-, DID- und Tokenformat
 - [x] Secret-Redaction-Helfer
 - [x] ioBroker-Adapter-Core integrieren
-- [x] Konfiguration, Verbindungsmanager, Polling und Backoff
-- [x] Basis-Objekt-/State-Modell und Tests
+- [x] Konfiguration, lokaler miIO-Transport, Polling und Backoff als Grundgerüst
+- [x] Basis-Objekt-/State-Modell und automatisierte Tests
 
 ## Phase 2 – Kernsteuerung (inkl. priorisierter Raumsteuerung)
-- [ ] Status und Akkudaten
-- [ ] Start / Pause / Fortsetzen / Dock
-- [ ] Saugmodus und Wasserstufe
-- [ ] Fehler- und Verbindungsstatus
-- [ ] Raumaufteilung bzw. Raumliste vom Gerät abrufen, soweit das Protokoll es ermöglicht
+- [x] Basisstatus, Akku und Ladezustand als Datenpunkte
+- [x] Datenpunkte und protokollbasierte MIoT-Mappings für Start / Pause / Fortsetzen / Dock
+- [x] Fehler- und Verbindungsstatus als Datenpunkte
+- [ ] Saugmodus und Wasserstufe als Datenpunkte und Steuerung
+- [ ] Raumaufteilung bzw. Raumliste ermitteln
 - [ ] Aktuelle mapId und Raum-/Segment-IDs automatisch ermitteln und persistent ablegen
 - [ ] Räume mit stabilen Raum-IDs und lesbaren Namen als ioBroker-Objekte abbilden
 - [x] JSON-Schnittstelle für Einzelraumreinigung im Adapter bereitstellen (Geräteausführung noch offen)
@@ -33,11 +33,15 @@
 - [ ] Zonenreinigung
 - [ ] Karten und Reinigungsverlauf
 - [ ] Zeitpläne / Wartungsdaten, soweit verfügbar
+- [ ] Staubabsaugung und Wartungsreset-Funktionen, soweit sicher verifiziert
 
 ## Phase 4 – Qualität und Veröffentlichung
-- [ ] CI und vollständige Tests
+- [x] CI-Build und automatisierte Unit-Tests
+- [ ] Integrationstest mit realem Roidmi EVE Plus
 - [ ] ioBroker-Repository-Konventionen und Adapter-Validierung
-- [ ] Release-Prozess und Dokumentation
+- [ ] Release-Prozess und vollständige Dokumentation
 
 ## Phase 5 – Integration
 - [ ] Optionale Anbindung an HomePilot
+
+**Wichtiger Statushinweis:** Grüne CI-Läufe bestätigen Build und Unit-Tests, nicht die reale Gerätekommunikation. Start-/Pause-/Fortsetzen-/Dock-Mappings sind anhand veröffentlichter V60-Profile hinterlegt und müssen am konkreten Gerät noch bestätigt werden.
