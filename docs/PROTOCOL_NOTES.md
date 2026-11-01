@@ -56,3 +56,15 @@ Diese Zuordnungen stammen aus dem veröffentlichten MIoT-Profil und dem openHAB-
 - openHAB V60 profile: https://github.com/openhab/openhab-addons/blob/main/bundles/org.openhab.binding.miio/src/main/resources/database/roidmi.vacuum.v60-miot.json
 - Roidmi EVE Plus room-cleaning workflow: https://community.home-assistant.io/t/roidmi-eva-integration/450084/8
 - Xiaomi Cloud Map Extractor support: https://github.com/PiotrMachowski/Home-Assistant-custom-components-Xiaomi-Cloud-Map-Extractor
+
+## Raumprofile – Protokollrecherche (Stand 01.11.2026)
+- Die V60-MIOT-Zuordnung in python-miio kennt `timing` als SIID 8 / PIID 6. Der Wert ist ein JSON-String für wiederkehrende Reinigungspläne.
+- Ein Plan-Eintrag enthält unter anderem Startzeit, Aktivierung, Saugstufe, Reinigungsart, Wochentage, Wasserstufe und eine Liste von Raum-IDs. Beispiel und Feldreihenfolge sind in der python-miio-Dokumentation beschrieben.
+- Der dokumentierte Setter `set_timing` schreibt diese Property und weist ausdrücklich darauf hin, dass vorhandene Zeitpläne überschrieben werden. Deshalb darf der Adapter diese Property nicht als vermeintlichen Sofortbefehl für Raumprofile verwenden.
+- Die MIoT-Aktion `start_room_sweep` (SIID 2 / AIID 3) ist zwar im Mapping aufgeführt, python-miio markiert die Eingabeparameter jedoch weiterhin als unbekannt. Ein aktueller Bericht zur lokalen V60-Steuerung beschreibt ebenfalls fehlgeschlagene Versuche mit dieser Aktion und mit PIID 9. Das ist ein Hinweis auf eine offene Protokollfrage, kein Beweis, dass Raumreinigung generell unmöglich ist.
+- Konsequenz: Noch keine automatische Umschaltung von Saug-/Wasserwerten vor einer Raumreinigung einbauen. Das wäre nicht gleichwertig zu echten Raumprofilen und könnte bei Fehlern die globalen Einstellungen verändern.
+- Nächster sicherer Schritt zur vollständigen Umsetzung: Einmalig den tatsächlichen lokalen MIoT-/miIO-Verkehr beim Start einer Raumreinigung mit abweichenden Raumprofilen aus der Original-App erfassen (Anfrageparameter und Reihenfolge, Token schwärzen). Alternativ kann ein reproduzierbarer Export/Debug-Log der App verwendet werden. Erst danach wird der bestätigte Aufruf implementiert und getestet.
+
+Quellen:
+- python-miio V60-Mapping und Timing-Format: https://python-miio.readthedocs.io/en/latest/_modules/miio/integrations/roidmi/vacuum/roidmivacuum_miot.html
+- Bericht zu offenen lokalen Raumreinigungsaufrufen: https://github.com/al-one/hass-xiaomi-miot/issues/2969
