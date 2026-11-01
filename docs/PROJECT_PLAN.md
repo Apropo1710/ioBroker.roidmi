@@ -45,7 +45,7 @@
 - [ ] Release-Prozess und vollständige Dokumentation
 
 ## Phase 5 – Integration
-- [ ] Optionale Anbindung an HomePilot
+- [ ] HomePilot-Anbindung (begonnen: Startseiten-Kachel, Statusansicht und Kernbefehle in HomePilot; reale Geräteausführung noch nicht bestätigt)
 
 **Wichtiger Statushinweis:** Grüne CI-Läufe bestätigen Build und Unit-Tests, nicht die reale Gerätekommunikation. Start-/Pause-/Fortsetzen-/Dock-Mappings sind anhand veröffentlichter V60-Profile hinterlegt und müssen am konkreten Gerät noch bestätigt werden.
 
