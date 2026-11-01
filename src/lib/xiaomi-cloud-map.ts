@@ -87,7 +87,7 @@ export class XiaomiCloudMapClient {
         this.cUserId = ""; this.passToken = ""; this.pendingFlag = ""; this.maskedDestination = "";
     }
 
-    public async fetchMap(o:XiaomiCloudMapOptions, verificationCode?: string):Promise<XiaomiCloudMapResult>{
+    public async fetchMap(o:XiaomiCloudMapOptions, verificationCode?: string, onProgress?: (message: string) => void):Promise<XiaomiCloudMapResult>{
         if(!o.username.trim()||!o.password||!o.mapName.trim())throw new Error("Xiaomi cloud username, password and map name are required");
         if (!this.serviceToken || !this.ssecurity) {
             if (this.pendingFlag) {
@@ -110,6 +110,7 @@ export class XiaomiCloudMapClient {
                 // Use Xiaomi's returned qs/callback/sid values instead of hard-coded
                 // equivalents, and provide the deviceId cookie expected by Xiaomi.
                 const deviceId = randomBytes(8).toString("hex");
+                onProgress?.("Xiaomi-Anmeldung: Login wird initialisiert …");
                 const first=await this.request("https://account.xiaomi.com/pass/serviceLogin?_json=true&sid=xiaomiio",{
                     headers:{Cookie:`userId=${encodeURIComponent(o.username)}; deviceId=${deviceId}`}
                 });
@@ -126,6 +127,7 @@ export class XiaomiCloudMapClient {
                     qs:init.qs,
                     user:o.username
                 });
+                onProgress?.("Xiaomi-Anmeldung: Zugangsdaten werden geprüft …");
                 const login=await this.request("https://account.xiaomi.com/pass/serviceLoginAuth2",{
                     method:"POST",
                     body:fields.toString(),
@@ -133,7 +135,7 @@ export class XiaomiCloudMapClient {
                 });
                 const auth=this.json(await login.text());
                 if (typeof auth.notificationUrl === "string") {
-                    await this.startTwoFactor(auth.notificationUrl);
+                    await this.startTwoFactor(auth.notificationUrl, onProgress);
                     throw new Error("XIAOMI_2FA_CODE:Bestätigungscode wurde an " + this.maskedDestination + " gesendet. Bitte den Code im Adapter-Admin eingeben und anschließend Schritt 2 ausführen.");
                 }
                 if(typeof auth.location!=="string" || !auth.location) {
@@ -170,8 +172,9 @@ export class XiaomiCloudMapClient {
         return "identity_session=" + value;
     }
 
-    private async startTwoFactor(notificationUrl: string): Promise<void> {
+    private async startTwoFactor(notificationUrl: string, onProgress?: (message: string) => void): Promise<void> {
         const listUrl = notificationUrl.replace("/fe/service/identity/authStart", "/identity/list");
+        onProgress?.("Xiaomi 2FA: Bestätigungsmethoden werden abgefragt …");
         const listResponse = await this.request(listUrl);
         const list = this.json(await listResponse.text());
         const flag = String(list.flag ?? "");
@@ -183,11 +186,13 @@ export class XiaomiCloudMapClient {
         this.pendingFlag = flag;
         const method = flag === "8" ? "Email" : "Phone";
         const cookieHeader = this.identityCookie();
+        onProgress?.("Xiaomi 2FA: " + (flag === "8" ? "E-Mail-Adresse" : "Telefonnummer") + " wird ermittelt …");
         const optionsResponse = await this.request("https://account.xiaomi.com/identity/auth/verify" + method + "?_flag=" + flag + "&_json=true", {
             headers: { Cookie: cookieHeader }
         });
         const options = this.json(await optionsResponse.text());
         this.maskedDestination = String(flag === "8" ? options.maskedEmail ?? "your email" : options.maskedPhone ?? "your phone");
+        onProgress?.("Xiaomi 2FA: Codeversand wird bei Xiaomi angefordert …");
         const sent = await this.request("https://account.xiaomi.com/identity/auth/send" + method + "Ticket", {
             method: "POST",
             body: new URLSearchParams({ _json: "true", icode: "", retry: "0" }).toString(),
@@ -195,6 +200,7 @@ export class XiaomiCloudMapClient {
         });
         const result = this.json(await sent.text());
         if (result.code !== 0) throw new Error("Xiaomi could not send the verification code (code " + String(result.code ?? "unknown") + ").");
+        onProgress?.("Xiaomi hat den Codeversand angenommen. Ziel: " + this.maskedDestination + ". Bitte Posteingang und Spam prüfen.");
     }
 
     private async finishLogin(location: string): Promise<void> {

@@ -1,7 +1,7 @@
 {
   "common": {
     "name": "roidmi",
-    "version": "0.1.12",
+    "version": "0.1.13",
     "title": "Roidmi",
     "titleLang": {
       "en": "Roidmi",
@@ -77,6 +77,10 @@
       "0.1.12": {
         "en": "Restored the previously working Xiaomi 2FA button and background login flow",
         "de": "Zuvor funktionierenden Xiaomi-2FA-Button und Hintergrund-Anmeldeablauf wiederhergestellt"
+      },
+      "0.1.13": {
+        "en": "Added safe step-by-step Xiaomi 2FA diagnostics",
+        "de": "Sichere Schritt-für-Schritt-Diagnose für Xiaomi-2FA ergänzt"
       }
     },
     "adminUI": {

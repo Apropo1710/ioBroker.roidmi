@@ -519,7 +519,10 @@ class RoidmiAdapter extends Adapter {
                 country: config.cloudCountry || "de",
                 token: config.token,
                 mapName
-            }, verificationCode);
+            }, verificationCode, (message) => {
+                void this.setStateAsync("map.cloudStatus", { val: message, ack: true });
+                this.log.info(message);
+            });
             const rooms = result.metadata.rooms;
             if (!rooms.length) throw new Error("Downloaded map contains no named rooms.");
 
