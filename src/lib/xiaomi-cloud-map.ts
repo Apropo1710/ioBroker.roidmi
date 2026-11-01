@@ -193,12 +193,18 @@ export class XiaomiCloudMapClient {
         const options = this.json(await optionsResponse.text());
         this.maskedDestination = String(flag === "8" ? options.maskedEmail ?? "your email" : options.maskedPhone ?? "your phone");
         onProgress?.("Xiaomi 2FA: Codeversand wird bei Xiaomi angefordert …");
+        const sendCookies = this.cookies.get("ick")
+            ? cookieHeader + "; ick=" + this.cookies.get("ick")
+            : cookieHeader;
         const sent = await this.request("https://account.xiaomi.com/identity/auth/send" + method + "Ticket", {
             method: "POST",
-            body: new URLSearchParams({ _json: "true", icode: "", retry: "0" }).toString(),
-            headers: { "Content-Type": "application/x-www-form-urlencoded", Cookie: cookieHeader }
+            body: new URLSearchParams({ _json: "true", _flag: flag, icode: "", retry: "0" }).toString(),
+            headers: { "Content-Type": "application/x-www-form-urlencoded", Cookie: sendCookies }
         });
         const result = this.json(await sent.text());
+        if (typeof result.captchaURL === "string" && result.captchaURL) {
+            throw new Error("Xiaomi requires an additional CAPTCHA before sending the verification code. The current adapter version cannot yet display this CAPTCHA.");
+        }
         if (result.code !== 0) throw new Error("Xiaomi could not send the verification code (code " + String(result.code ?? "unknown") + ").");
         onProgress?.("Xiaomi hat den Codeversand angenommen. Ziel: " + this.maskedDestination + ". Bitte Posteingang und Spam prüfen.");
     }

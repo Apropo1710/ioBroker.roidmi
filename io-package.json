@@ -1,7 +1,7 @@
 {
   "common": {
     "name": "roidmi",
-    "version": "0.1.15",
+    "version": "0.1.16",
     "title": "Roidmi",
     "titleLang": {
       "en": "Roidmi",
@@ -89,6 +89,10 @@
       "0.1.15": {
         "en": "Prevent adapter self-restart during Xiaomi 2FA login",
         "de": "Adapter-Neustart während der Xiaomi-2FA-Anmeldung verhindert"
+      },
+      "0.1.16": {
+        "en": "Improve Xiaomi 2FA ticket request parameters and detect CAPTCHA challenges",
+        "de": "Xiaomi-2FA-Codeanfrage korrigiert und CAPTCHA-Anforderungen erkannt"
       }
     },
     "adminUI": {
