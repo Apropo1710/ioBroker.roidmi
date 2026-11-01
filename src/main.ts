@@ -162,13 +162,14 @@ class RoidmiAdapter extends Adapter {
             if (!this.client || this.stopping || this.commandRunning) return;
             this.commandRunning = true;
             try {
-                // Conservative V60 profile: one property per RPC, no overlapping cycles or commands.
-                for (const property of properties) {
-                    const result = await this.client.call("get_properties", [{
-                        did: config.did, siid: property.siid, piid: property.piid
-                    }]);
-                    if (!Array.isArray(result)) throw new Error("Unexpected MIoT property response");
-                    const item = result[0] as { code?: number; value?: unknown } | undefined;
+                // Read all status properties in one MIoT RPC to minimize UDP traffic and robot wakeups.
+                const result = await this.client.call("get_properties", properties.map((property) => ({
+                    did: config.did, siid: property.siid, piid: property.piid
+                })));
+                if (!Array.isArray(result)) throw new Error("Unexpected MIoT property response");
+                for (let index = 0; index < properties.length; index++) {
+                    const property = properties[index];
+                    const item = result[index] as { code?: number; value?: unknown } | undefined;
                     if (item?.code === 0 && typeof item.value === "number") {
                         await this.setStateChangedAsync(property.id, { val: item.value, ack: true });
                         if (getRoidmiSetting(property.id)) this.lastKnownSettings[property.id] = item.value;
