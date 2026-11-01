@@ -6,7 +6,7 @@ export interface AdapterConfig {
 
 export function validateConfig(config: AdapterConfig): string[] {
     const errors: string[] = [];
-    if (config.host && !/^(?:\\d{1,3}\\.){3}\\d{1,3}$/.test(config.host)) {
+    if (config.host && !/^(?:\d{1,3}\.){3}\d{1,3}$/.test(config.host)) {
         errors.push("host must be an IPv4 address");
     }
     if (config.pollIntervalSeconds !== undefined &&
