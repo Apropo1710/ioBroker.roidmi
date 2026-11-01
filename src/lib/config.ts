@@ -7,10 +7,10 @@ export interface AdapterConfig {
 
 export function validateConfig(config: AdapterConfig): string[] {
     const errors: string[] = [];
-    if (config.host && !/^(?:\\d{1,3}\\.){3}\\d{1,3}$/.test(config.host)) {
+    if (config.host && !/^(?:\d{1,3}\.){3}\d{1,3}$/.test(config.host)) {
         errors.push("host must be an IPv4 address");
     }
-    if (config.did && !/^\\d{1,20}$/.test(config.did)) {
+    if (config.did && !/^\d{1,20}$/.test(config.did)) {
         errors.push("did must be a numeric Xiaomi device ID");
     }
     if (config.pollIntervalSeconds !== undefined &&
