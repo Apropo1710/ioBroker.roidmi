@@ -7,6 +7,12 @@
       "default": "",
       "help": "Local IPv4 address of the Roidmi EVE Plus"
     },
+    "did": {
+      "type": "text",
+      "label": "Xiaomi device DID",
+      "default": "",
+      "help": "Numeric device ID (DID) from the Xiaomi device details or MIoT logs. Required for MIoT requests."
+    },
     "token": {
       "type": "password",
       "label": "MIoT / miIO token",
