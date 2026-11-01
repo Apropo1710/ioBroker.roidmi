@@ -16,7 +16,8 @@ interface RoidmiAdapterConfig {
 interface MiotPropertyWrite {
     siid: number;
     piid: number;
-    value: number;
+    min: number;
+    max: number;
 }
 
 interface MiotAction {
