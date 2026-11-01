@@ -408,8 +408,8 @@ class RoidmiAdapter extends adapter_core_1.Adapter {
         const code = obj.command === "cloudSubmitCode" && typeof payload.code === "string" ? payload.code.trim() : undefined;
         try {
             if (obj.command === "cloudStartLogin") {
+                // Do not update system.adapter.<instance> during login: changing native config restarts this adapter.
                 this.cloudMapClient.clearSession();
-                await this.clearPersistedCloudSession();
             }
             if (!credentials.username || !credentials.password || !credentials.token) {
                 throw new Error("Bitte Xiaomi-Benutzername, Passwort und Roboter-Token in der Adapterkonfiguration eintragen.");
