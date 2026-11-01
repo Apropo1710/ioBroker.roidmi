@@ -1,3 +1,5 @@
+import { gunzipSync } from "node:zlib";
+
 /**
  * Parser for the Roidmi V60 compressed map payload.
  *
@@ -94,4 +96,15 @@ function positiveNumber(value: unknown, field: string): number {
         throw new Error(`Roidmi map ${field} must be a positive number`);
     }
     return value;
+}
+
+/** Decompresses a Xiaomi Cloud Map Extractor-compatible Roidmi .gz archive and parses its metadata. */
+export function parseRoidmiMapArchive(archive: Uint8Array): RoidmiMapMetadata {
+    let decompressed: Buffer;
+    try {
+        decompressed = gunzipSync(archive);
+    } catch {
+        throw new Error("Roidmi map archive is not valid gzip data");
+    }
+    return parseRoidmiMapPayload(decompressed);
 }
