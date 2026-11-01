@@ -120,6 +120,23 @@ class RoidmiAdapter extends Adapter {
         });
         await this.subscribeStatesAsync("control.cleanRooms");
 
+        await this.setObjectNotExistsAsync("control.refreshTiming", {
+            type: "state",
+            common: { name: "Read saved cleaning schedules and room selections", type: "boolean", role: "button", read: false, write: true, def: false },
+            native: {}
+        });
+        await this.subscribeStatesAsync("control.refreshTiming");
+        await this.setObjectNotExistsAsync("timing.raw", {
+            type: "state",
+            common: { name: "Raw saved Roidmi cleaning schedules (read on demand)", type: "string", role: "json", read: true, write: false },
+            native: { siid: 8, piid: 6 }
+        });
+        await this.setObjectNotExistsAsync("timing.lastUpdate", {
+            type: "state",
+            common: { name: "Last schedule read", type: "string", role: "date", read: true, write: false },
+            native: {}
+        });
+
         await this.setObjectNotExistsAsync("control.importRooms", {
             type: "state",
             common: { name: "Import room map (JSON: mapId and rooms)", type: "string", role: "json", read: false, write: true, def: "" },
@@ -249,6 +266,13 @@ class RoidmiAdapter extends Adapter {
             return;
         }
 
+        const refreshTimingId = this.namespace + ".control.refreshTiming";
+        if (id === refreshTimingId) {
+            if (state.val === true) await this.refreshTiming();
+            await this.setStateAsync("control.refreshTiming", { val: false, ack: true });
+            return;
+        }
+
         const roomPrefix = this.namespace + ".rooms.";
         if (id.startsWith(roomPrefix) && id.endsWith(".clean")) {
             const roomIdText = id.slice(roomPrefix.length, -".clean".length);
@@ -306,6 +330,43 @@ class RoidmiAdapter extends Adapter {
             return;
         }
         await this.setStateAsync("control." + command, { val: false, ack: true });
+    }
+
+    /**
+     * Read the stored schedule JSON only when explicitly requested.
+     * This is deliberately excluded from the fast status polling cycle.
+     */
+    private async refreshTiming(): Promise<void> {
+        const config = this.config as RoidmiAdapterConfig;
+        if (!this.client || !config.did || this.commandRunning) {
+            this.log.warn("Schedule read skipped: device unavailable or another command is running");
+            return;
+        }
+        this.commandRunning = true;
+        try {
+            const result = await this.client.call("get_properties", [{
+                did: config.did, siid: 8, piid: 6
+            }]);
+            if (!Array.isArray(result)) throw new Error("Unexpected MIoT schedule response");
+            const item = result[0] as { code?: number; value?: unknown } | undefined;
+            if (!item || item.code !== 0 || typeof item.value !== "string") {
+                throw new Error("MIoT schedule read failed or returned an unsupported value");
+            }
+            let formatted = item.value;
+            try {
+                formatted = JSON.stringify(JSON.parse(item.value), null, 2);
+            } catch {
+                // Preserve the exact device response if firmware returns non-JSON text.
+            }
+            await this.setStateChangedAsync("timing.raw", { val: formatted, ack: true });
+            await this.setStateChangedAsync("timing.lastUpdate", { val: new Date().toISOString(), ack: true });
+            this.log.info("Saved cleaning schedules read from robot (SIID 8 / PIID 6)");
+        } catch (error) {
+            const message = error instanceof Error ? error.message : "Unknown schedule read error";
+            this.log.warn("Could not read saved cleaning schedules: " + message);
+        } finally {
+            this.commandRunning = false;
+        }
     }
 
     private async sendProperty(stateId: string, property: MiotPropertyWrite, value: number): Promise<void> {
