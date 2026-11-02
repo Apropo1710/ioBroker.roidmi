@@ -175,3 +175,19 @@ Vollständige Historie: https://github.com/Apropo1710/ioBroker.roidmi/commits/ma
 Diesen Text im neuen Chat innerhalb des Projekts verwenden:
 
 > Wir setzen die Entwicklung des ioBroker-Adapters für den Roidmi EVE Plus fort. Bitte lies zuerst `docs/PROJECT_HANDOVER.md` im GitHub-Repository Apropo1710/ioBroker.roidmi vollständig und nutze sie als verbindliche technische Übergabe. Aktueller Stand: main, Build-Commit fd5baf50. Lokale Steuerung und gebündeltes 30-Sekunden-Polling sind implementiert; die Xiaomi-Cloud-2FA ist noch nicht live bestätigt. Der letzte Fehler war „Xiaomi verification completed but no cloud security token was returned“; Commit 97783d7 erfasst Extension-Pragma auf allen Redirect-Hops. Arbeite direkt am Repository weiter, prüfe den aktuellen Stand und mache die Xiaomi-Authentifizierung mit Tests fertig. Änderungen möglichst bündeln und erst nach erfolgreichem CI- und Distributionsbuild einen Installationsstand nennen. Keine Zugangsdaten erfragen oder loggen.
+
+
+## 10. Live-Test nach Installation – 02.11.2026 (deutsche Zeit)
+
+Adapterversion **0.1.29** wurde auf dem produktiven ioBroker installiert und gestartet. Der Benutzer hat folgende Live-Datenpunkte/Screenshots bestätigt:
+
+- Adapterstart im Log erfolgreich; Raumkarte geladen: **5 Räume**.
+- `info.connection = true`.
+- `info.connectionText = Local MIoT connection established`.
+- `info.lastPoll` wird aktualisiert; `info.pollCount` stieg auf mindestens **3**.
+- Akku **100 %**, Fehlercode **0 / No error**, Roboterstatus **9** (docked/fully charged, empirische Zuordnung), Charging-Wert **1** (Bedeutung weiterhin nicht endgültig verifiziert), Saugstufe **2**, Wasserstufe **2**.
+- Die Basis-Statusabfrage funktioniert live. **Steuerbefehle und Raumreinigung sind weiterhin nicht live verifiziert.** Noch keinen Start-/Pause-/Dock-/Raumreinigungsbefehl als erfolgreich bezeichnen.
+- Xiaomi-Cloud-2FA-Sperre ist am 02.11.2026 noch aktiv. Nutzer plant, Cloud-Anmeldung und Cloud-Funktion erst **morgen (03.11.2026)** fortzusetzen. Bis dahin keine weiteren Login-/Code-Anfragen und keine Cloud-Live-Tests.
+- Letzter Quellcode-Commit mit Befehlsfehlerklassifizierung: `129b5ec77168815fef6bcd60f52959665d4bac44`. CI und Distribution Build für diesen Commit sind beide erfolgreich.
+
+**Nächster sinnvoller Ablauf:** Am 03.11.2026 zuerst die Xiaomi-2FA-Sperre beim Nutzer bestätigen lassen, dann einen einzelnen Cloud-Login-Versuch durchführen. Vorher lokale Statusabfrage nicht unnötig intensivieren; Standard-Polling von 30 Sekunden beibehalten.
