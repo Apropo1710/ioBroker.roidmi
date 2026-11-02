@@ -38,6 +38,12 @@ export declare class XiaomiCloudMapClient {
     private identityCookie;
     private startTwoFactor;
     private finishLogin;
+    /**
+     * Xiaomi serviceToken is not permanent. Renew it using the long-lived
+     * account passToken before falling back to a password/2FA login.
+     * This is the same flow used by current Xiaomi cloud integrations.
+     */
+    private renewSessionWithPassToken;
     private api;
     private request;
     private json;

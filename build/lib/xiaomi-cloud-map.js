@@ -266,9 +266,40 @@ class XiaomiCloudMapClient {
             throw new Error("Xiaomi verification completed but session data is incomplete (missing " + missing.filter(Boolean).join(", ") + ").");
         }
     }
-    async api(url, params) {
-        const millis = Date.now(), nonce = Buffer.concat([(0, node_crypto_1.randomBytes)(8), Buffer.from(Math.floor(millis / 60000).toString(16).padStart(8, "0"), "hex")]).toString("base64");
-        const signed = signedNonce(this.ssecurity, nonce), enc = { ...params };
+    /**
+     * Xiaomi serviceToken is not permanent. Renew it using the long-lived
+     * account passToken before falling back to a password/2FA login.
+     * This is the same flow used by current Xiaomi cloud integrations.
+     */
+    async renewSessionWithPassToken() {
+        if (!this.userId || !this.passToken) {
+            throw new Error("Xiaomi Cloud session expired and no passToken is available; sign in again.");
+        }
+        const response = await this.request("https://account.xiaomi.com/pass/serviceLogin?sid=xiaomiio&_json=true", {
+            headers: {
+                Cookie: `userId=${encodeURIComponent(this.userId)}; passToken=${encodeURIComponent(this.passToken)}`
+            }
+        });
+        const auth = this.json(await response.text());
+        if (typeof auth.location !== "string" || !auth.location) {
+            throw new Error("Xiaomi passToken renewal was rejected; interactive sign-in may be required.");
+        }
+        if (typeof auth.ssecurity === "string")
+            this.ssecurity = auth.ssecurity;
+        if (typeof auth.userId === "string" || typeof auth.userId === "number")
+            this.userId = String(auth.userId);
+        if (typeof auth.passToken === "string" && auth.passToken)
+            this.passToken = auth.passToken;
+        await this.finishLogin(auth.location);
+    }
+    async api(url, params, allowRefresh = true) {
+        const millis = Date.now();
+        const nonce = Buffer.concat([
+            (0, node_crypto_1.randomBytes)(8),
+            Buffer.from(Math.floor(millis / 60000).toString(16).padStart(8, "0"), "hex")
+        ]).toString("base64");
+        const signed = signedNonce(this.ssecurity, nonce);
+        const enc = { ...params };
         enc.rc4_hash__ = encSignature(url, "POST", signed, enc);
         for (const [k, v] of Object.entries(enc))
             enc[k] = crypt(signed, Buffer.from(v)).toString("base64");
@@ -281,10 +312,27 @@ class XiaomiCloudMapClient {
             `serviceToken=${this.serviceToken}`,
             "locale=en_GB", "timezone=GMT+01:00", "channel=MI_APP_STORE"
         ].join("; ");
-        const response = await this.request(url + "?" + query.toString(), {
-            method: "POST",
-            headers: { "Accept-Encoding": "identity", "Content-Type": "application/x-www-form-urlencoded", "x-xiaomi-protocal-flag-cli": "PROTOCAL-HTTP2", "MIOT-ENCRYPT-ALGORITHM": "ENCRYPT-RC4", Cookie: cookieHeader }
-        });
+        let response;
+        try {
+            response = await this.request(url + "?" + query.toString(), {
+                method: "POST",
+                headers: {
+                    "Accept-Encoding": "identity",
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    "x-xiaomi-protocal-flag-cli": "PROTOCAL-HTTP2",
+                    "MIOT-ENCRYPT-ALGORITHM": "ENCRYPT-RC4",
+                    Cookie: cookieHeader
+                }
+            });
+        }
+        catch (error) {
+            const message = error instanceof Error ? error.message : String(error);
+            if (allowRefresh && /HTTP 401|HTTP 403/.test(message)) {
+                await this.renewSessionWithPassToken();
+                return this.api(url, params, false);
+            }
+            throw error;
+        }
         const plain = crypt(signed, Buffer.from(await response.text(), "base64"), true).toString("utf8");
         let parsed;
         try {
@@ -293,8 +341,19 @@ class XiaomiCloudMapClient {
         catch {
             throw new Error("Xiaomi cloud returned an unreadable encrypted response");
         }
-        if (parsed?.code !== 0)
+        const authExpired = parsed?.code === 2 || parsed?.code === 3 ||
+            parsed?.message === "SERVICETOKEN_EXPIRED" ||
+            parsed?.message === "auth err";
+        if (allowRefresh && authExpired) {
+            await this.renewSessionWithPassToken();
+            return this.api(url, params, false);
+        }
+        if (parsed?.code !== 0) {
             throw new Error("Xiaomi cloud API request failed (code " + String(parsed?.code ?? "unknown") + ").");
+        }
+        if (parsed?.message === "SERVICETOKEN_EXPIRED" || parsed?.message === "auth err") {
+            throw new Error("Xiaomi Cloud serviceToken expired and could not be renewed.");
+        }
         return parsed;
     }
     async request(url, init = {}) {
