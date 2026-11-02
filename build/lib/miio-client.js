@@ -17,8 +17,7 @@ class MiioClient {
         const timeoutMs = timeoutOverrideMs ?? this.options.timeoutMs ?? 4000;
         const socket = (0, node_dgram_1.createSocket)("udp4");
         const startedAt = Date.now();
-        const debug = (message) => { if (this.options.debug)
-            this.options.onDebug?.(`${method}: +${Date.now() - startedAt}ms ${message}`); };
+        const debug = (message) => { this.options.onDebug?.(`${method}: +${Date.now() - startedAt}ms ${message}`); };
         let stage = "handshake";
         debug(`starting RPC to ${this.options.host}:${port} (timeout ${timeoutMs}ms)`);
         return new Promise((resolve, reject) => {

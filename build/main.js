@@ -63,7 +63,7 @@ class RoidmiAdapter extends adapter_core_1.Adapter {
             this.log.info(message);
             return;
         }
-        this.client = new miio_client_1.MiioClient({ host: config.host, token: config.token, debug: config.debugMiio === true, onDebug: (message) => this.log.debug("[miIO] " + message) });
+        this.client = new miio_client_1.MiioClient({ host: config.host, token: config.token, debug: true, onDebug: (message) => this.log.debug("[miIO] " + message) });
         if (config.cloudSession) {
             try {
                 this.cloudMapClient.restoreSession(this.decrypt(config.cloudSession));
