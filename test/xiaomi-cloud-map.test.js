@@ -168,3 +168,47 @@ test('Xiaomi cloud session can be exported and restored without another login', 
   await assert.rejects(() => second.fetchMap(validOptions()), /unreadable encrypted response/);
   assert.equal(loginRequests, 0);
 });
+
+
+test('cloud actions require a restored or authenticated session before sending requests', async () => {
+  const client = new XiaomiCloudMapClient();
+  await assert.rejects(
+    () => client.callAction('de', { did: 'robot-did', siid: 8, aiid: 8 }),
+    /Xiaomi Cloud session is unavailable/,
+  );
+});
+
+test('cloud action sends MIoT action to the encrypted action endpoint when session exists', async (t) => {
+  const originalFetch = global.fetch;
+  const calls = [];
+  global.fetch = async (url, init) => {
+    calls.push({ url: String(url), method: init.method || 'GET', headers: new Headers(init.headers) });
+    // Deliberately malformed encrypted response: endpoint/request can be verified
+    // without authenticating against Xiaomi or making a live robot action.
+    return response('not-valid-base64');
+  };
+  t.after(() => { global.fetch = originalFetch; });
+
+  const client = new XiaomiCloudMapClient();
+  client.restoreSession(JSON.stringify({
+    cookies: [['userId', '123'], ['serviceToken', 'test-service-token']],
+    ssecurity: Buffer.from('test-security').toString('base64'),
+    userId: '123',
+    serviceToken: 'test-service-token',
+    cUserId: '456',
+    passToken: 'test-pass',
+  }));
+
+  await assert.rejects(
+    () => client.callAction('de', { did: 'robot-did', siid: 8, aiid: 8, in: [] }),
+    /unreadable encrypted response/,
+  );
+  assert.equal(calls.length, 1);
+  assert.match(calls[0].url, /^https:\/\/de\.api\.io\.mi\.com\/app\/miotspec\/action\?/);
+  assert.equal(calls[0].method, 'POST');
+  assert.equal(calls[0].headers.get('MIOT-ENCRYPT-ALGORITHM'), 'ENCRYPT-RC4');
+  // The action arguments are encrypted; sensitive/session data is not logged or
+  // exposed in a plain URL query parameter.
+  assert.doesNotMatch(calls[0].url, /robot-did/);
+  assert.doesNotMatch(calls[0].url, /test-service-token/);
+});
