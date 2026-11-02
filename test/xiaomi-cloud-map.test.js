@@ -236,7 +236,8 @@ test('completed Xiaomi 2FA session survives export and restore without another v
       return response('&&&START&&&{"code":0}');
     }
     if (u.endsWith('/identity/auth/verifyEmail')) {
-      assert.match(String(init.body || ''), /ticket=123456/);\n      assert.match(String(init.body || ''), /trust=true/);
+      assert.match(String(init.body || ''), /ticket=123456/);
+      assert.match(String(init.body || ''), /trust=true/);
       return response('&&&START&&&{"location":"https://sts.example/first"}');
     }
     if (u === 'https://sts.example/first') {
