@@ -1,7 +1,7 @@
 {
   "common": {
     "name": "roidmi",
-    "version": "0.1.22",
+    "version": "0.1.23",
     "title": "Roidmi",
     "titleLang": {
       "en": "Roidmi",
@@ -109,6 +109,10 @@
       "0.1.22": {
         "en": "Add empirical readable status labels",
         "de": "Empirische Klartext-Statusanzeigen ergänzt"
+      },
+      "0.1.23": {
+        "en": "Add readable robot fault-code diagnostics",
+        "de": "Lesbare Klartext-Diagnose für Roboterfehler ergänzt"
       }
     },
     "adminUI": {
