@@ -52,6 +52,7 @@ export class XiaomiCloudMapClient {
     private cUserId="";
     private passToken="";
     private pendingFlag="";
+    private pendingTrust=false;
     private maskedDestination="";
     private readonly agent="Android-7.1.1-1.0.0-ROIDMIIOBROKER APP/xiaomi.smarthome APPV/62830";
 
@@ -85,7 +86,7 @@ export class XiaomiCloudMapClient {
     public clearSession(): void {
         this.cookies.restore([]);
         this.ssecurity = ""; this.userId = ""; this.serviceToken = "";
-        this.cUserId = ""; this.passToken = ""; this.pendingFlag = ""; this.maskedDestination = "";
+        this.cUserId = ""; this.passToken = ""; this.pendingFlag = ""; this.pendingTrust = false; this.maskedDestination = "";
     }
 
     public async callAction(country: string, action: XiaomiCloudAction): Promise<unknown> {
@@ -109,7 +110,7 @@ export class XiaomiCloudMapClient {
                 // and the identity_session cookie established by identity/list.
                 const verify = await this.request("https://account.xiaomi.com/identity/auth/verify" + method, {
                     method: "POST",
-                    body: new URLSearchParams({ _flag: this.pendingFlag, ticket: verificationCode.trim(), trust: "false", _json: "true" }).toString(),
+                    body: new URLSearchParams({ _flag: this.pendingFlag, ticket: verificationCode.trim(), trust: this.pendingTrust ? "true" : "false", _json: "true" }).toString(),
                     headers: { "Content-Type": "application/x-www-form-urlencoded", Cookie: this.identityCookie() }
                 });
                 const verified = this.json(await verify.text());
@@ -196,6 +197,8 @@ export class XiaomiCloudMapClient {
             throw new Error("Xiaomi 2FA response incomplete (" + reason + ").");
         }
         this.pendingFlag = flag;
+        // Only request Xiaomi trusted-device handling when the account explicitly exposes it.
+        this.pendingTrust = list.trustCheckBox === true || list.trustCheckBox === "true";
         const method = flag === "8" ? "Email" : "Phone";
         const cookieHeader = "identity_session=" + identitySession;
         onProgress?.("Xiaomi 2FA: " + (flag === "8" ? "E-Mail-Adresse" : "Telefonnummer") + " wird ermittelt …");
