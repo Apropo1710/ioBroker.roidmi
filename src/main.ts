@@ -2,7 +2,7 @@ import { Adapter } from "@iobroker/adapter-core";
 import { MiioClient } from "./lib/miio-client";
 import { parseRoomCleaningRequest } from "./lib/room-cleaning";
 import { validateConfig } from "./lib/config";
-import { buildVacuumAction, getActionResponseError } from "./lib/roidmi-actions";
+import { buildVacuumAction, getActionResponseError, getActionFailureStatus } from "./lib/roidmi-actions";
 import { parseRoomMapConfig, RoomMapConfig } from "./lib/room-map";
 import { getRoidmiSetting } from "./lib/roidmi-settings";
 import { XiaomiCloudMapClient } from "./lib/xiaomi-cloud-map";
@@ -605,11 +605,11 @@ class RoidmiAdapter extends Adapter {
             this.log.debug("MIoT action response: " + JSON.stringify(result));
         } catch (error) {
             const message = error instanceof Error ? error.message : "Unknown command error";
-            const timedOut = message === "miIO request timed out";
-            const status = timedOut
-                ? "Timeout: no MIoT acknowledgement; command outcome unknown (it may have reached the robot)"
-                : "Failed: " + message;
-            this.log.warn("Robot command " + command + (timedOut ? " timed out without MIoT acknowledgement; command outcome is unknown" : " failed: " + message));
+            const failure = getActionFailureStatus(error, config.cloudControlEnabled ? "cloud" : "local");
+            const status = failure.status;
+            this.log.warn("Robot command " + command + (failure.uncertain
+                ? " failed without confirmation; command outcome is unknown"
+                : " failed: " + message));
             await this.setStateChangedAsync("control.lastCommand", { val: command, ack: true });
             await this.setStateChangedAsync("control.lastCommandStatus", { val: status, ack: true });
             await this.setStateChangedAsync("control.lastCommandTime", { val: new Date().toISOString(), ack: true });
