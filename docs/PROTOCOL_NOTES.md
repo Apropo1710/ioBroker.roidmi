@@ -68,3 +68,26 @@ Diese Zuordnungen stammen aus dem veröffentlichten MIoT-Profil und dem openHAB-
 Quellen:
 - python-miio V60-Mapping und Timing-Format: https://python-miio.readthedocs.io/en/latest/_modules/miio/integrations/roidmi/vacuum/roidmivacuum_miot.html
 - Bericht zu offenen lokalen Raumreinigungsaufrufen: https://github.com/al-one/hass-xiaomi-miot/issues/2969
+
+
+## Live-Beobachtungen am Roidmi EVE Plus (02.11.2026)
+
+Diese Werte stammen aus Screenshots des realen Geräts. Sie sind Beobachtungen, keine endgültig bestätigte Enum-Tabelle.
+
+| Situation | Akku | charging (SIID 3 / PIID 2) | state (SIID 2 / PIID 1) | Fehlercode | Beobachtung |
+|---|---:|---:|---:|---:|---|
+| Angedockt, voll geladen | 100 % | 1 | 9 | 0 | Xiaomi Home zeigte Ladung/voll geladen. |
+| Reinigung läuft | 98 % | 2 | 4 | 0 | Reinigung war in der Original-App aktiv. |
+| Nach Reinigung/Unterbrechung außerhalb der Station | 94 % | 2 | 3 | 0 | App zeigte „aussetzen“ bzw. Standby-ähnlich. |
+| Rückfahrt zur Station | 94 % | 2 | 5 | 0 | Nutzer vermutet Rückkehrstatus; noch nicht endgültig verifiziert. |
+| Andocken plus automatische Behälterabsaugung | 99 % | 1 | 6 | 0 | Roboter stand in der Station; Absaugung erfolgte nach Andocken. |
+| Später angedockt und voll geladen | 100 % | 1 | 9 | 0 | Status erneut beobachtet. |
+
+### Vorläufige Interpretation
+- `charging=1` tritt angedockt bei 99 % und 100 % auf. Das ist kein Beweis für aktives Laden; vorerst als Rohwert „Lade-/Dockstatus“ behandeln, nicht eindeutig als „Akku lädt“ übersetzen.
+- `state=5` passt zur beobachteten Rückkehr, ist aber noch eine Hypothese.
+- `state=6` trat nach dem Andocken im Zusammenhang mit der automatischen Staubbehälterabsaugung auf.
+- `state=9` wurde bei vollständig geladenem, angedocktem Roboter beobachtet.
+- `state=3` trat nach dem Ende/Abbruch außerhalb der Station auf. Daraus folgt keine bestätigte Fortsetzen-Funktion.
+- Nutzerbeobachtung: Fortsetzen nach einer Unterbrechung könnte bei diesem Roidmi eine neue Reinigung starten statt die Route wiederaufzunehmen. Bis zur Verifikation darf der Adapter keine Wiederaufnahme der vorherigen Route versprechen.
+- Weitere Tests bevorzugt passiv mit den normalen Statuspolls. Keine wiederholten Stop-/Resume-/Dock-Befehle nur zum Erzeugen von Statuswerten.
