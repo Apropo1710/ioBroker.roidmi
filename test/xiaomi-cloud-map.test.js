@@ -142,7 +142,7 @@ test('Xiaomi 2FA reports sanitized server tips without exposing response data', 
   t.after(() => { global.fetch = originalFetch; });
   await assert.rejects(
     () => new XiaomiCloudMapClient().fetchMap(validOptions()),
-    /code 70022: Please try again later soon/,
+    /code 70022\): Please try again later soon/,
   );
 });
 
