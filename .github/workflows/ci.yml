@@ -1,0 +1,27 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "build/**"
+  pull_request:
+    branches: [main]
+    paths-ignore:
+      - "build/**"
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm ci
+      - run: npm run build
+      - run: npm test
+      - name: Verify installable package contents
+        run: |
+          npm pack --dry-run --json > pack.json
+          node -e "const p=require('./pack.json')[0]; const files=p.files.map(f=>f.path); for (const f of ['build/main.js','build/lib/miio-client.js']) { if (!files.includes(f)) throw new Error('Missing packaged file: '+f); }"

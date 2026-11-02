@@ -1,0 +1,17 @@
+/** Verified Roidmi V60 MIoT action mappings. */
+export interface VacuumAction {
+    siid: number;
+    aiid: number;
+    in?: unknown[];
+}
+export type VacuumCommand = "start" | "pause" | "resume" | "dock" | "stop";
+/** Start whole-map cleaning; pause/resume are custom actions; dock uses Battery. */
+export function buildVacuumAction(command: VacuumCommand): VacuumAction {
+    switch (command) {
+        case "start": return { siid: 14, aiid: 1, in: [1, ""] };
+        case "pause": return { siid: 8, aiid: 8 };
+        case "resume": return { siid: 8, aiid: 5 };
+        case "dock": return { siid: 3, aiid: 1 };
+        case "stop": return { siid: 2, aiid: 2 };
+    }
+}
