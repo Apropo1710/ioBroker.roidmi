@@ -7,3 +7,5 @@ export interface VacuumAction {
 export type VacuumCommand = "start" | "pause" | "resume" | "dock" | "stop";
 /** Start whole-map cleaning; pause/resume are custom actions; dock uses Battery. */
 export declare function buildVacuumAction(command: VacuumCommand): VacuumAction;
+/** Returns an error message for a non-success MIoT action response, if present. */
+export declare function getActionResponseError(response: unknown): string | null;
