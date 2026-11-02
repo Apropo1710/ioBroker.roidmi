@@ -13,6 +13,7 @@ interface RoidmiAdapterConfig {
     did?: string;
     token?: string;
     pollIntervalSeconds?: number;
+    debugMiio?: boolean;
     cloudEnabled?: boolean;
     cloudUsername?: string;
     cloudPassword?: string;
@@ -92,7 +93,7 @@ class RoidmiAdapter extends Adapter {
             return;
         }
 
-        this.client = new MiioClient({ host: config.host, token: config.token });
+        this.client = new MiioClient({ host: config.host, token: config.token, debug: config.debugMiio === true, onDebug: (message) => this.log.debug("[miIO] " + message) });
         if (config.cloudSession) {
             try {
                 this.cloudMapClient.restoreSession(this.decrypt(config.cloudSession));

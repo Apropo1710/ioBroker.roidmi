@@ -162,6 +162,18 @@
       "oid": "map.cloudStatus",
       "sm": 12,
       "newLine": true
+    },
+    "debugMiio": {
+      "type": "checkbox",
+      "label": {
+        "de": "MIoT-Debugprotokollierung aktivieren",
+        "en": "Enable MIoT debug logging"
+      },
+      "default": false,
+      "help": {
+        "de": "Nur zur Fehlersuche einschalten. Protokolliert Ablauf, Zeitpunkte und Paketgrößen, aber keine Tokens oder Paket-Inhalte. Danach wieder ausschalten.",
+        "en": "Enable only for troubleshooting. Logs protocol stages, timing and packet sizes, but no tokens or packet contents. Turn off afterward."
+      }
     }
   },
   "i18n": true
