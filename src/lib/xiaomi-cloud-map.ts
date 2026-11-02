@@ -3,6 +3,7 @@ import { parseRoidmiMapArchive, RoidmiMapMetadata } from "./roidmi-map";
 
 export interface XiaomiCloudMapOptions { username: string; password: string; country: string; token: string; mapName: string; }
 export interface XiaomiCloudMapResult { metadata: RoidmiMapMetadata; mapName: string; deviceId: string; userId: string; }
+export interface XiaomiCloudAction { did: string; siid: number; aiid: number; in?: unknown[]; }
 
 class CookieStore {
     private readonly values = new Map<string, string>();
@@ -85,6 +86,17 @@ export class XiaomiCloudMapClient {
         this.cookies.restore([]);
         this.ssecurity = ""; this.userId = ""; this.serviceToken = "";
         this.cUserId = ""; this.passToken = ""; this.pendingFlag = ""; this.maskedDestination = "";
+    }
+
+    public async callAction(country: string, action: XiaomiCloudAction): Promise<unknown> {
+        if (!this.hasSession()) throw new Error("Xiaomi Cloud session is unavailable; sign in and complete verification first.");
+        const base = `https://${country === "cn" ? "" : country + "."}api.io.mi.com/app`;
+        const response = await this.api(base + "/miotspec/action", {
+            data: JSON.stringify({ params: {
+                did: action.did, siid: action.siid, aiid: action.aiid, in: action.in ?? []
+            } })
+        });
+        return response?.result ?? response;
     }
 
     public async fetchMap(o:XiaomiCloudMapOptions, verificationCode?: string, onProgress?: (message: string) => void):Promise<XiaomiCloudMapResult>{

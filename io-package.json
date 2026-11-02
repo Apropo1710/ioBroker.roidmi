@@ -1,7 +1,7 @@
 {
   "common": {
     "name": "roidmi",
-    "version": "0.1.28",
+    "version": "0.1.29",
     "title": "Roidmi",
     "titleLang": {
       "en": "Roidmi",
@@ -133,6 +133,10 @@
       "0.1.28": {
         "de": "MIoT-Aktions-Timeouts als unbestätigten Ausgang kennzeichnen",
         "en": "Report MIoT action timeouts as unconfirmed outcomes"
+      },
+      "0.1.29": {
+        "de": "Optionaler Xiaomi-Cloud-Transport für Roboteraktionen",
+        "en": "Optional Xiaomi Cloud transport for robot actions"
       }
     },
     "adminUI": {
@@ -155,6 +159,7 @@
     "cloudPassword": "",
     "cloudCountry": "de",
     "cloudSession": "",
-    "debugMiio": false
+    "debugMiio": false,
+    "cloudControlEnabled": false
   }
 }

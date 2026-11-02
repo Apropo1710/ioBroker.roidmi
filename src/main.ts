@@ -14,6 +14,7 @@ interface RoidmiAdapterConfig {
     token?: string;
     pollIntervalSeconds?: number;
     cloudEnabled?: boolean;
+    cloudControlEnabled?: boolean;
     cloudUsername?: string;
     cloudPassword?: string;
     cloudCountry?: string;
@@ -586,16 +587,21 @@ class RoidmiAdapter extends Adapter {
 
         this.commandRunning = true;
         try {
-            const result = await this.client.call("action", [{
-                did: config.did, siid: action.siid, aiid: action.aiid,
-                ...(action.in ? { in: action.in } : {})
-            }]);
+            const result = config.cloudControlEnabled
+                ? await this.cloudMapClient.callAction(config.cloudCountry || "de", {
+                    did: config.did, siid: action.siid, aiid: action.aiid,
+                    ...(action.in ? { in: action.in } : {})
+                })
+                : await this.client.call("action", [{
+                    did: config.did, siid: action.siid, aiid: action.aiid,
+                    ...(action.in ? { in: action.in } : {})
+                }]);
             const responseError = getActionResponseError(result);
             if (responseError) throw new Error(responseError);
             await this.setStateChangedAsync("control.lastCommand", { val: command, ack: true });
             await this.setStateChangedAsync("control.lastCommandStatus", { val: "Accepted by robot", ack: true });
             await this.setStateChangedAsync("control.lastCommandTime", { val: new Date().toISOString(), ack: true });
-            this.log.info("Robot command " + command + " accepted by MIoT");
+            this.log.info("Robot command " + command + " accepted by " + (config.cloudControlEnabled ? "Xiaomi Cloud MIoT" : "local MIoT"));
             this.log.debug("MIoT action response: " + JSON.stringify(result));
         } catch (error) {
             const message = error instanceof Error ? error.message : "Unknown command error";

@@ -162,6 +162,18 @@
       "oid": "map.cloudStatus",
       "sm": 12,
       "newLine": true
+    },
+    "cloudControlEnabled": {
+      "type": "checkbox",
+      "label": {
+        "de": "Steuerbefehle über Xiaomi Cloud senden",
+        "en": "Send control commands via Xiaomi Cloud"
+      },
+      "default": false,
+      "help": {
+        "de": "Nur aktivieren, wenn die Xiaomi-Cloud-Anmeldung erfolgreich ist. Steuerbefehle werden dann über die Cloud statt lokal gesendet. Statusabfragen bleiben lokal.",
+        "en": "Enable only after Xiaomi Cloud login succeeds. Commands will use cloud transport instead of LAN; status polling remains local."
+      }
     }
   },
   "i18n": true
