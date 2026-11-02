@@ -84,6 +84,7 @@ class RoidmiAdapter extends adapter_core_1.Adapter {
             { id: "waterLevel", siid: 8, piid: 11, name: "Water level", min: 0, max: 4 }
         ];
         await this.setObjectNotExistsAsync("stateText", { type: "state", common: { name: "Vacuum state (human-readable, empirical)", type: "string", role: "text", read: true, write: false }, native: {} });
+        await this.setObjectNotExistsAsync("errorCodeText", { type: "state", common: { name: "Robot error (human-readable)", type: "string", role: "text", read: true, write: false }, native: {} });
         await this.setObjectNotExistsAsync("chargingText", { type: "state", common: { name: "Charging state (human-readable, empirical)", type: "string", role: "text", read: true, write: false }, native: {} });
         for (const property of properties) {
             await this.setObjectNotExistsAsync(property.id, {
@@ -185,6 +186,8 @@ class RoidmiAdapter extends adapter_core_1.Adapter {
                         await this.setStateChangedAsync(property.id, { val: item.value, ack: true });
                         if (property.id === "state")
                             await this.setStateChangedAsync("stateText", { val: (0, roidmi_status_1.getVacuumStateText)(item.value), ack: true });
+                        if (property.id === "errorCode")
+                            await this.setStateChangedAsync("errorCodeText", { val: (0, roidmi_status_1.getRoidmiErrorText)(item.value), ack: true });
                         if (property.id === "charging")
                             await this.setStateChangedAsync("chargingText", { val: (0, roidmi_status_1.getChargingStateText)(item.value), ack: true });
                         if ((0, roidmi_settings_1.getRoidmiSetting)(property.id))
