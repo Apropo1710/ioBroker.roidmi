@@ -599,11 +599,11 @@ class RoidmiAdapter extends adapter_core_1.Adapter {
         }
         catch (error) {
             const message = error instanceof Error ? error.message : "Unknown command error";
-            const timedOut = message === "miIO request timed out";
-            const status = timedOut
-                ? "Timeout: no MIoT acknowledgement; command outcome unknown (it may have reached the robot)"
-                : "Failed: " + message;
-            this.log.warn("Robot command " + command + (timedOut ? " timed out without MIoT acknowledgement; command outcome is unknown" : " failed: " + message));
+            const failure = (0, roidmi_actions_1.getActionFailureStatus)(error, config.cloudControlEnabled ? "cloud" : "local");
+            const status = failure.status;
+            this.log.warn("Robot command " + command + (failure.uncertain
+                ? " failed without confirmation; command outcome is unknown"
+                : " failed: " + message));
             await this.setStateChangedAsync("control.lastCommand", { val: command, ack: true });
             await this.setStateChangedAsync("control.lastCommandStatus", { val: status, ack: true });
             await this.setStateChangedAsync("control.lastCommandTime", { val: new Date().toISOString(), ack: true });

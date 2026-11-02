@@ -9,3 +9,8 @@ export type VacuumCommand = "start" | "pause" | "resume" | "dock" | "stop";
 export declare function buildVacuumAction(command: VacuumCommand): VacuumAction;
 /** Returns an error message for a non-success MIoT action response, if present. */
 export declare function getActionResponseError(response: unknown): string | null;
+/** Classifies command failures without retrying potentially delivered actions. */
+export declare function getActionFailureStatus(error: unknown, transport: "local" | "cloud"): {
+    status: string;
+    uncertain: boolean;
+};

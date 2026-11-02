@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.buildVacuumAction = buildVacuumAction;
 exports.getActionResponseError = getActionResponseError;
+exports.getActionFailureStatus = getActionFailureStatus;
 /** Start whole-map cleaning; pause/resume are custom actions; dock uses Battery. */
 function buildVacuumAction(command) {
     switch (command) {
@@ -21,4 +22,22 @@ function getActionResponseError(response) {
     if (typeof code === "number" && code !== 0)
         return "MIoT action rejected (code " + code + ")";
     return null;
+}
+/** Classifies command failures without retrying potentially delivered actions. */
+function getActionFailureStatus(error, transport) {
+    const message = error instanceof Error ? error.message : "Unknown command error";
+    const normalized = message.toLowerCase();
+    const timedOut = normalized.includes("timeout") || normalized.includes("timed out") || normalized.includes("etimedout");
+    if (timedOut) {
+        return {
+            status: transport === "cloud"
+                ? "Timeout: Xiaomi Cloud did not confirm the command; outcome unknown (it may have reached the robot)"
+                : "Timeout: no MIoT acknowledgement; command outcome unknown (it may have reached the robot)",
+            uncertain: true
+        };
+    }
+    if (transport === "cloud" && normalized.includes("session is unavailable")) {
+        return { status: "Cloud session unavailable: sign in and complete Xiaomi verification first", uncertain: false };
+    }
+    return { status: "Failed: " + message, uncertain: false };
 }
