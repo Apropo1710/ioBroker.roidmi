@@ -1,7 +1,7 @@
 {
   "common": {
     "name": "roidmi",
-    "version": "0.1.26",
+    "version": "0.1.27",
     "title": "Roidmi",
     "titleLang": {
       "en": "Roidmi",
@@ -125,6 +125,10 @@
       "0.1.26": {
         "de": "Debug-Konfigurationsfeld vereinfacht",
         "en": "Simplify debug configuration label"
+      },
+      "0.1.27": {
+        "de": "Redundante Debug-Checkbox entfernt; Instanz-Log-Level steuert Debug",
+        "en": "Remove redundant debug checkbox; instance log level controls debug"
       }
     },
     "adminUI": {
