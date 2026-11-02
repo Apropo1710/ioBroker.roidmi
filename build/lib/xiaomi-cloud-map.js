@@ -99,6 +99,17 @@ class XiaomiCloudMapClient {
         this.pendingFlag = "";
         this.maskedDestination = "";
     }
+    async callAction(country, action) {
+        if (!this.hasSession())
+            throw new Error("Xiaomi Cloud session is unavailable; sign in and complete verification first.");
+        const base = `https://${country === "cn" ? "" : country + "."}api.io.mi.com/app`;
+        const response = await this.api(base + "/miotspec/action", {
+            data: JSON.stringify({ params: {
+                    did: action.did, siid: action.siid, aiid: action.aiid, in: action.in ?? []
+                } })
+        });
+        return response?.result ?? response;
+    }
     async fetchMap(o, verificationCode, onProgress) {
         if (!o.username.trim() || !o.password || !o.mapName.trim())
             throw new Error("Xiaomi cloud username, password and map name are required");

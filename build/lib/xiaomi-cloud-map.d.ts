@@ -12,6 +12,12 @@ export interface XiaomiCloudMapResult {
     deviceId: string;
     userId: string;
 }
+export interface XiaomiCloudAction {
+    did: string;
+    siid: number;
+    aiid: number;
+    in?: unknown[];
+}
 export declare class XiaomiCloudMapClient {
     private readonly cookies;
     private ssecurity;
@@ -26,6 +32,7 @@ export declare class XiaomiCloudMapClient {
     exportSession(): string;
     restoreSession(serialized: string): void;
     clearSession(): void;
+    callAction(country: string, action: XiaomiCloudAction): Promise<unknown>;
     fetchMap(o: XiaomiCloudMapOptions, verificationCode?: string, onProgress?: (message: string) => void): Promise<XiaomiCloudMapResult>;
     private identityCookie;
     private startTwoFactor;

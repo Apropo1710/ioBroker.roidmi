@@ -14,9 +14,7 @@ function buildVacuumAction(command) {
 }
 /** Returns an error message for a non-success MIoT action response, if present. */
 function getActionResponseError(response) {
-    if (!Array.isArray(response))
-        return null;
-    const item = response[0];
+    const item = Array.isArray(response) ? response[0] : response;
     if (!item || typeof item !== "object" || !("code" in item))
         return null;
     const code = item.code;
