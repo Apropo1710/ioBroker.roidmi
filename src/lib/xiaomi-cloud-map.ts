@@ -211,7 +211,7 @@ export class XiaomiCloudMapClient {
             // Xiaomi's tips field is the only useful server-side explanation for
             // several otherwise opaque account errors. Keep it short and strip markup.
             const tips = typeof result.tips === "string"
-                ? result.tips.replace(/<[^>]*>/g, " ").replace(/\\s+/g, " ").trim().slice(0, 240)
+                ? result.tips.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim().slice(0, 240)
                 : "";
             throw new Error("Xiaomi could not send the verification code (code " + String(result.code ?? "unknown") + ")" + (tips ? ": " + tips : "."));
         }
