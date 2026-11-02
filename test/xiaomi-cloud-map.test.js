@@ -212,3 +212,62 @@ test('cloud action sends MIoT action to the encrypted action endpoint when sessi
   assert.doesNotMatch(calls[0].url, /robot-did/);
   assert.doesNotMatch(calls[0].url, /test-service-token/);
 });
+
+
+test('completed Xiaomi 2FA session survives export and restore without another verification', async (t) => {
+  const calls = [];
+  const originalFetch = global.fetch;
+  global.fetch = async (url, init = {}) => {
+    const u = String(url);
+    calls.push({ url: u, method: init.method || 'GET' });
+    if (u.includes('/pass/serviceLogin?')) {
+      return response('&&&START&&&{"_sign":"sig","sid":"xiaomiio","callback":"https://sts.api.io.mi.com/sts","qs":"?sid=xiaomiio&_json=true"}');
+    }
+    if (u.endsWith('/pass/serviceLoginAuth2')) {
+      return response('&&&START&&&{"notificationUrl":"https://account.xiaomi.com/fe/service/identity/authStart?sid=xiaomiio"}');
+    }
+    if (u.includes('/identity/list')) {
+      return response('&&&START&&&{"code":0,"flag":8}', 200, { 'set-cookie': 'identity_session=identity-test; Path=/' });
+    }
+    if (u.includes('/identity/auth/verifyEmail?')) {
+      return response('&&&START&&&{"maskedEmail":"a***@example.test"}');
+    }
+    if (u.endsWith('/identity/auth/sendEmailTicket')) {
+      return response('&&&START&&&{"code":0}');
+    }
+    if (u.endsWith('/identity/auth/verifyEmail')) {
+      assert.match(String(init.body || ''), /ticket=123456/);
+      return response('&&&START&&&{"location":"https://sts.example/first"}');
+    }
+    if (u === 'https://sts.example/first') {
+      return response('', 302, {
+        location: 'https://sts.example/final',
+        'set-cookie': 'userId=789; Path=/',
+        'Extension-Pragma': JSON.stringify({ ssecurity: 'c2VjdXJpdHk=' }),
+      });
+    }
+    if (u === 'https://sts.example/final') {
+      return response('', 200, { 'set-cookie': 'serviceToken=service-test; Path=/' });
+    }
+    if (u.startsWith('https://de.api.io.mi.com/app/home/device_list')) {
+      return response('not-valid-base64');
+    }
+    throw new Error('Unexpected mocked URL: ' + u.split('?')[0]);
+  };
+  t.after(() => { global.fetch = originalFetch; });
+
+  const first = new XiaomiCloudMapClient();
+  await assert.rejects(() => first.fetchMap(validOptions()), /Bestätigungscode wurde an a\*\*\*@example\.test gesendet/);
+  await assert.rejects(() => first.fetchMap(validOptions(), '123456'), /unreadable encrypted response/);
+  assert.equal(first.hasSession(), true);
+
+  const saved = first.exportSession();
+  const restored = new XiaomiCloudMapClient();
+  restored.restoreSession(saved);
+  assert.equal(restored.hasSession(), true);
+
+  const loginCallsBefore = calls.filter(c => c.url.includes('/pass/serviceLogin')).length;
+  await assert.rejects(() => restored.fetchMap(validOptions()), /unreadable encrypted response/);
+  const loginCallsAfter = calls.filter(c => c.url.includes('/pass/serviceLogin')).length;
+  assert.equal(loginCallsAfter, loginCallsBefore, 'restored session should not trigger a new password/2FA login');
+});
