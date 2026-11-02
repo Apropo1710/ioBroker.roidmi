@@ -91,3 +91,9 @@ Diese Werte stammen aus Screenshots des realen Geräts. Sie sind Beobachtungen, 
 - `state=3` trat nach dem Ende/Abbruch außerhalb der Station auf. Daraus folgt keine bestätigte Fortsetzen-Funktion.
 - Nutzerbeobachtung: Fortsetzen nach einer Unterbrechung könnte bei diesem Roidmi eine neue Reinigung starten statt die Route wiederaufzunehmen. Bis zur Verifikation darf der Adapter keine Wiederaufnahme der vorherigen Route versprechen.
 - Weitere Tests bevorzugt passiv mit den normalen Statuspolls. Keine wiederholten Stop-/Resume-/Dock-Befehle nur zum Erzeugen von Statuswerten.
+
+
+## Empirische Statuslabels
+- Neue lesbare Datenpunkte `stateText` und `chargingText`; Rohdatenpunkte bleiben unverändert.
+- `charging=1` wird nicht als aktives Laden interpretiert; Bedeutung ungeklärt.
+- Status 5 und 6 sind empirisch/vorläufig. Unbekannte Werte bleiben sichtbar.

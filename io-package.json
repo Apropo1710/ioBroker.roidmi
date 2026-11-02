@@ -1,7 +1,7 @@
 {
   "common": {
     "name": "roidmi",
-    "version": "0.1.21",
+    "version": "0.1.22",
     "title": "Roidmi",
     "titleLang": {
       "en": "Roidmi",
@@ -105,6 +105,10 @@
       "0.1.21": {
         "en": "Expose safe Xiaomi verification error details and detect CAPTCHA responses",
         "de": "Sichere Details zu Xiaomi-Verifizierungsfehlern anzeigen und CAPTCHA-Antworten erkennen"
+      },
+      "0.1.22": {
+        "en": "Add empirical readable status labels",
+        "de": "Empirische Klartext-Statusanzeigen ergänzt"
       }
     },
     "adminUI": {

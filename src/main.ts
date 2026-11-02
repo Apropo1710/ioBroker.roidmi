@@ -6,6 +6,7 @@ import { buildVacuumAction } from "./lib/roidmi-actions";
 import { parseRoomMapConfig, RoomMapConfig } from "./lib/room-map";
 import { getRoidmiSetting } from "./lib/roidmi-settings";
 import { XiaomiCloudMapClient } from "./lib/xiaomi-cloud-map";
+import { getVacuumStateText, getChargingStateText } from "./lib/roidmi-status";
 
 interface RoidmiAdapterConfig {
     host?: string;
@@ -112,6 +113,8 @@ class RoidmiAdapter extends Adapter {
             { id: "waterLevel", siid: 8, piid: 11, name: "Water level", min: 0, max: 4 }
         ] as const;
 
+        await this.setObjectNotExistsAsync("stateText", { type: "state", common: { name: "Vacuum state (human-readable, empirical)", type: "string", role: "text", read: true, write: false }, native: {} });
+        await this.setObjectNotExistsAsync("chargingText", { type: "state", common: { name: "Charging state (human-readable, empirical)", type: "string", role: "text", read: true, write: false }, native: {} });
         for (const property of properties) {
             await this.setObjectNotExistsAsync(property.id, {
                 type: "state",
@@ -210,6 +213,8 @@ class RoidmiAdapter extends Adapter {
                     const item = result[index] as { code?: number; value?: unknown } | undefined;
                     if (item?.code === 0 && typeof item.value === "number") {
                         await this.setStateChangedAsync(property.id, { val: item.value, ack: true });
+                        if (property.id === "state") await this.setStateChangedAsync("stateText", { val: getVacuumStateText(item.value), ack: true });
+                        if (property.id === "charging") await this.setStateChangedAsync("chargingText", { val: getChargingStateText(item.value), ack: true });
                         if (getRoidmiSetting(property.id)) this.lastKnownSettings[property.id] = item.value;
                     } else if (item && typeof item.code === "number" && item.code !== 0) {
                         throw new Error(`MIoT property read failed (SIID ${property.siid}, PIID ${property.piid}, code ${item.code})`);
