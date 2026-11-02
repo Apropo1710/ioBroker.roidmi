@@ -3,6 +3,8 @@ export interface MiioClientOptions {
     token: string;
     port?: number;
     timeoutMs?: number;
+    debug?: boolean;
+    onDebug?: (message: string) => void;
 }
 export interface MiioRpcResponse {
     id?: number;
