@@ -166,8 +166,8 @@
     "debugMiio": {
       "type": "checkbox",
       "label": {
-        "de": "MIoT-Debugprotokollierung aktivieren",
-        "en": "Enable MIoT debug logging"
+        "de": "Debugprotokollierung aktivieren",
+        "en": "Enable debug logging"
       },
       "default": false,
       "help": {

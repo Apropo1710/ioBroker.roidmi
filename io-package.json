@@ -1,7 +1,7 @@
 {
   "common": {
     "name": "roidmi",
-    "version": "0.1.25",
+    "version": "0.1.26",
     "title": "Roidmi",
     "titleLang": {
       "en": "Roidmi",
@@ -121,6 +121,10 @@
       "0.1.25": {
         "en": "Add configurable safe MIoT diagnostics",
         "de": "Konfigurierbare, sichere MIoT-Diagnose ergänzt"
+      },
+      "0.1.26": {
+        "de": "Debug-Konfigurationsfeld vereinfacht",
+        "en": "Simplify debug configuration label"
       }
     },
     "adminUI": {
