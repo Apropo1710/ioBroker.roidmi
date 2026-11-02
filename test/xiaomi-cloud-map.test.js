@@ -272,3 +272,51 @@ test('completed Xiaomi 2FA session survives export and restore without another v
   const loginCallsAfter = calls.filter(c => c.url.includes('/pass/serviceLogin')).length;
   assert.equal(loginCallsAfter, loginCallsBefore, 'restored session should not trigger a new password/2FA login');
 });
+
+
+test('expired Xiaomi serviceToken renews with passToken without password login or 2FA', async (t) => {
+  const calls = [];
+  const originalFetch = global.fetch;
+  let mapCalls = 0;
+  global.fetch = async (url, init = {}) => {
+    const u = String(url);
+    const headers = new Headers(init.headers);
+    calls.push({ url: u, cookie: headers.get('Cookie') || '' });
+    if (u.startsWith('https://de.api.io.mi.com/app/home/device_list')) {
+      mapCalls++;
+      if (mapCalls === 1) return response('unauthorized', 401);
+      return response('not-valid-base64');
+    }
+    if (u === 'https://account.xiaomi.com/pass/serviceLogin?sid=xiaomiio&_json=true') {
+      assert.match(headers.get('Cookie') || '', /userId=123/);
+      assert.match(headers.get('Cookie') || '', /passToken=long-lived-pass/);
+      return response('&&&START&&&{"location":"https://sts.example/renew","ssecurity":"c2VjdXJpdHk=","userId":"123"}');
+    }
+    if (u === 'https://sts.example/renew') {
+      return response('', 302, {
+        location: 'https://sts.example/renew-final',
+        'set-cookie': 'userId=123; Path=/',
+        'Extension-Pragma': JSON.stringify({ ssecurity: 'c2VjdXJpdHk=' }),
+      });
+    }
+    if (u === 'https://sts.example/renew-final') {
+      return response('', 200, { 'set-cookie': 'serviceToken=fresh-service-token; Path=/' });
+    }
+    throw new Error('Unexpected mocked URL: ' + u.split('?')[0]);
+  };
+  t.after(() => { global.fetch = originalFetch; });
+
+  const client = new XiaomiCloudMapClient();
+  client.restoreSession(JSON.stringify({
+    cookies: [['userId', '123'], ['serviceToken', 'old-service-token']],
+    ssecurity: 'c2VjdXJpdHk=', userId: '123', serviceToken: 'old-service-token',
+    cUserId: '456', passToken: 'long-lived-pass'
+  }));
+
+  await assert.rejects(() => client.fetchMap(validOptions()), /unreadable encrypted response/);
+  assert.equal(mapCalls, 2, 'API request should be retried exactly once after session renewal');
+  assert.equal(calls.filter(c => c.url.includes('/pass/serviceLoginAuth2')).length, 0,
+    'renewal must not submit password or start a new 2FA login');
+  assert.equal(calls.filter(c => c.url.includes('/pass/serviceLogin?sid=xiaomiio')).length, 1);
+  assert.ok(client.exportSession().includes('fresh-service-token'));
+});
