@@ -26,6 +26,7 @@ export declare class XiaomiCloudMapClient {
     private cUserId;
     private passToken;
     private pendingFlag;
+    private pendingTrust;
     private maskedDestination;
     private readonly agent;
     hasSession(): boolean;
