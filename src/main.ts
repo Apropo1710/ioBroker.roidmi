@@ -2,7 +2,7 @@ import { Adapter } from "@iobroker/adapter-core";
 import { MiioClient } from "./lib/miio-client";
 import { parseRoomCleaningRequest } from "./lib/room-cleaning";
 import { validateConfig } from "./lib/config";
-import { buildVacuumAction } from "./lib/roidmi-actions";
+import { buildVacuumAction, getActionResponseError } from "./lib/roidmi-actions";
 import { parseRoomMapConfig, RoomMapConfig } from "./lib/room-map";
 import { getRoidmiSetting } from "./lib/roidmi-settings";
 import { XiaomiCloudMapClient } from "./lib/xiaomi-cloud-map";
@@ -144,6 +144,10 @@ class RoidmiAdapter extends Adapter {
             });
             await this.subscribeStatesAsync(`control.${control.id}`);
         }
+
+        await this.setObjectNotExistsAsync("control.lastCommand", { type: "state", common: { name: "Last robot command", type: "string", role: "text", read: true, write: false }, native: {} });
+        await this.setObjectNotExistsAsync("control.lastCommandStatus", { type: "state", common: { name: "Last robot command result", type: "string", role: "text", read: true, write: false }, native: {} });
+        await this.setObjectNotExistsAsync("control.lastCommandTime", { type: "state", common: { name: "Last robot command time", type: "string", role: "date", read: true, write: false }, native: {} });
 
         await this.setObjectNotExistsAsync("control.cleanRooms", {
             type: "state",
@@ -586,11 +590,19 @@ class RoidmiAdapter extends Adapter {
                 did: config.did, siid: action.siid, aiid: action.aiid,
                 ...(action.in ? { in: action.in } : {})
             }]);
-            this.log.info("Robot command " + command + " sent");
+            const responseError = getActionResponseError(result);
+            if (responseError) throw new Error(responseError);
+            await this.setStateChangedAsync("control.lastCommand", { val: command, ack: true });
+            await this.setStateChangedAsync("control.lastCommandStatus", { val: "Accepted by robot", ack: true });
+            await this.setStateChangedAsync("control.lastCommandTime", { val: new Date().toISOString(), ack: true });
+            this.log.info("Robot command " + command + " accepted by MIoT");
             this.log.debug("MIoT action response: " + JSON.stringify(result));
         } catch (error) {
             const message = error instanceof Error ? error.message : "Unknown command error";
             this.log.warn("Robot command " + command + " failed: " + message);
+            await this.setStateChangedAsync("control.lastCommand", { val: command, ack: true });
+            await this.setStateChangedAsync("control.lastCommandStatus", { val: "Failed: " + message, ack: true });
+            await this.setStateChangedAsync("control.lastCommandTime", { val: new Date().toISOString(), ack: true });
             await this.setStateChangedAsync("info.connectionText", { val: message, ack: true });
         } finally {
             this.commandRunning = false;

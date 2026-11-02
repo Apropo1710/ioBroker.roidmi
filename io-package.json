@@ -1,7 +1,7 @@
 {
   "common": {
     "name": "roidmi",
-    "version": "0.1.23",
+    "version": "0.1.24",
     "title": "Roidmi",
     "titleLang": {
       "en": "Roidmi",
@@ -113,6 +113,10 @@
       "0.1.23": {
         "en": "Add readable robot fault-code diagnostics",
         "de": "Lesbare Klartext-Diagnose für Roboterfehler ergänzt"
+      },
+      "0.1.24": {
+        "en": "Validate MIoT command responses and expose command diagnostics",
+        "de": "MIoT-Befehlsantworten prüfen und Befehlsdiagnose bereitstellen"
       }
     },
     "adminUI": {
