@@ -599,11 +599,14 @@ class RoidmiAdapter extends Adapter {
             this.log.debug("MIoT action response: " + JSON.stringify(result));
         } catch (error) {
             const message = error instanceof Error ? error.message : "Unknown command error";
-            this.log.warn("Robot command " + command + " failed: " + message);
+            const timedOut = message === "miIO request timed out";
+            const status = timedOut
+                ? "Timeout: no MIoT acknowledgement; command outcome unknown (it may have reached the robot)"
+                : "Failed: " + message;
+            this.log.warn("Robot command " + command + (timedOut ? " timed out without MIoT acknowledgement; command outcome is unknown" : " failed: " + message));
             await this.setStateChangedAsync("control.lastCommand", { val: command, ack: true });
-            await this.setStateChangedAsync("control.lastCommandStatus", { val: "Failed: " + message, ack: true });
+            await this.setStateChangedAsync("control.lastCommandStatus", { val: status, ack: true });
             await this.setStateChangedAsync("control.lastCommandTime", { val: new Date().toISOString(), ack: true });
-            await this.setStateChangedAsync("info.connectionText", { val: message, ack: true });
         } finally {
             this.commandRunning = false;
             await this.setStateAsync(stateId, { val: resetValue, ack: true });
