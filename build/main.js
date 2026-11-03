@@ -596,6 +596,10 @@ class RoidmiAdapter extends adapter_core_1.Adapter {
                 ? await this.cloudMapClient.callAction(config.cloudCountry || "de", {
                     did: config.did, siid: action.siid, aiid: action.aiid,
                     ...(action.in ? { in: action.in } : {})
+                }, async () => {
+                    // Persist refreshed Xiaomi serviceToken/passToken after cloud actions,
+                    // so a renewal survives adapter restarts and future Admin saves.
+                    await this.persistCloudSession();
                 })
                 : await this.client.call("action", [{
                         did: config.did, siid: action.siid, aiid: action.aiid,
