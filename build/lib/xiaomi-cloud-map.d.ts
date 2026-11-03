@@ -33,8 +33,8 @@ export declare class XiaomiCloudMapClient {
     exportSession(): string;
     restoreSession(serialized: string): void;
     clearSession(): void;
-    callAction(country: string, action: XiaomiCloudAction): Promise<unknown>;
-    fetchMap(o: XiaomiCloudMapOptions, verificationCode?: string, onProgress?: (message: string) => void): Promise<XiaomiCloudMapResult>;
+    callAction(country: string, action: XiaomiCloudAction, onSessionChanged?: () => Promise<void>): Promise<unknown>;
+    fetchMap(o: XiaomiCloudMapOptions, verificationCode?: string, onProgress?: (message: string) => void, onSessionChanged?: () => Promise<void>): Promise<XiaomiCloudMapResult>;
     private identityCookie;
     private startTwoFactor;
     private finishLogin;
