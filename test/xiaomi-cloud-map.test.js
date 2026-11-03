@@ -49,10 +49,14 @@ test('Xiaomi login preserves session cookies and Extension-Pragma across every S
   };
   t.after(() => { global.fetch = originalFetch; });
 
+  let sessionPersisted = false;
   await assert.rejects(
-    () => new XiaomiCloudMapClient().fetchMap(validOptions()),
+    () => new XiaomiCloudMapClient().fetchMap(validOptions(), undefined, undefined, async () => {
+      sessionPersisted = true;
+    }),
     /unreadable encrypted response/,
   );
+  assert.equal(sessionPersisted, true, 'session persistence callback runs immediately after login, before map API requests');
   assert.ok(calls.some(c => c.url === 'https://sts.example/second'));
   const secondHop = calls.find(c => c.url === 'https://sts.example/final');
   assert.ok(secondHop.cookie?.includes('userId=123'));
