@@ -463,14 +463,14 @@ class RoidmiAdapter extends adapter_core_1.Adapter {
         this.commandRunning = true;
         await this.setStateAsync("map.cloudAuthUrl", { val: "", ack: true });
         try {
-            // Roidmi V60 (EVE Plus) uses the Xiaomi Cloud V2 map API.
+            // The EVE Plus uses Xiaomi's V60-family Cloud V2 map API.
             // The upstream Xiaomi Cloud Map Extractor explicitly does not query a
             // map name from the robot for this API (should_get_map_from_vacuum=false);
             // the cloud archive key uses "0". Avoiding get_map_v1 also prevents a
             // firmware-specific user-ack timeout and saves an unnecessary robot RPC.
             const mapName = "0";
             await this.setStateAsync("map.cloudStatus", {
-                val: "Roidmi V60 cloud map: connecting to Xiaomi Cloud…",
+                val: "Roidmi EVE Plus cloud map: connecting to Xiaomi Cloud…",
                 ack: true
             });
             const result = await this.cloudMapClient.fetchMap({
