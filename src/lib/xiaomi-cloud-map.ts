@@ -89,18 +89,18 @@ export class XiaomiCloudMapClient {
         this.cUserId = ""; this.passToken = ""; this.pendingFlag = ""; this.pendingTrust = false; this.maskedDestination = "";
     }
 
-    public async callAction(country: string, action: XiaomiCloudAction): Promise<unknown> {
+    public async callAction(country: string, action: XiaomiCloudAction, onSessionChanged?: () => Promise<void>): Promise<unknown> {
         if (!this.hasSession()) throw new Error("Xiaomi Cloud session is unavailable; sign in and complete verification first.");
         const base = `https://${country === "cn" ? "" : country + "."}api.io.mi.com/app`;
         const response = await this.api(base + "/miotspec/action", {
             data: JSON.stringify({ params: {
                 did: action.did, siid: action.siid, aiid: action.aiid, in: action.in ?? []
             } })
-        });
+        }, onSessionChanged);
         return response?.result ?? response;
     }
 
-    public async fetchMap(o:XiaomiCloudMapOptions, verificationCode?: string, onProgress?: (message: string) => void):Promise<XiaomiCloudMapResult>{
+    public async fetchMap(o:XiaomiCloudMapOptions, verificationCode?: string, onProgress?: (message: string) => void, onSessionChanged?: () => Promise<void>):Promise<XiaomiCloudMapResult>{
         if(!o.username.trim()||!o.password||!o.mapName.trim())throw new Error("Xiaomi cloud username, password and map name are required");
         if (!this.serviceToken || !this.ssecurity) {
             if (this.pendingFlag) {
@@ -252,7 +252,7 @@ export class XiaomiCloudMapClient {
      * account passToken before falling back to a password/2FA login.
      * This is the same flow used by current Xiaomi cloud integrations.
      */
-    private async renewSessionWithPassToken(): Promise<void> {
+    private async renewSessionWithPassToken(onSessionChanged?: () => Promise<void>): Promise<void> {
         if (!this.userId || !this.passToken) {
             throw new Error("Xiaomi Cloud session expired and no passToken is available; sign in again.");
         }
@@ -272,9 +272,10 @@ export class XiaomiCloudMapClient {
         if (typeof auth.userId === "string" || typeof auth.userId === "number") this.userId = String(auth.userId);
         if (typeof auth.passToken === "string" && auth.passToken) this.passToken = auth.passToken;
         await this.finishLogin(auth.location);
+        if (onSessionChanged) await onSessionChanged();
     }
 
-    private async api(url: string, params: Record<string, string>, allowRefresh = true): Promise<any> {
+    private async api(url: string, params: Record<string, string>, onSessionChanged?: () => Promise<void>, allowRefresh = true): Promise<any> {
         const millis = Date.now();
         const nonce = Buffer.concat([
             randomBytes(8),
@@ -309,8 +310,8 @@ export class XiaomiCloudMapClient {
         } catch (error) {
             const message = error instanceof Error ? error.message : String(error);
             if (allowRefresh && /HTTP 401|HTTP 403/.test(message)) {
-                await this.renewSessionWithPassToken();
-                return this.api(url, params, false);
+                await this.renewSessionWithPassToken(onSessionChanged);
+                return this.api(url, params, onSessionChanged, false);
             }
             throw error;
         }
@@ -324,8 +325,8 @@ export class XiaomiCloudMapClient {
             parsed?.message === "SERVICETOKEN_EXPIRED" ||
             parsed?.message === "auth err";
         if (allowRefresh && authExpired) {
-            await this.renewSessionWithPassToken();
-            return this.api(url, params, false);
+            await this.renewSessionWithPassToken(onSessionChanged);
+            return this.api(url, params, onSessionChanged, false);
         }
         if (parsed?.code !== 0) {
             throw new Error("Xiaomi cloud API request failed (code " + String(parsed?.code ?? "unknown") + ").");
