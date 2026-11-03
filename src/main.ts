@@ -94,9 +94,13 @@ class RoidmiAdapter extends Adapter {
         }
 
         this.client = new MiioClient({ host: config.host, token: config.token, debug: true, onDebug: (message) => this.log.debug("[miIO] " + message) });
-        if (config.cloudSession) {
+        const storedCloudSession = await this.getStateAsync("map.cloudSession");
+        const encryptedCloudSession = typeof storedCloudSession?.val === "string" && storedCloudSession.val
+            ? storedCloudSession.val
+            : config.cloudSession;
+        if (encryptedCloudSession) {
             try {
-                this.cloudMapClient.restoreSession(this.decrypt(config.cloudSession));
+                this.cloudMapClient.restoreSession(this.decrypt(encryptedCloudSession));
                 this.log.info("Stored Xiaomi Cloud session restored");
             } catch {
                 this.cloudMapClient.clearSession();
@@ -180,6 +184,7 @@ class RoidmiAdapter extends Adapter {
             native: {}
         });
         await this.subscribeStatesAsync("control.importRooms");
+        await this.setObjectNotExistsAsync("map.cloudSession", { type: "state", common: { name: "Encrypted Xiaomi Cloud session (internal persistence)", type: "string", role: "text", read: false, write: false }, native: {} });
         await this.setObjectNotExistsAsync("map.config", {
             type: "state",
             common: { name: "Persisted room map configuration", type: "string", role: "json", read: true, write: false },
@@ -457,11 +462,15 @@ class RoidmiAdapter extends Adapter {
     private async persistCloudSession(): Promise<void> {
         if (!this.cloudMapClient.hasSession()) return;
         const encrypted = this.encrypt(this.cloudMapClient.exportSession());
+        // Store independently of adapter native config: Admin config saves may replace
+        // native fields and must never wipe a valid Xiaomi session.
+        await this.setStateAsync("map.cloudSession", { val: encrypted, ack: true });
         await this.extendForeignObjectAsync("system.adapter." + this.namespace, { native: { cloudSession: encrypted } });
         (this.config as RoidmiAdapterConfig).cloudSession = encrypted;
     }
 
     private async clearPersistedCloudSession(): Promise<void> {
+        await this.setStateAsync("map.cloudSession", { val: "", ack: true });
         await this.extendForeignObjectAsync("system.adapter." + this.namespace, { native: { cloudSession: "" } });
         (this.config as RoidmiAdapterConfig).cloudSession = "";
     }
