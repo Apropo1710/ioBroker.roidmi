@@ -132,6 +132,8 @@ class XiaomiCloudMapClient {
                     throw new Error("Xiaomi rejected the verification code. Please request a new code.");
                 }
                 await this.finishLogin(verified.location);
+                if (onSessionChanged)
+                    await onSessionChanged();
                 this.pendingFlag = "";
             }
             else {
@@ -176,6 +178,8 @@ class XiaomiCloudMapClient {
                 if (typeof auth.passToken === "string")
                     this.passToken = auth.passToken;
                 await this.finishLogin(auth.location);
+                if (onSessionChanged)
+                    await onSessionChanged();
             }
         }
         if (!this.serviceToken || !this.ssecurity || !this.userId) {

@@ -491,6 +491,10 @@ class RoidmiAdapter extends adapter_core_1.Adapter {
             }, verificationCode, (message) => {
                 void this.setStateAsync("map.cloudStatus", { val: message, ack: true });
                 this.log.info(message);
+            }, async () => {
+                // Save immediately after login/session renewal, before any later
+                // cloud API call can fail and leave the session unpersisted.
+                await this.persistCloudSession();
             });
             const rooms = result.metadata.rooms;
             if (!rooms.length)
