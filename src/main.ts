@@ -113,9 +113,9 @@ class RoidmiAdapter extends Adapter {
             { id: "charging", siid: 3, piid: 2, name: "Charging state" },
             { id: "state", siid: 2, piid: 1, name: "Vacuum state" },
             { id: "errorCode", siid: 2, piid: 2, name: "Error code" },
-            { id: "fanSpeed", siid: 2, piid: 4, name: "Suction power", min: 0, max: 4, states: { 0: "Sweep", 1: "Leise (Silent)", 2: "Standard (Basic)", 3: "Stark (Strong)", 4: "Maximal (Full Speed)" } },
+            { id: "fanSpeed", siid: 2, piid: 4, name: "Suction power", min: 0, max: 4, states: { 0: "Aus", 1: "Leise (Silent)", 2: "Standard (Basic)", 3: "Stark (Strong)", 4: "Maximal (Full Speed)" } },
             { id: "sweepType", siid: 2, piid: 8, name: "Cleaning type", min: 0, max: 2 },
-            { id: "waterLevel", siid: 8, piid: 11, name: "Water level", min: 0, max: 4, states: { 0: "Aus", 1: "Niedrig", 2: "Mittel", 3: "MAX", 4: "Stufe 4" } }
+            { id: "waterLevel", siid: 8, piid: 11, name: "Water level", min: 0, max: 4, states: { 0: "Aus", 1: "Niedrig", 2: "Mittel", 3: "Maximal", 4: "Zusatzstufe (Fourth)" } }
         ] as const;
 
         await this.setObjectNotExistsAsync("stateText", { type: "state", common: { name: "Vacuum state (human-readable, empirical)", type: "string", role: "text", read: true, write: false }, native: {} });
