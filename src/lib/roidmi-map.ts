@@ -12,6 +12,10 @@ export interface RoidmiMapRoom {
     name: string;
     x?: number;
     y?: number;
+    /** Room-specific cleaning profile fields supplied by Xiaomi's map metadata. */
+    fanLevel?: number;
+    waterPump?: number;
+    cleanOrder?: number;
 }
 
 export interface RoidmiMapMetadata {
@@ -72,6 +76,11 @@ export function parseRoidmiMapPayload(payload: Uint8Array): RoidmiMapMetadata {
             if (typeof area.pos[0] === "number" && Number.isFinite(area.pos[0])) room.x = area.pos[0];
             if (typeof area.pos[1] === "number" && Number.isFinite(area.pos[1])) room.y = area.pos[1];
         }
+        // Xiaomi's original Roidmi plugin reads these from autoAreaValue.
+        // Keep values read-only and omit them when metadata does not contain them.
+        if (typeof area.fanLevel === "number" && Number.isFinite(area.fanLevel)) room.fanLevel = area.fanLevel;
+        if (typeof area.waterPump === "number" && Number.isFinite(area.waterPump)) room.waterPump = area.waterPump;
+        if (typeof area.cleanOrder === "number" && Number.isFinite(area.cleanOrder)) room.cleanOrder = area.cleanOrder;
         return room;
     });
 
