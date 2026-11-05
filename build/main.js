@@ -470,14 +470,15 @@ class RoidmiAdapter extends adapter_core_1.Adapter {
         const encrypted = this.encrypt(this.cloudMapClient.exportSession());
         // Store independently of adapter native config: Admin config saves may replace
         // native fields and must never wipe a valid Xiaomi session.
+        // Persist the session only in its dedicated state. Updating system.adapter
+        // native configuration can trigger an ioBroker instance restart during
+        // the cloud map refresh.
         await this.setStateAsync("map.cloudSession", { val: encrypted, ack: true });
-        await this.extendForeignObjectAsync("system.adapter." + this.namespace, { native: { cloudSession: encrypted } });
-        this.config.cloudSession = encrypted;
     }
     async clearPersistedCloudSession() {
+        // Do not modify system.adapter native configuration: that can restart
+        // this adapter and interrupt the explicit cloud operation.
         await this.setStateAsync("map.cloudSession", { val: "", ack: true });
-        await this.extendForeignObjectAsync("system.adapter." + this.namespace, { native: { cloudSession: "" } });
-        this.config.cloudSession = "";
     }
     async refreshCloudMap(verificationCode, supplied) {
         const config = { ...this.config, ...(supplied ?? {}) };
