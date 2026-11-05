@@ -1,7 +1,7 @@
 {
   "common": {
     "name": "roidmi",
-    "version": "0.1.33",
+    "version": "0.1.34",
     "title": "Roidmi",
     "titleLang": {
       "en": "Roidmi",
@@ -141,6 +141,10 @@
       "0.1.33": {
         "de": "Saug- und Wasserstufen mit lesbaren Auswahlwerten ergänzt",
         "en": "Add readable enum labels for suction and water levels"
+      },
+      "0.1.34": {
+        "de": "Neue schreibbare Reinigungsoptionen: doppelte Reinigung, Wischmuster und individuelle Profile",
+        "en": "Add writable cleaning options: double cleaning, mopping pattern and individual profiles"
       }
     },
     "adminUI": {
