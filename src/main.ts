@@ -230,15 +230,16 @@ class RoidmiAdapter extends Adapter {
             if (!this.client || this.stopping || this.commandRunning) return;
             this.commandRunning = true;
             try {
-                // Read all status properties in one MIoT RPC to minimize UDP traffic and robot wakeups.
+                // The V60 profile limits get_properties to one property per RPC.
+                // Read sequentially (never in parallel) to respect that limit and avoid
+                // adding simultaneous UDP traffic or overlapping poll cycles.
                 miioTrace.length = 0;
-                const result = await this.client.call("get_properties", properties.map((property) => ({
-                    did: config.did, siid: property.siid, piid: property.piid
-                })));
-                if (!Array.isArray(result)) throw new Error("Unexpected MIoT property response");
-                for (let index = 0; index < properties.length; index++) {
-                    const property = properties[index];
-                    const item = result[index] as { code?: number; value?: unknown } | undefined;
+                for (const property of properties) {
+                    const result = await this.client.call("get_properties", [{
+                        did: config.did, siid: property.siid, piid: property.piid
+                    }]);
+                    if (!Array.isArray(result)) throw new Error("Unexpected MIoT property response");
+                    const item = result[0] as { code?: number; value?: unknown } | undefined;
                     if (item?.code === 0 && typeof item.value === "number") {
                         await this.setStateChangedAsync(property.id, { val: item.value, ack: true });
                         if (property.id === "state") await this.setStateChangedAsync("stateText", { val: getVacuumStateText(item.value), ack: true });
