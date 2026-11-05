@@ -8,7 +8,7 @@ export interface RoidmiSetting {
 
 const SETTINGS: Record<string, RoidmiSetting> = {
     fanSpeed: { siid: 2, piid: 4, min: 0, max: 4 },
-    sweepType: { siid: 2, piid: 8, min: 0, max: 2 },
+    sweepType: { siid: 2, piid: 8, min: 0, max: 1 },
     waterLevel: { siid: 8, piid: 11, min: 0, max: 4 }
 };
 
