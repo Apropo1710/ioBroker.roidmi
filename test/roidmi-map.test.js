@@ -39,6 +39,24 @@ test("supports autoAreaValue and optional mapId", () => {
     assert.deepEqual(result.rooms, [{ id: 2, name: "Bad" }]);
 });
 
+test("normalizes digit-string map and segment IDs from V60 metadata", () => {
+    const result = parseRoidmiMapPayload(payload({
+        width: 10, height: 10, resolution: 0.1, mapId: "1626189155",
+        autoAreaValue: [{ id: "7", name: "Küche" }]
+    }));
+    assert.equal(result.mapId, 1626189155);
+    assert.deepEqual(result.rooms, [{ id: 7, name: "Küche" }]);
+});
+
+test("does not infer a map ID from malformed metadata", () => {
+    const result = parseRoidmiMapPayload(payload({
+        width: 10, height: 10, resolution: 0.1, mapId: "not-a-map-id",
+        autoAreaValue: [{ id: 7, name: "Küche" }]
+    }));
+    assert.equal(result.mapId, undefined);
+    assert.deepEqual(result.rooms, [{ id: 7, name: "Küche" }]);
+});
+
 test("rejects malformed payloads and room entries", () => {
     assert.throws(() => parseRoidmiMapPayload(Buffer.alloc(8)), /too short/);
     assert.throws(() => parseRoidmiMapPayload(Buffer.concat([Buffer.alloc(18), Buffer.from([1, 2])])), /marker/);
