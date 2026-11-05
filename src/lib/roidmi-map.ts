@@ -12,6 +12,10 @@ export interface RoidmiMapRoom {
     name: string;
     x?: number;
     y?: number;
+    /** Room-specific cleaning profile fields supplied by Xiaomi's map metadata. */
+    fanLevel?: number;
+    waterPump?: number;
+    cleanOrder?: number;
 }
 
 export interface RoidmiMapMetadata {
@@ -58,6 +62,15 @@ export function parseRoidmiMapPayload(payload: Uint8Array): RoidmiMapMetadata {
         : Array.isArray(data.autoAreaValue)
             ? data.autoAreaValue
             : [];
+    const profileById = new Map<number, Record<string, unknown>>();
+    if (Array.isArray(data.autoAreaValue)) {
+        for (const entry of data.autoAreaValue) {
+            if (entry && typeof entry === "object" && !Array.isArray(entry)) {
+                const profile = entry as Record<string, unknown>;
+                try { profileById.set(positiveInteger(profile.id, "profile.id"), profile); } catch { /* Ignore malformed optional profile entries. */ }
+            }
+        }
+    }
     const rooms = areas.map((entry, index): RoidmiMapRoom => {
         if (!entry || typeof entry !== "object" || Array.isArray(entry)) {
             throw new Error(`Room entry ${index} is invalid`);
@@ -72,6 +85,12 @@ export function parseRoidmiMapPayload(payload: Uint8Array): RoidmiMapMetadata {
             if (typeof area.pos[0] === "number" && Number.isFinite(area.pos[0])) room.x = area.pos[0];
             if (typeof area.pos[1] === "number" && Number.isFinite(area.pos[1])) room.y = area.pos[1];
         }
+        // Xiaomi's original Roidmi plugin reads these from autoAreaValue.
+        // Keep values read-only and omit them when metadata does not contain them.
+        const profile = profileById.get(id) ?? area;
+        if (typeof profile.fanLevel === "number" && Number.isFinite(profile.fanLevel)) room.fanLevel = profile.fanLevel;
+        if (typeof profile.waterPump === "number" && Number.isFinite(profile.waterPump)) room.waterPump = profile.waterPump;
+        if (typeof profile.cleanOrder === "number" && Number.isFinite(profile.cleanOrder)) room.cleanOrder = profile.cleanOrder;
         return room;
     });
 

@@ -9,7 +9,10 @@ export interface RoidmiSetting {
 const SETTINGS: Record<string, RoidmiSetting> = {
     fanSpeed: { siid: 2, piid: 4, min: 0, max: 4 },
     sweepType: { siid: 2, piid: 8, min: 0, max: 2 },
-    waterLevel: { siid: 8, piid: 11, min: 0, max: 4 }
+    waterLevel: { siid: 8, piid: 11, min: 0, max: 4 },
+    doubleClean: { siid: 8, piid: 20, min: 0, max: 1 },
+    pathType: { siid: 13, piid: 8, min: 0, max: 2 },
+    individual: { siid: 13, piid: 7, min: 0, max: 1 }
 };
 
 export function getRoidmiSetting(id: string): RoidmiSetting | undefined {
