@@ -21,3 +21,12 @@ test("exposes supported ranges and rejects invalid values or unknown settings", 
   assert.throws(() => buildSettingWrite("abc", "fanSpeed", 1), /numeric/);
   assert.throws(() => buildSettingWrite("123456", "other", 1), /Unknown/);
 });
+
+
+test("maps the three additional documented V60 cleaning options", () => {
+  assert.deepEqual(getRoidmiSetting("customizeRooms"), { siid: 13, piid: 7, min: 0, max: 1 });
+  assert.deepEqual(buildSettingWrite("123456", "customizeRooms", 1).params[0], { did: "123456", siid: 13, piid: 7, value: 1 });
+  assert.deepEqual(buildSettingWrite("123456", "doubleClean", 1).params[0], { did: "123456", siid: 8, piid: 20, value: 1 });
+  assert.deepEqual(buildSettingWrite("123456", "moppingPath", 1).params[0], { did: "123456", siid: 13, piid: 8, value: 1 });
+  assert.throws(() => buildSettingWrite("123456", "moppingPath", 3), /between 0 and 2/);
+});
