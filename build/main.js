@@ -7,6 +7,7 @@ const config_1 = require("./lib/config");
 const roidmi_actions_1 = require("./lib/roidmi-actions");
 const room_map_1 = require("./lib/room-map");
 const roidmi_settings_1 = require("./lib/roidmi-settings");
+const cleaning_schedules_1 = require("./lib/cleaning-schedules");
 const xiaomi_cloud_map_1 = require("./lib/xiaomi-cloud-map");
 const roidmi_status_1 = require("./lib/roidmi-status");
 class RoidmiAdapter extends adapter_core_1.Adapter {
@@ -151,6 +152,8 @@ class RoidmiAdapter extends adapter_core_1.Adapter {
             common: { name: "Raw saved Roidmi cleaning schedules (read on demand)", type: "string", role: "json", read: true, write: false },
             native: { siid: 8, piid: 6 }
         });
+        await this.setObjectNotExistsAsync("timing.parsed", { type: "state", common: { name: "Decoded cleaning schedules (read-only)", type: "string", role: "json", read: true, write: false }, native: {} });
+        await this.setObjectNotExistsAsync("timing.summary", { type: "state", common: { name: "Cleaning schedule summary (read-only)", type: "string", role: "text", read: true, write: false }, native: {} });
         await this.setObjectNotExistsAsync("timing.lastUpdate", {
             type: "state",
             common: { name: "Last schedule read", type: "string", role: "date", read: true, write: false },
@@ -422,6 +425,9 @@ class RoidmiAdapter extends adapter_core_1.Adapter {
                 // Preserve the exact device response if firmware returns non-JSON text.
             }
             await this.setStateChangedAsync("timing.raw", { val: formatted, ack: true });
+            const parsed = (0, cleaning_schedules_1.parseCleaningSchedules)(item.value);
+            await this.setStateChangedAsync("timing.parsed", { val: JSON.stringify(parsed, null, 2), ack: true });
+            await this.setStateChangedAsync("timing.summary", { val: parsed.map((entry, index) => `${index + 1}. ${entry.timeText} | ${entry.enabled ? "aktiv" : "deaktiviert"} | Saugstufe ${entry.fanSpeedText} | Modus ${entry.cleaningMode} | Wasser ${entry.waterLevelText} | Raum-IDs ${entry.roomIds.join(", ")} | ${entry.weekdaysText}`).join("\\n") || "Keine Zeitpläne gespeichert", ack: true });
             await this.setStateChangedAsync("timing.lastUpdate", { val: new Date().toISOString(), ack: true });
             this.log.info("Saved cleaning schedules read from robot (SIID 8 / PIID 6)");
         }
