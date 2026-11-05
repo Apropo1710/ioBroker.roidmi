@@ -62,6 +62,15 @@ export function parseRoidmiMapPayload(payload: Uint8Array): RoidmiMapMetadata {
         : Array.isArray(data.autoAreaValue)
             ? data.autoAreaValue
             : [];
+    const profileById = new Map<number, Record<string, unknown>>();
+    if (Array.isArray(data.autoAreaValue)) {
+        for (const entry of data.autoAreaValue) {
+            if (entry && typeof entry === "object" && !Array.isArray(entry)) {
+                const profile = entry as Record<string, unknown>;
+                try { profileById.set(positiveInteger(profile.id, "profile.id"), profile); } catch { /* Ignore malformed optional profile entries. */ }
+            }
+        }
+    }
     const rooms = areas.map((entry, index): RoidmiMapRoom => {
         if (!entry || typeof entry !== "object" || Array.isArray(entry)) {
             throw new Error(`Room entry ${index} is invalid`);
@@ -78,9 +87,10 @@ export function parseRoidmiMapPayload(payload: Uint8Array): RoidmiMapMetadata {
         }
         // Xiaomi's original Roidmi plugin reads these from autoAreaValue.
         // Keep values read-only and omit them when metadata does not contain them.
-        if (typeof area.fanLevel === "number" && Number.isFinite(area.fanLevel)) room.fanLevel = area.fanLevel;
-        if (typeof area.waterPump === "number" && Number.isFinite(area.waterPump)) room.waterPump = area.waterPump;
-        if (typeof area.cleanOrder === "number" && Number.isFinite(area.cleanOrder)) room.cleanOrder = area.cleanOrder;
+        const profile = profileById.get(id) ?? area;
+        if (typeof profile.fanLevel === "number" && Number.isFinite(profile.fanLevel)) room.fanLevel = profile.fanLevel;
+        if (typeof profile.waterPump === "number" && Number.isFinite(profile.waterPump)) room.waterPump = profile.waterPump;
+        if (typeof profile.cleanOrder === "number" && Number.isFinite(profile.cleanOrder)) room.cleanOrder = profile.cleanOrder;
         return room;
     });
 
