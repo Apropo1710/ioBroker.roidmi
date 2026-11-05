@@ -7,9 +7,10 @@ test("maps suction power, cleaning type and water level to their V60 MIoT proper
     method: "set_properties",
     params: [{ did: "123456", siid: 2, piid: 4, value: 3 }]
   });
-  assert.deepEqual(buildSettingWrite("123456", "sweepType", 2).params[0], {
-    did: "123456", siid: 2, piid: 8, value: 2
+  assert.deepEqual(buildSettingWrite("123456", "sweepType", 1).params[0], {
+    did: "123456", siid: 2, piid: 8, value: 1
   });
+  assert.throws(() => buildSettingWrite("123456", "sweepType", 2), /between 0 and 1/);
   assert.deepEqual(buildSettingWrite("123456", "waterLevel", 4).params[0], {
     did: "123456", siid: 8, piid: 11, value: 4
   });
