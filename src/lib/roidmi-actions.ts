@@ -4,7 +4,7 @@ export interface VacuumAction {
     aiid: number;
     in?: unknown[];
 }
-export type VacuumCommand = "start" | "pause" | "resume" | "dock" | "stop" | "emptyDust";
+export type VacuumCommand = "start" | "pause" | "resume" | "dock" | "stop";
 /** Start whole-map cleaning; pause/resume are custom actions; dock uses Battery. */
 export function buildVacuumAction(command: VacuumCommand): VacuumAction {
     switch (command) {
@@ -13,7 +13,6 @@ export function buildVacuumAction(command: VacuumCommand): VacuumAction {
         case "resume": return { siid: 8, aiid: 5 };
         case "dock": return { siid: 3, aiid: 1 };
         case "stop": return { siid: 2, aiid: 2 };
-        case "emptyDust": return { siid: 8, aiid: 6 };
     }
 }
 
