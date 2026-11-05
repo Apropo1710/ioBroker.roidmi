@@ -217,12 +217,6 @@ class RoidmiAdapter extends Adapter {
             native: {}
         });
         await this.setObjectNotExistsAsync("control.refreshMap", { type: "state", common: { name: "Fetch map and rooms from Xiaomi Cloud (manual)", type: "boolean", role: "button", read: false, write: true, def: false }, native: {} });
-        await this.setObjectNotExistsAsync("control.setRoomProfile", {
-            type: "state",
-            common: { name: "Set room suction/water profile (JSON: mapId, roomId, fanLevel, waterPump)", type: "string", role: "json", read: false, write: true, def: "" },
-            native: {}
-        });
-        await this.subscribeStatesAsync("control.setRoomProfile");
         await this.subscribeStatesAsync("control.refreshMap");
         for (const [id, name, role] of [["map.cloudStatus","Xiaomi Cloud map retrieval status","text"],["map.cloudAuthUrl","Xiaomi two-factor authentication URL","text"],["map.cloudLastUpdate","Last successful Xiaomi Cloud map retrieval","date"]]) await this.setObjectNotExistsAsync(id,{type:"state",common:{name,type:"string",role,read:true,write:false},native:{}});
         // Remove the former 2FA datapoint; verification is handled in the adapter configuration UI.
@@ -404,11 +398,6 @@ class RoidmiAdapter extends Adapter {
         }
 
         if (id === this.namespace + ".control.refreshMap") { if(state.val===true) await this.refreshCloudMap(); await this.setStateAsync("control.refreshMap",{val:false,ack:true}); return; }
-        if (id === this.namespace + ".control.setRoomProfile") {
-            if (typeof state.val === "string" && state.val.trim()) await this.setRoomProfile(state.val);
-            await this.setStateAsync("control.setRoomProfile", { val: "", ack: true });
-            return;
-        }
         const refreshTimingId = this.namespace + ".control.refreshTiming";
         if (id === refreshTimingId) {
             if (state.val === true) await this.refreshTiming();
@@ -478,71 +467,6 @@ class RoidmiAdapter extends Adapter {
      * Read the stored schedule JSON only when explicitly requested.
      * This is deliberately excluded from the fast status polling cycle.
      */
-    /**
-     * Update one room profile using the exact action/payload found in Xiaomi Home's
-     * Roidmi V60 plugin. We require the complete current profile set from a fresh map
-     * archive and send all rooms, matching the official app's Type 15 operation.
-     */
-    private async setRoomProfile(input: string): Promise<void> {
-        const config = this.config as RoidmiAdapterConfig;
-        if (!this.client || !config.did || this.commandRunning) {
-            this.log.warn("Room profile update skipped: robot unavailable or another command is running");
-            return;
-        }
-        let request: unknown;
-        try { request = JSON.parse(input); } catch { this.log.warn("Room profile update rejected: invalid JSON"); return; }
-        if (!request || typeof request !== "object" || Array.isArray(request)) {
-            this.log.warn("Room profile update rejected: expected JSON object"); return;
-        }
-        const req = request as Record<string, unknown>;
-        const mapId = Number(req.mapId), roomId = Number(req.roomId), fanLevel = Number(req.fanLevel), waterPump = Number(req.waterPump);
-        if (!Number.isSafeInteger(mapId) || mapId <= 0 || !Number.isSafeInteger(roomId) || roomId <= 0 ||
-            !Number.isInteger(fanLevel) || fanLevel < 0 || fanLevel > 4 ||
-            !Number.isInteger(waterPump) || waterPump < 0 || waterPump > 4) {
-            this.log.warn("Room profile update rejected: invalid map/room ID or fan/water range"); return;
-        }
-        const cached = await this.getStateAsync("map.roomProfilesJson");
-        if (typeof cached?.val !== "string" || !cached.val) {
-            this.log.warn("Room profile update rejected: refresh the Xiaomi Cloud map first"); return;
-        }
-        let profiles: Array<Record<string, unknown>>;
-        try {
-            const parsed = JSON.parse(cached.val);
-            if (!Array.isArray(parsed)) throw new Error("not an array");
-            profiles = parsed;
-        } catch { this.log.warn("Room profile update rejected: cached profile metadata is invalid"); return; }
-        if (!profiles.length || profiles.some((p) => typeof p.id !== "number" || typeof p.fanLevel !== "number" || typeof p.waterPump !== "number")) {
-            this.log.warn("Room profile update rejected: map does not contain complete existing profile values for every room; refusing to overwrite/default profiles");
-            return;
-        }
-        const persistedMap = await this.getStateAsync("map.config");
-        let persistedMapId = 0;
-        try { persistedMapId = Number((JSON.parse(String(persistedMap?.val ?? "{}")) as { mapId?: unknown }).mapId); } catch { /* invalid cache */ }
-        if (mapId !== persistedMapId) {
-            this.log.warn("Room profile update rejected: requested mapId does not match the imported room map");
-            return;
-        }
-        const target = profiles.find((p) => p.id === roomId);
-        if (!target) { this.log.warn("Room profile update rejected: room ID not found in current map"); return; }
-        target.fanLevel = fanLevel;
-        target.waterPump = waterPump;
-        const areaInfo = profiles.map((p) => [p.id, p.fanLevel, p.waterPump, 1]);
-        const operateId = Date.now() & 0xFFFFF;
-        await this.setStateAsync("control.lastCommandStatus", { val: "Sending room profile…", ack: true });
-        await this.sendAction("room-profile-" + roomId, {
-            siid: 13, aiid: 10,
-            in: [JSON.stringify({ Cmd: "set", Type: 15, AreaInfo: areaInfo, MapId: mapId, OperateId: operateId })]
-        }, "control.setRoomProfile", "");
-        const resultState = await this.getStateAsync("control.lastCommandStatus");
-        if (resultState?.val !== "Accepted by robot") {
-            this.log.warn("Room profile update was not accepted; cached profile values remain unchanged");
-            return;
-        }
-        await this.setStateChangedAsync("map.roomProfilesJson", { val: JSON.stringify(profiles, null, 2), ack: true });
-        const roomName = String(target.name ?? roomId);
-        this.log.info(`Room profile action accepted for ${roomName} (map ${mapId}): suction ${fanLevel}, water ${waterPump}`);
-    }
-
     private async refreshTiming(): Promise<void> {
         const config = this.config as RoidmiAdapterConfig;
         if (!this.client || !config.did || this.commandRunning) {
