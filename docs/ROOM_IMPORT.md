@@ -44,3 +44,13 @@ Xiaomi may require two-factor authentication; open `map.cloudAuthUrl` on a devic
 - This reads MIoT SIID 8 / PIID 6 and is intentionally not part of the regular polling loop. It adds no background traffic.
 - The JSON format can contain schedule start time, enabled flag, fan speed, cleaning type, weekdays, water level, and room IDs. Reading it helps inspect room-specific schedule data, but does not yet prove that the original app's per-room defaults are represented in the same structure.
 - Do not write to this property yet: setting it replaces existing schedules on the robot.
+
+
+## Schedule decoding
+
+The manual `control.refreshTiming` read also updates two read-only states:
+
+- `timing.parsed`: decoded JSON with local time, enabled state, fan speed, cleaning mode, weekdays, water level and room IDs.
+- `timing.summary`: compact human-readable summary.
+
+The raw `timing.raw` state is retained unchanged for diagnostics. These states only decode the schedule response; they do not write to the robot, change schedules, or alter room cleaning commands. Schedule data must not be treated as proof that manual room-profile defaults use the same storage/API.
