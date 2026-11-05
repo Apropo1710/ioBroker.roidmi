@@ -78,7 +78,7 @@ class RoidmiAdapter extends Adapter {
         });
         // Always create the new cleaning-option states, even when adapter configuration
         // is incomplete. The rest of onReady() may return early before device polling.
-        const earlyCleaningOptions = [
+        const earlyCleaningOptions: Array<{ id: string; name: string; siid: number; piid: number; min: number; max: number; states: Record<string, string> }> = [
             { id: "doubleClean", name: "Double cleaning", siid: 8, piid: 20, min: 0, max: 1, states: { 0: "Aus", 1: "Ein" } },
             { id: "pathType", name: "Mopping pattern", siid: 13, piid: 8, min: 0, max: 2, states: { 0: "Normal", 1: "Y-Weg", 2: "Wiederholen" } },
             { id: "individual", name: "Individual room settings", siid: 13, piid: 7, min: 0, max: 1, states: { 0: "Aus", 1: "Ein" } }
