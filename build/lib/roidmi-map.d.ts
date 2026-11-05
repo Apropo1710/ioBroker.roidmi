@@ -10,6 +10,10 @@ export interface RoidmiMapRoom {
     name: string;
     x?: number;
     y?: number;
+    /** Room-specific cleaning profile fields supplied by Xiaomi's map metadata. */
+    fanLevel?: number;
+    waterPump?: number;
+    cleanOrder?: number;
 }
 export interface RoidmiMapMetadata {
     width: number;

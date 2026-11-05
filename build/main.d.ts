@@ -12,6 +12,8 @@ declare class RoidmiAdapter extends Adapter {
     constructor();
     private onReady;
     private applyRoomMapConfig;
+    /** Publish room profile values from the Xiaomi map archive. This is only called during explicit cloud map refresh. */
+    private applyRoomProfiles;
     private onStateChange;
     /**
      * Read the stored schedule JSON only when explicitly requested.
