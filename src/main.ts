@@ -247,12 +247,13 @@ class RoidmiAdapter extends Adapter {
                 for (let index = 0; index < properties.length; index++) {
                     const property = properties[index];
                     const item = result[index] as { code?: number; value?: unknown } | undefined;
-                    if (item?.code === 0 && typeof item.value === "number") {
-                        await this.setStateChangedAsync(property.id, { val: item.value, ack: true });
-                        if (property.id === "state") await this.setStateChangedAsync("stateText", { val: getVacuumStateText(item.value), ack: true });
-                        if (property.id === "errorCode") await this.setStateChangedAsync("errorCodeText", { val: getRoidmiErrorText(item.value), ack: true });
-                        if (property.id === "charging") await this.setStateChangedAsync("chargingText", { val: getChargingStateText(item.value), ack: true });
-                        if (getRoidmiSetting(property.id)) this.lastKnownSettings[property.id] = item.value;
+                    if (item?.code === 0 && (typeof item.value === "number" || typeof item.value === "boolean")) {
+                        const propertyValue = typeof item.value === "boolean" ? Number(item.value) : item.value;
+                        await this.setStateChangedAsync(property.id, { val: propertyValue, ack: true });
+                        if (property.id === "state") await this.setStateChangedAsync("stateText", { val: getVacuumStateText(propertyValue), ack: true });
+                        if (property.id === "errorCode") await this.setStateChangedAsync("errorCodeText", { val: getRoidmiErrorText(propertyValue), ack: true });
+                        if (property.id === "charging") await this.setStateChangedAsync("chargingText", { val: getChargingStateText(propertyValue), ack: true });
+                        if (getRoidmiSetting(property.id)) this.lastKnownSettings[property.id] = propertyValue;
                     } else if (item && typeof item.code === "number" && item.code !== 0) {
                         throw new Error(`MIoT property read failed (SIID ${property.siid}, PIID ${property.piid}, code ${item.code})`);
                     }
