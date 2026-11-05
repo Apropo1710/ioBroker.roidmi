@@ -6,7 +6,7 @@
 - [ ] Read-only-Verbindung am realen Gerät testen
 - [x] Dokumentiertes MIoT-Format für Einzel- und Mehrraumreinigung als getesteten Payload-Builder abbilden
 - [ ] Tatsächlich unterstützte Properties, Actions, Raum-IDs und Fehlercodes am Gerät dokumentieren
-- [ ] Gebündelte Sieben-Property-Abfrage (1 RPC statt 7) am realen Gerät auf vollständige und korrekt zugeordnete Antworten prüfen
+- [ ] Sieben sequenzielle Einzel-Property-Abfragen am realen Gerät auf korrekte Werte, Laufzeit und Belastung prüfen (V60-Profil: maxProperties=1)
 - [ ] Prüfen, welche Funktionen lokal und welche nur über Cloud verfügbar sind
 
 ## Phase 1 – Adapterbasis

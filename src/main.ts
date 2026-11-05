@@ -37,6 +37,7 @@ interface MiotAction {
 
 class RoidmiAdapter extends Adapter {
     private pollTimer?: NodeJS.Timeout;
+    private statusPollTimer?: NodeJS.Timeout;
     private stopping = false;
     private lastPollError = "";
     private commandRunning = false;
@@ -127,7 +128,10 @@ class RoidmiAdapter extends Adapter {
             { id: "errorCode", siid: 2, piid: 2, name: "Error code" },
             { id: "fanSpeed", siid: 2, piid: 4, name: "Suction power", min: 0, max: 4, states: { 0: "Aus", 1: "Leise (Silent)", 2: "Standard (Basic)", 3: "Stark (Strong)", 4: "Maximal (Full Speed)" } },
             { id: "sweepType", siid: 2, piid: 8, name: "Cleaning type", min: 0, max: 1, states: { 0: "Saugen", 1: "Wischen" } },
-            { id: "waterLevel", siid: 8, piid: 11, name: "Water level", min: 0, max: 4, states: { 0: "Aus", 1: "Niedrig", 2: "Mittel", 3: "Maximal", 4: "Zusatzstufe (Fourth)" } }
+            { id: "waterLevel", siid: 8, piid: 11, name: "Water level", min: 0, max: 4, states: { 0: "Aus", 1: "Niedrig", 2: "Mittel", 3: "Maximal", 4: "Zusatzstufe (Fourth)" } },
+            { id: "customizeRooms", siid: 13, piid: 7, name: "Individuelle Raumreinigung", min: 0, max: 1, states: { 0: "Aus", 1: "Ein" } },
+            { id: "doubleClean", siid: 8, piid: 20, name: "Reinigungszeit ×2", min: 0, max: 1, states: { 0: "Aus", 1: "Ein" } },
+            { id: "moppingPath", siid: 13, piid: 8, name: "Wischweg", min: 0, max: 2, states: { 0: "Normal", 1: "Y-Weg-Moppen", 2: "Wiederholtes Moppen" } }
         ] as const;
 
         await this.setObjectNotExistsAsync("stateText", { type: "state", common: { name: "Vacuum state (human-readable, empirical)", type: "string", role: "text", read: true, write: false }, native: {} });
@@ -141,18 +145,19 @@ class RoidmiAdapter extends Adapter {
                     ...("min" in property ? { min: property.min, max: property.max } : {}),
                     ...("unit" in property ? { unit: property.unit } : {}),
                     ...("states" in property ? { states: property.states } : {}),
-                    read: true, write: "min" in property
+                    read: true, write: "min" in property && property.id !== "sweepType"
                 },
                 native: { siid: property.siid, piid: property.piid }
             });
-            if ("min" in property) await this.subscribeStatesAsync(property.id);
+            if ("min" in property && property.id !== "sweepType") await this.subscribeStatesAsync(property.id);
         }
 
         const controls = [
             { id: "start", name: "Start full cleaning" },
             { id: "pause", name: "Pause cleaning" },
             { id: "resume", name: "Resume cleaning" },
-            { id: "dock", name: "Return to charging dock" },            { id: "stop", name: "Stop cleaning" }
+            { id: "dock", name: "Return to charging dock" },
+            { id: "stop", name: "Stop cleaning" }
         ] as const;
         for (const control of controls) {
             await this.setObjectNotExistsAsync(`control.${control.id}`, {
@@ -225,29 +230,59 @@ class RoidmiAdapter extends Adapter {
             }
         }
 
+        const readProperty = async (property: typeof properties[number]): Promise<void> => {
+            const result = await this.client!.call("get_properties", [{
+                did: config.did, siid: property.siid, piid: property.piid
+            }]);
+            if (!Array.isArray(result)) throw new Error("Unexpected MIoT property response");
+            const item = result[0] as { code?: number; value?: unknown } | undefined;
+            if (item?.code === 0 && typeof item.value === "number") {
+                await this.setStateChangedAsync(property.id, { val: item.value, ack: true });
+                if (property.id === "state") await this.setStateChangedAsync("stateText", { val: getVacuumStateText(item.value), ack: true });
+                if (property.id === "errorCode") await this.setStateChangedAsync("errorCodeText", { val: getRoidmiErrorText(item.value), ack: true });
+                if (property.id === "charging") await this.setStateChangedAsync("chargingText", { val: getChargingStateText(item.value), ack: true });
+                if (getRoidmiSetting(property.id)) this.lastKnownSettings[property.id] = item.value;
+            } else if (item && typeof item.code === "number" && item.code !== 0) {
+                throw new Error(`MIoT property read failed (SIID ${property.siid}, PIID ${property.piid}, code ${item.code})`);
+            }
+        };
+
+        const stateProperty = properties.find((property) => property.id === "state")!;
+        const errorProperty = properties.find((property) => property.id === "errorCode")!;
+        const slowProperties = properties.filter((property) => property.id !== "state" && property.id !== "errorCode");
+        let lastStatusPollError = "";
+
+        // The robot state and fault code are the values most visible to the user.
+        // Read these every 10 seconds; keep battery/settings on the slower configured interval.
+        const pollStatus = async (): Promise<void> => {
+            if (!this.client || this.stopping || this.commandRunning) return;
+            this.commandRunning = true;
+            try {
+                miioTrace.length = 0;
+                await readProperty(stateProperty);
+                await readProperty(errorProperty);
+                await this.setStateChangedAsync("info.connection", { val: true, ack: true });
+                await this.setStateChangedAsync("info.connectionText", { val: "Local miIO connection established", ack: true });
+                lastStatusPollError = "";
+            } catch (error) {
+                const message = error instanceof Error ? error.message : "Unknown local miIO status error";
+                if (message !== lastStatusPollError) this.log.warn("Fast status poll failed: " + message);
+                lastStatusPollError = message;
+                await this.setStateChangedAsync("info.connection", { val: false, ack: true });
+                await this.setStateChangedAsync("info.connectionText", { val: message, ack: true });
+            } finally {
+                this.commandRunning = false;
+            }
+        };
+
         const poll = async (): Promise<void> => {
             if (!this.client || this.stopping || this.commandRunning) return;
             this.commandRunning = true;
             try {
-                // Read all status properties in one MIoT RPC to minimize UDP traffic and robot wakeups.
+                // V60 maxProperties=1: all requests remain sequential and never overlap.
+                // Slow-changing values are intentionally excluded from the fast status poll.
                 miioTrace.length = 0;
-                const result = await this.client.call("get_properties", properties.map((property) => ({
-                    did: config.did, siid: property.siid, piid: property.piid
-                })));
-                if (!Array.isArray(result)) throw new Error("Unexpected MIoT property response");
-                for (let index = 0; index < properties.length; index++) {
-                    const property = properties[index];
-                    const item = result[index] as { code?: number; value?: unknown } | undefined;
-                    if (item?.code === 0 && typeof item.value === "number") {
-                        await this.setStateChangedAsync(property.id, { val: item.value, ack: true });
-                        if (property.id === "state") await this.setStateChangedAsync("stateText", { val: getVacuumStateText(item.value), ack: true });
-                        if (property.id === "errorCode") await this.setStateChangedAsync("errorCodeText", { val: getRoidmiErrorText(item.value), ack: true });
-                        if (property.id === "charging") await this.setStateChangedAsync("chargingText", { val: getChargingStateText(item.value), ack: true });
-                        if (getRoidmiSetting(property.id)) this.lastKnownSettings[property.id] = item.value;
-                    } else if (item && typeof item.code === "number" && item.code !== 0) {
-                        throw new Error(`MIoT property read failed (SIID ${property.siid}, PIID ${property.piid}, code ${item.code})`);
-                    }
-                }
+                for (const property of slowProperties) await readProperty(property);
                 successfulPollCount++;
                 await this.setStateChangedAsync("info.lastPoll", { val: new Date().toISOString(), ack: true });
                 await this.setStateChangedAsync("info.pollCount", { val: successfulPollCount, ack: true });
@@ -271,6 +306,7 @@ class RoidmiAdapter extends Adapter {
         };
 
         const baseIntervalMs = (config.pollIntervalSeconds ?? 30) * 1000;
+        const statusIntervalMs = 10000;
         let consecutiveFailures = 0;
         const scheduleNext = (delayMs: number): void => {
             if (this.stopping) return;
@@ -284,8 +320,17 @@ class RoidmiAdapter extends Adapter {
                 scheduleNext(nextDelay);
             }, delayMs);
         };
+        const scheduleNextStatus = (): void => {
+            if (this.stopping) return;
+            this.statusPollTimer = setTimeout(async () => {
+                await pollStatus();
+                scheduleNextStatus();
+            }, statusIntervalMs);
+        };
 
+        await pollStatus();
         await poll();
+        scheduleNextStatus();
         scheduleNext(this.lastPollError ? Math.min(baseIntervalMs * 2, 300000) : baseIntervalMs);
     }
 
@@ -664,6 +709,7 @@ class RoidmiAdapter extends Adapter {
     private onUnload(callback: () => void): void {
         this.stopping = true;
         if (this.pollTimer) clearTimeout(this.pollTimer);
+        if (this.statusPollTimer) clearTimeout(this.statusPollTimer);
         this.setState("info.connection", false, true);
         callback();
     }

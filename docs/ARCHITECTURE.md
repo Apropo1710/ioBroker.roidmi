@@ -22,7 +22,7 @@ Die konkrete Implementierung wird erst nach Validierung der realen Geräteantwor
 
 Ziel ist eine möglichst geringe Datenlatenz bei minimaler Last für Roboter und ioBroker.
 
-- Der Adapter bündelt aktuell alle sieben Status- und Einstellungs-Properties in einer `get_properties`-RPC. Das reduziert die Zahl der Status-RPCs pro Polling-Zyklus von sieben auf eine. Die tatsächliche Unterstützung und Antwortreihenfolge müssen am konkreten EVE Plus noch im Live-Betrieb bestätigt werden.
+- Das veröffentlichte openHAB-V60-Profil setzt `maxProperties: 1`. Der Adapter liest deshalb jede der sieben Status- und Einstellungs-Properties in einer eigenen `get_properties`-RPC, sequenziell und nicht parallel. Die konkrete Property-Unterstützung muss am EVE Plus weiterhin live bestätigt werden.
 - Polling standardmäßig moderat (30 Sekunden); die Frequenz muss konfigurierbar bleiben.
 - Keine überlappenden Polling-Durchläufe: der nächste Lauf wird erst nach Abschluss des vorherigen geplant.
 - Bei erfolgreicher Abfrage nur geänderte Werte mit `setStateChangedAsync` schreiben, damit unnötige Datenbank- und Event-Last vermieden wird.
@@ -33,4 +33,4 @@ Ziel ist eine möglichst geringe Datenlatenz bei minimaler Last für Roboter und
 - Keine unnötigen Objekte/Datenpunkte pro Poll neu anlegen.
 - Polling-Takt, Anzahl der RPC-Aufrufe und Antwortzeiten später messbar machen, ohne Tokens oder sensible Nutzdaten zu protokollieren.
 
-Die aktuelle Implementierung liest sieben Basis- und Einstellungs-Properties gebündelt mit einem RPC, schreibt nur geänderte Werte und verwendet ein nicht überlappendes Polling mit Fehler-Backoff. Die gebündelte Antwortzuordnung ist durch die Reihenfolge der angeforderten Properties definiert; die erfolgreiche CI bestätigt Build und Unit-Tests, aber noch nicht die Antwort des realen EVE Plus.
+Die aktuelle Implementierung liest den Roboterstatus und Fehlercode alle 10 Sekunden mit zwei sequenziellen RPCs. Akku, Ladezustand und drei Einstellungs-Properties werden separat im konfigurierten Standardintervall (30 Sekunden) gelesen. Es schreibt nur geänderte Werte und verwendet nicht überlappende Abfragen mit Fehler-Backoff. Die CI bestätigt Build und Unit-Tests, aber noch nicht die Antwort des realen EVE Plus.
