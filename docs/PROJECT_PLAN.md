@@ -23,8 +23,8 @@
 - [x] Fehler- und Verbindungsstatus als Datenpunkte
 - [x] Saugstufe, Reinigungsart und Wasserstufe als les-/schreibbare Datenpunkte mit Wertevalidierung (Geräteausführung noch offen)
 - [x] Manueller, validierter Raumkarten-Import mit persistenter Speicherung und dynamischen Einzelraum-Datenpunkten (automatische Ermittlung bleibt offen)
-- [ ] Raumaufteilung bzw. Raumliste automatisch ermitteln
-- [ ] Aktuelle mapId und Raum-/Segment-IDs automatisch ermitteln und persistent ablegen
+- [x] Raumaufteilung bzw. Raumliste aus V60-Cloud-Kartenmetadaten automatisch ermitteln
+- [x] mapId und Raum-/Segment-IDs aus den Kartenmetadaten übernehmen und persistent ablegen, sofern die Karte eine gültige mapId enthält (Fallback bleibt manueller Import); reale Geräteausführung noch offen
 - [x] Importierte Räume mit stabilen Segment-IDs, lesbaren Namen und Einzelraum-Reinigungsbuttons als ioBroker-Objekte abbilden
 - [x] JSON-Schnittstelle für Einzelraumreinigung im Adapter bereitstellen (Geräteausführung noch offen)
 - [x] JSON-Schnittstelle für Mehrraumreinigung in einem Auftrag bereitstellen (Geräteausführung noch offen)
