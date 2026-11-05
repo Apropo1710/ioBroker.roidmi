@@ -62,6 +62,21 @@ test("preserves per-room fan, water and cleaning-order metadata", () => {
     ]);
 });
 
+test("joins profile metadata by room ID when autoArea and autoAreaValue are separate", () => {
+    const result = parseRoidmiMapPayload(payload({
+        width: 10, height: 10, resolution: 0.1,
+        autoArea: [{ id: 5, name: "Bad" }, { id: 7, name: "Flur" }],
+        autoAreaValue: [
+            { id: 5, fanLevel: 4, waterPump: 1, cleanOrder: 2 },
+            { id: 7, fanLevel: 2, waterPump: 0 }
+        ]
+    }));
+    assert.deepEqual(result.rooms, [
+        { id: 5, name: "Bad", fanLevel: 4, waterPump: 1, cleanOrder: 2 },
+        { id: 7, name: "Flur", fanLevel: 2, waterPump: 0 }
+    ]);
+});
+
 test("does not infer a map ID from malformed metadata", () => {
     const result = parseRoidmiMapPayload(payload({
         width: 10, height: 10, resolution: 0.1, mapId: "not-a-map-id",
