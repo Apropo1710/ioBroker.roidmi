@@ -37,6 +37,7 @@ interface MiotAction {
 
 class RoidmiAdapter extends Adapter {
     private pollTimer?: NodeJS.Timeout;
+    private statusPollTimer?: NodeJS.Timeout;
     private stopping = false;
     private lastPollError = "";
     private commandRunning = false;
@@ -226,30 +227,59 @@ class RoidmiAdapter extends Adapter {
             }
         }
 
+        const readProperty = async (property: typeof properties[number]): Promise<void> => {
+            const result = await this.client!.call("get_properties", [{
+                did: config.did, siid: property.siid, piid: property.piid
+            }]);
+            if (!Array.isArray(result)) throw new Error("Unexpected MIoT property response");
+            const item = result[0] as { code?: number; value?: unknown } | undefined;
+            if (item?.code === 0 && typeof item.value === "number") {
+                await this.setStateChangedAsync(property.id, { val: item.value, ack: true });
+                if (property.id === "state") await this.setStateChangedAsync("stateText", { val: getVacuumStateText(item.value), ack: true });
+                if (property.id === "errorCode") await this.setStateChangedAsync("errorCodeText", { val: getRoidmiErrorText(item.value), ack: true });
+                if (property.id === "charging") await this.setStateChangedAsync("chargingText", { val: getChargingStateText(item.value), ack: true });
+                if (getRoidmiSetting(property.id)) this.lastKnownSettings[property.id] = item.value;
+            } else if (item && typeof item.code === "number" && item.code !== 0) {
+                throw new Error(`MIoT property read failed (SIID ${property.siid}, PIID ${property.piid}, code ${item.code})`);
+            }
+        };
+
+        const stateProperty = properties.find((property) => property.id === "state")!;
+        const errorProperty = properties.find((property) => property.id === "errorCode")!;
+        const slowProperties = properties.filter((property) => property.id !== "state" && property.id !== "errorCode");
+        let lastStatusPollError = "";
+
+        // The robot state and fault code are the values most visible to the user.
+        // Read these every 10 seconds; keep battery/settings on the slower configured interval.
+        const pollStatus = async (): Promise<void> => {
+            if (!this.client || this.stopping || this.commandRunning) return;
+            this.commandRunning = true;
+            try {
+                miioTrace.length = 0;
+                await readProperty(stateProperty);
+                await readProperty(errorProperty);
+                await this.setStateChangedAsync("info.connection", { val: true, ack: true });
+                await this.setStateChangedAsync("info.connectionText", { val: "Local miIO connection established", ack: true });
+                lastStatusPollError = "";
+            } catch (error) {
+                const message = error instanceof Error ? error.message : "Unknown local miIO status error";
+                if (message !== lastStatusPollError) this.log.warn("Fast status poll failed: " + message);
+                lastStatusPollError = message;
+                await this.setStateChangedAsync("info.connection", { val: false, ack: true });
+                await this.setStateChangedAsync("info.connectionText", { val: message, ack: true });
+            } finally {
+                this.commandRunning = false;
+            }
+        };
+
         const poll = async (): Promise<void> => {
             if (!this.client || this.stopping || this.commandRunning) return;
             this.commandRunning = true;
             try {
-                // The V60 profile limits get_properties to one property per RPC.
-                // Read sequentially (never in parallel) to respect that limit and avoid
-                // adding simultaneous UDP traffic or overlapping poll cycles.
+                // V60 maxProperties=1: all requests remain sequential and never overlap.
+                // Slow-changing values are intentionally excluded from the fast status poll.
                 miioTrace.length = 0;
-                for (const property of properties) {
-                    const result = await this.client.call("get_properties", [{
-                        did: config.did, siid: property.siid, piid: property.piid
-                    }]);
-                    if (!Array.isArray(result)) throw new Error("Unexpected MIoT property response");
-                    const item = result[0] as { code?: number; value?: unknown } | undefined;
-                    if (item?.code === 0 && typeof item.value === "number") {
-                        await this.setStateChangedAsync(property.id, { val: item.value, ack: true });
-                        if (property.id === "state") await this.setStateChangedAsync("stateText", { val: getVacuumStateText(item.value), ack: true });
-                        if (property.id === "errorCode") await this.setStateChangedAsync("errorCodeText", { val: getRoidmiErrorText(item.value), ack: true });
-                        if (property.id === "charging") await this.setStateChangedAsync("chargingText", { val: getChargingStateText(item.value), ack: true });
-                        if (getRoidmiSetting(property.id)) this.lastKnownSettings[property.id] = item.value;
-                    } else if (item && typeof item.code === "number" && item.code !== 0) {
-                        throw new Error(`MIoT property read failed (SIID ${property.siid}, PIID ${property.piid}, code ${item.code})`);
-                    }
-                }
+                for (const property of slowProperties) await readProperty(property);
                 successfulPollCount++;
                 await this.setStateChangedAsync("info.lastPoll", { val: new Date().toISOString(), ack: true });
                 await this.setStateChangedAsync("info.pollCount", { val: successfulPollCount, ack: true });
@@ -273,6 +303,7 @@ class RoidmiAdapter extends Adapter {
         };
 
         const baseIntervalMs = (config.pollIntervalSeconds ?? 30) * 1000;
+        const statusIntervalMs = 10000;
         let consecutiveFailures = 0;
         const scheduleNext = (delayMs: number): void => {
             if (this.stopping) return;
@@ -286,8 +317,17 @@ class RoidmiAdapter extends Adapter {
                 scheduleNext(nextDelay);
             }, delayMs);
         };
+        const scheduleNextStatus = (): void => {
+            if (this.stopping) return;
+            this.statusPollTimer = setTimeout(async () => {
+                await pollStatus();
+                scheduleNextStatus();
+            }, statusIntervalMs);
+        };
 
+        await pollStatus();
         await poll();
+        scheduleNextStatus();
         scheduleNext(this.lastPollError ? Math.min(baseIntervalMs * 2, 300000) : baseIntervalMs);
     }
 
@@ -666,6 +706,7 @@ class RoidmiAdapter extends Adapter {
     private onUnload(callback: () => void): void {
         this.stopping = true;
         if (this.pollTimer) clearTimeout(this.pollTimer);
+        if (this.statusPollTimer) clearTimeout(this.statusPollTimer);
         this.setState("info.connection", false, true);
         callback();
     }

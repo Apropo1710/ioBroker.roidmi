@@ -33,4 +33,4 @@ Ziel ist eine möglichst geringe Datenlatenz bei minimaler Last für Roboter und
 - Keine unnötigen Objekte/Datenpunkte pro Poll neu anlegen.
 - Polling-Takt, Anzahl der RPC-Aufrufe und Antwortzeiten später messbar machen, ohne Tokens oder sensible Nutzdaten zu protokollieren.
 
-Die aktuelle Implementierung liest sieben Basis- und Einstellungs-Properties mit sieben sequenziellen RPCs, schreibt nur geänderte Werte und verwendet ein nicht überlappendes Polling mit Fehler-Backoff. Die CI bestätigt Build und Unit-Tests, aber noch nicht die Antwort des realen EVE Plus.
+Die aktuelle Implementierung liest den Roboterstatus und Fehlercode alle 10 Sekunden mit zwei sequenziellen RPCs. Akku, Ladezustand und drei Einstellungs-Properties werden separat im konfigurierten Standardintervall (30 Sekunden) gelesen. Es schreibt nur geänderte Werte und verwendet nicht überlappende Abfragen mit Fehler-Backoff. Die CI bestätigt Build und Unit-Tests, aber noch nicht die Antwort des realen EVE Plus.
