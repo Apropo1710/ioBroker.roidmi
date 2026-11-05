@@ -210,6 +210,11 @@ class RoidmiAdapter extends Adapter {
             common: { name: "Imported room list", type: "string", role: "json", read: true, write: false },
             native: {}
         });
+        await this.setObjectNotExistsAsync("map.roomProfilesJson", {
+            type: "state",
+            common: { name: "Room-specific suction and water profiles from Xiaomi map metadata (read-only)", type: "string", role: "json", read: true, write: false },
+            native: {}
+        });
         await this.setObjectNotExistsAsync("control.refreshMap", { type: "state", common: { name: "Fetch map and rooms from Xiaomi Cloud (manual)", type: "boolean", role: "button", read: false, write: true, def: false }, native: {} });
         await this.subscribeStatesAsync("control.refreshMap");
         for (const [id, name, role] of [["map.cloudStatus","Xiaomi Cloud map retrieval status","text"],["map.cloudAuthUrl","Xiaomi two-factor authentication URL","text"],["map.cloudLastUpdate","Last successful Xiaomi Cloud map retrieval","date"]]) await this.setObjectNotExistsAsync(id,{type:"state",common:{name,type:"string",role,read:true,write:false},native:{}});
@@ -328,6 +333,49 @@ class RoidmiAdapter extends Adapter {
             }
         }
         this.log.info(`Loaded room map ${config.mapId} with ${config.rooms.length} rooms`);
+    }
+
+    /** Publish room profile values from the Xiaomi map archive. This is only called during explicit cloud map refresh. */
+    private async applyRoomProfiles(rooms: RoidmiMapMetadata["rooms"]): Promise<void> {
+        const profiles = rooms.filter((room) => room.fanLevel !== undefined || room.waterPump !== undefined || room.cleanOrder !== undefined)
+            .map((room) => ({
+                id: room.id,
+                name: room.name,
+                ...(room.fanLevel === undefined ? {} : { fanLevel: room.fanLevel }),
+                ...(room.waterPump === undefined ? {} : { waterPump: room.waterPump }),
+                ...(room.cleanOrder === undefined ? {} : { cleanOrder: room.cleanOrder })
+            }));
+        await this.setStateChangedAsync("map.roomProfilesJson", { val: JSON.stringify(profiles, null, 2), ack: true });
+        for (const room of profiles) {
+            if (room.fanLevel !== undefined) {
+                const id = `rooms.${room.id}.profile.fanLevel`;
+                await this.setObjectNotExistsAsync(id, {
+                    type: "state",
+                    common: { name: `Room suction profile - ${room.name}`, type: "number", role: "value", read: true, write: false },
+                    native: { segmentId: room.id, source: "Xiaomi map metadata" }
+                });
+                await this.setStateChangedAsync(id, { val: room.fanLevel, ack: true });
+            }
+            if (room.waterPump !== undefined) {
+                const id = `rooms.${room.id}.profile.waterPump`;
+                await this.setObjectNotExistsAsync(id, {
+                    type: "state",
+                    common: { name: `Room mop water profile - ${room.name}`, type: "number", role: "value", read: true, write: false },
+                    native: { segmentId: room.id, source: "Xiaomi map metadata" }
+                });
+                await this.setStateChangedAsync(id, { val: room.waterPump, ack: true });
+            }
+            if (room.cleanOrder !== undefined) {
+                const id = `rooms.${room.id}.profile.cleanOrder`;
+                await this.setObjectNotExistsAsync(id, {
+                    type: "state",
+                    common: { name: `Room cleaning order - ${room.name}`, type: "number", role: "value", read: true, write: false },
+                    native: { segmentId: room.id, source: "Xiaomi map metadata" }
+                });
+                await this.setStateChangedAsync(id, { val: room.cleanOrder, ack: true });
+            }
+        }
+        this.log.info(`Read room-specific cleaning profiles from Xiaomi map metadata: ${profiles.length} rooms`);
     }
 
     private async onStateChange(id: string, state: ioBroker.State | null | undefined): Promise<void> {
@@ -540,6 +588,7 @@ class RoidmiAdapter extends Adapter {
             });
             const rooms = result.metadata.rooms;
             if (!rooms.length) throw new Error("Downloaded map contains no named rooms.");
+            await this.applyRoomProfiles(rooms);
 
             await this.setStateChangedAsync("map.roomsJson", { val: JSON.stringify(rooms), ack: true });
             if (result.metadata.mapId) {
