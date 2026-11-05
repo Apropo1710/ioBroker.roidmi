@@ -52,9 +52,18 @@ function parseRoidmiMapPayload(payload) {
         }
         return room;
     });
-    const mapId = typeof data.mapId === "number" && Number.isSafeInteger(data.mapId) && data.mapId > 0
-        ? data.mapId
-        : undefined;
+    // node-xmihome's V60 implementation reads mapId directly from these
+    // metadata and passes it through parseInt; accept digit-only strings too.
+    // Do not infer it from file names, DID, or segment IDs.
+    let mapId;
+    try {
+        mapId = data.mapId === undefined || data.mapId === null
+            ? undefined
+            : positiveInteger(data.mapId, "mapId");
+    }
+    catch {
+        mapId = undefined;
+    }
     return {
         width,
         height,
@@ -73,10 +82,11 @@ function findMarker(data, start) {
     return -1;
 }
 function positiveInteger(value, field) {
-    if (typeof value !== "number" || !Number.isSafeInteger(value) || value <= 0) {
+    const normalized = typeof value === "string" && /^\d+$/.test(value) ? Number(value) : value;
+    if (typeof normalized !== "number" || !Number.isSafeInteger(normalized) || normalized <= 0) {
         throw new Error(`Roidmi map ${field} must be a positive integer`);
     }
-    return value;
+    return normalized;
 }
 function finiteOptionalNumber(value) {
     return typeof value === "number" && Number.isFinite(value) ? value : undefined;
