@@ -63,7 +63,19 @@ class RoidmiAdapter extends adapter_core_1.Adapter {
             this.log.info(message);
             return;
         }
-        this.client = new miio_client_1.MiioClient({ host: config.host, token: config.token, debug: true, onDebug: (message) => this.log.debug("[miIO] " + message) });
+        // Keep a small miIO trace in memory and only emit it when a request fails.
+        // This avoids flooding the ioBroker log during normal polling.
+        const miioTrace = [];
+        this.client = new miio_client_1.MiioClient({
+            host: config.host,
+            token: config.token,
+            debug: true,
+            onDebug: (message) => {
+                miioTrace.push(message);
+                if (miioTrace.length > 20)
+                    miioTrace.shift();
+            }
+        });
         const storedCloudSession = await this.getStateAsync("map.cloudSession");
         const encryptedCloudSession = typeof storedCloudSession?.val === "string" && storedCloudSession.val
             ? storedCloudSession.val
@@ -183,6 +195,7 @@ class RoidmiAdapter extends adapter_core_1.Adapter {
             this.commandRunning = true;
             try {
                 // Read all status properties in one MIoT RPC to minimize UDP traffic and robot wakeups.
+                miioTrace.length = 0;
                 const result = await this.client.call("get_properties", properties.map((property) => ({
                     did: config.did, siid: property.siid, piid: property.piid
                 })));
@@ -215,6 +228,12 @@ class RoidmiAdapter extends adapter_core_1.Adapter {
             }
             catch (error) {
                 const message = error instanceof Error ? error.message : "Unknown local miIO error";
+                if (message.includes("timed out") && miioTrace.length) {
+                    this.log.debug("[miIO timeout] Diagnostic trace for the failed request:");
+                    for (const line of miioTrace)
+                        this.log.debug("[miIO timeout] " + line);
+                    miioTrace.length = 0;
+                }
                 await this.setStateChangedAsync("info.connection", { val: false, ack: true });
                 await this.setStateChangedAsync("info.connectionText", { val: message, ack: true });
                 if (message !== this.lastPollError)
