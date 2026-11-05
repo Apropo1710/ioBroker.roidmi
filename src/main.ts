@@ -152,7 +152,8 @@ class RoidmiAdapter extends Adapter {
             { id: "start", name: "Start full cleaning" },
             { id: "pause", name: "Pause cleaning" },
             { id: "resume", name: "Resume cleaning" },
-            { id: "dock", name: "Return to charging dock" },            { id: "stop", name: "Stop cleaning" }
+            { id: "dock", name: "Return to charging dock" },            { id: "stop", name: "Stop cleaning" },
+            { id: "emptyDust", name: "Empty dust bin" }
         ] as const;
         for (const control of controls) {
             await this.setObjectNotExistsAsync(`control.${control.id}`, {
@@ -408,7 +409,7 @@ class RoidmiAdapter extends Adapter {
         }
 
         if (state.val !== true) return;
-        if (command === "start" || command === "pause" || command === "resume" || command === "dock" || command === "stop") {
+        if (command === "start" || command === "pause" || command === "resume" || command === "dock" || command === "stop" || command === "emptyDust") {
             await this.sendAction(command, buildVacuumAction(command), "control." + command, false);
             return;
         }
