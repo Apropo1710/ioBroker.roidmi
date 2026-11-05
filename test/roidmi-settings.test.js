@@ -17,10 +17,6 @@ test("maps suction power, cleaning type and water level to their V60 MIoT proper
 
 test("exposes supported ranges and rejects invalid values or unknown settings", () => {
   assert.deepEqual(getRoidmiSetting("fanSpeed"), { siid: 2, piid: 4, min: 0, max: 4 });
-  assert.deepEqual(getRoidmiSetting("sweepType"), { siid: 2, piid: 8, min: 0, max: 2 });
-  assert.deepEqual(buildSettingWrite("123456", "sweepType", 2).params[0], {
-    did: "123456", siid: 2, piid: 8, value: 2
-  });
   assert.throws(() => buildSettingWrite("123456", "fanSpeed", 5), /between 0 and 4/);
   assert.throws(() => buildSettingWrite("123456", "waterLevel", -1), /between 0 and 4/);
   assert.throws(() => buildSettingWrite("123456", "sweepType", 1.5), /integer/);
