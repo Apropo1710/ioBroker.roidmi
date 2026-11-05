@@ -528,13 +528,19 @@ class RoidmiAdapter extends Adapter {
         target.waterPump = waterPump;
         const areaInfo = profiles.map((p) => [p.id, p.fanLevel, p.waterPump, 1]);
         const operateId = Date.now() & 0xFFFFF;
+        await this.setStateAsync("control.lastCommandStatus", { val: "Sending room profile…", ack: true });
         await this.sendAction("room-profile-" + roomId, {
             siid: 13, aiid: 10,
             in: [JSON.stringify({ Cmd: "set", Type: 15, AreaInfo: areaInfo, MapId: mapId, OperateId: operateId })]
         }, "control.setRoomProfile", "");
+        const resultState = await this.getStateAsync("control.lastCommandStatus");
+        if (resultState?.val !== "Accepted by robot") {
+            this.log.warn("Room profile update was not accepted; cached profile values remain unchanged");
+            return;
+        }
         await this.setStateChangedAsync("map.roomProfilesJson", { val: JSON.stringify(profiles, null, 2), ack: true });
         const roomName = String(target.name ?? roomId);
-        this.log.info(`Room profile action sent for ${roomName} (map ${mapId}): suction ${fanLevel}, water ${waterPump}`);
+        this.log.info(`Room profile action accepted for ${roomName} (map ${mapId}): suction ${fanLevel}, water ${waterPump}`);
     }
 
     private async refreshTiming(): Promise<void> {
