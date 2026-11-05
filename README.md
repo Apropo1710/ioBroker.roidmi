@@ -42,7 +42,7 @@ Die Xiaomi-Cloud-Anbindung ist **optional** und standardmäßig ausgeschaltet. S
 
 MIoT-/miIO-Zugangsdaten und Tokens dürfen niemals eingecheckt oder in Logs ausgegeben werden. Zugangsdaten gehören ausschließlich in die Adapterkonfiguration bzw. geschützte Laufzeitdaten.
 
-Die Statusabfrage erfolgt standardmäßig alle 30 Sekunden. Alle sieben aktuell unterstützten Status- und Einstellungswerte werden in einer gebündelten MIoT-Anfrage gelesen. Dadurch sinkt die Zahl der Status-RPCs pro Polling-Zyklus von sieben auf eine. Polling-Zyklen überlappen nicht; bei Fehlern verlängert der Adapter das Intervall automatisch. Zeitpläne werden nur auf ausdrückliche Anforderung gelesen und sind nicht Teil des regelmäßigen Pollings.
+Die Statusabfrage erfolgt standardmäßig alle 30 Sekunden. Das V60-Profil begrenzt `get_properties` auf eine Property pro RPC. Daher liest der Adapter die sieben Status- und Einstellungswerte einzeln und sequenziell (keine parallelen Abfragen). Bei einem Standardintervall von 30 Sekunden entstehen somit sieben lokale MIoT-RPCs pro Polling-Zyklus. Polling-Zyklen überlappen nicht; bei Fehlern verlängert der Adapter das Intervall automatisch. Zeitpläne werden nur auf ausdrückliche Anforderung gelesen und sind nicht Teil des regelmäßigen Pollings.
 
 ## Entwicklungsstand
 
