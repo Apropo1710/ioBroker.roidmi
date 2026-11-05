@@ -141,11 +141,11 @@ class RoidmiAdapter extends Adapter {
                     ...("min" in property ? { min: property.min, max: property.max } : {}),
                     ...("unit" in property ? { unit: property.unit } : {}),
                     ...("states" in property ? { states: property.states } : {}),
-                    read: true, write: "min" in property
+                    read: true, write: "min" in property && property.id !== "sweepType"
                 },
                 native: { siid: property.siid, piid: property.piid }
             });
-            if ("min" in property) await this.subscribeStatesAsync(property.id);
+            if ("min" in property && property.id !== "sweepType") await this.subscribeStatesAsync(property.id);
         }
 
         const controls = [
