@@ -76,6 +76,22 @@ class RoidmiAdapter extends Adapter {
             common: { name: "Successful status polls since adapter start", type: "number", role: "value", read: true, write: false },
             native: {}
         });
+        // Always create the new cleaning-option states, even when adapter configuration
+        // is incomplete. The rest of onReady() may return early before device polling.
+        const earlyCleaningOptions = [
+            { id: "doubleClean", name: "Double cleaning", siid: 8, piid: 20, min: 0, max: 1, states: { 0: "Aus", 1: "Ein" } },
+            { id: "pathType", name: "Mopping pattern", siid: 13, piid: 8, min: 0, max: 2, states: { 0: "Normal", 1: "Y-Weg", 2: "Wiederholen" } },
+            { id: "individual", name: "Individual room settings", siid: 13, piid: 7, min: 0, max: 1, states: { 0: "Aus", 1: "Ein" } }
+        ];
+        for (const property of earlyCleaningOptions) {
+            await this.setObjectNotExistsAsync(property.id, {
+                type: "state",
+                common: { name: property.name, type: "number", role: "level", min: property.min, max: property.max, states: property.states, read: true, write: true },
+                native: { siid: property.siid, piid: property.piid }
+            });
+            await this.subscribeStatesAsync(property.id);
+        }
+
         let successfulPollCount = 0;
 
         const config = this.config as RoidmiAdapterConfig;
