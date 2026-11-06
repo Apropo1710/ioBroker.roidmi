@@ -103,6 +103,9 @@ class RoidmiAdapter extends Adapter {
         let successfulPollCount = 0;
 
         const config = this.config as RoidmiAdapterConfig;
+        // Start Xiaomi independently before Roidmi-specific validation/early returns.
+        // This allows Xiaomi-only installations and prevents one robot's config from blocking the other.
+        if (config.enableXiaomi === true) void this.startXiaomiPolling(config);
         const errors = validateConfig(config);
 
         await this.setStateChangedAsync("info.connection", { val: false, ack: true });
