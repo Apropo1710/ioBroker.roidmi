@@ -213,7 +213,11 @@
         "de": "Xiaomi X20+ – Geräte-DID",
         "en": "Xiaomi X20+ – device DID"
       },
-      "default": "",\n      "help": {\n        "de": "Numerische DID mit Xiaomi Cloud Tokens Extractor aus den Xiaomi-Home-Gerätedaten ermitteln: https://github.com/PiotrMachowski/Xiaomi-cloud-tokens-extractor. Anleitung und richtige Kontoregion beachten.",\n        "en": "Find the numeric DID in Xiaomi Home device data using Xiaomi Cloud Tokens Extractor: https://github.com/PiotrMachowski/Xiaomi-cloud-tokens-extractor. Follow its instructions and select the correct account region."\n      }
+      "default": "",
+      "help": {
+        "de": "Numerische DID mit Xiaomi Cloud Tokens Extractor aus den Xiaomi-Home-Gerätedaten ermitteln: https://github.com/PiotrMachowski/Xiaomi-cloud-tokens-extractor. Anleitung und richtige Kontoregion beachten.",
+        "en": "Find the numeric DID in Xiaomi Home device data using Xiaomi Cloud Tokens Extractor: https://github.com/PiotrMachowski/Xiaomi-cloud-tokens-extractor. Follow its instructions and select the correct account region."
+      }
     },
     "xiaomiToken": {
       "type": "password",
@@ -223,7 +227,7 @@
       },
       "help": {
         "de": "Token (meist 32 Hex-Zeichen) mit Xiaomi Cloud Tokens Extractor auslesen: https://github.com/PiotrMachowski/Xiaomi-cloud-tokens-extractor. Anleitung beachten. Geheim halten: niemals posten, in Screenshots zeigen, in Git committen oder in Logs kopieren. Nur hier eintragen; ioBroker speichert ihn verschlüsselt. Separater X20+-Token, nicht der Roidmi-Token.",
-        "en": "Separate token for X20+. Do not confuse or share with the Roidmi token."
+        "en": "Extract the token (usually 32 hexadecimal characters) using Xiaomi Cloud Tokens Extractor: https://github.com/PiotrMachowski/Xiaomi-cloud-tokens-extractor. Follow its instructions. Treat it as a secret: never post it, show it in screenshots, commit it to Git, or copy it into logs. Enter it only here; ioBroker stores it encrypted. This is the X20+ token, not the Roidmi token."
       }
     }
   },
