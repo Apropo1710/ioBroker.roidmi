@@ -25,6 +25,13 @@ Die Installation aus GitHub ist eine Entwicklungsversion und erhält keine Prüf
 
 Ohne gültige IP-Adresse, DID und Token startet der Adapter, bleibt aber getrennt und zeigt den Grund unter `info.connectionText` an.
 
+## Xiaomi X20+ – IP-Adresse, DID und Token
+
+- **IP-Adresse:** in der Geräteliste des Routers (DHCP) oder in Xiaomi Home nachsehen; für eine stabile Verbindung empfiehlt sich eine feste DHCP-Zuweisung.
+- **DID und miIO-Token:** können üblicherweise mit dem [Xiaomi Cloud Tokens Extractor](https://github.com/PiotrMachowski/Xiaomi-cloud-tokens-extractor) aus den Xiaomi-Home-Gerätedaten ermittelt werden. Bitte dessen aktuelle Anleitung lesen und die richtige Xiaomi-Konto-Region wählen. Je nach Android-/Mi-Home-Version kann ein unterstütztes Backup-/Extraktionsverfahren notwendig sein.
+- Der **Token ist ein Geheimnis** (normalerweise 32 Hex-Zeichen). Niemals in Chats, Screenshots, GitHub, Issues oder Logs veröffentlichen. Nur in der lokalen Adapterkonfiguration eintragen; ioBroker speichert ihn verschlüsselt.
+- DID und Token gehören zum jeweiligen Gerät. Beim parallelen Betrieb von Roidmi EVE Plus und Xiaomi X20+ die getrennten Felder verwenden.
+
 ## Optionale Xiaomi-Cloud-Kartenerkennung
 
 Die Xiaomi-Cloud-Anbindung ist **optional** und standardmäßig ausgeschaltet. Sie wird ausschließlich benötigt, um die gespeicherte Karte sowie Raum-IDs und Raumnamen automatisch aus dem Xiaomi-Konto abzurufen. Ohne diese Funktion bleiben lokale Statusabfragen und die lokale Robotersteuerung nutzbar. Die Cloud wird nicht periodisch abgefragt: Der Abruf startet nur, wenn `control.refreshMap` manuell ausgelöst wird. Xiaomi-Benutzername und Passwort werden nur bei aktivierter Funktion verwendet und in ioBroker verschlüsselt gespeichert. Je nach Xiaomi-Konto kann eine Zwei-Faktor-Bestätigung erforderlich sein.
