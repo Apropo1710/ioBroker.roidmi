@@ -9,8 +9,8 @@
       },
       "default": "",
       "help": {
-        "de": "Lokale IPv4-Adresse des Roidmi EVE Plus",
-        "en": "Local IPv4 address of the Roidmi EVE Plus"
+        "de": "Lokale IPv4-Adresse des Roboters (Roidmi EVE Plus oder Xiaomi X20+)",
+        "en": "Local IPv4 address of the robot (Roidmi EVE Plus or Xiaomi X20+)"
       }
     },
     "did": {
@@ -173,6 +173,34 @@
       "help": {
         "de": "Nur aktivieren, wenn die Xiaomi-Cloud-Anmeldung erfolgreich ist. Steuerbefehle werden dann über die Cloud statt lokal gesendet. Statusabfragen bleiben lokal.",
         "en": "Enable only after Xiaomi Cloud login succeeds. Commands will use cloud transport instead of LAN; status polling remains local."
+      }
+    },
+    "robotModel": {
+      "type": "select",
+      "label": {
+        "de": "Robotermodell",
+        "en": "Robot model"
+      },
+      "options": [
+        {
+          "value": "roidmi.eveplus",
+          "label": {
+            "de": "Roidmi EVE Plus",
+            "en": "Roidmi EVE Plus"
+          }
+        },
+        {
+          "value": "xiaomi.x20plus",
+          "label": {
+            "de": "Xiaomi Robot Vacuum X20+",
+            "en": "Xiaomi Robot Vacuum X20+"
+          }
+        }
+      ],
+      "default": "roidmi.eveplus",
+      "help": {
+        "de": "Standard bleibt Roidmi. Xiaomi X20+ nutzt ein eigenes, zunächst nur lesendes MIoT-Profil.",
+        "en": "Roidmi remains the default. Xiaomi X20+ uses a separate, initially read-only MIoT profile."
       }
     }
   },
