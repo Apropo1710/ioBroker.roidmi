@@ -65,6 +65,23 @@ class RoidmiAdapter extends Adapter {
 
     private async onReady(): Promise<void> {
         await this.migrateLegacyStateTree();
+        const deviceChannels: Array<{ id: string; name: string }> = [
+            { id: "evePlus", name: "Roidmi EVE Plus" },
+            { id: "evePlus.info", name: "Information" },
+            { id: "evePlus.status", name: "Status" },
+            { id: "evePlus.control", name: "Steuerung" },
+            { id: "evePlus.map", name: "Karte" },
+            { id: "evePlus.rooms", name: "Räume" },
+            { id: "evePlus.timing", name: "Zeitpläne" },
+            { id: "x20Plus", name: "Xiaomi X20+" },
+            { id: "x20Plus.info", name: "Information" },
+            { id: "x20Plus.status", name: "Status" }
+        ];
+        for (const channel of deviceChannels) {
+            await this.setObjectNotExistsAsync(channel.id, {
+                type: "channel", common: { name: channel.name }, native: {}
+            });
+        }
         await this.setObjectNotExistsAsync("evePlus.info.connection", {
             type: "state",
             common: { name: "Device connection", type: "boolean", role: "indicator.reachable", read: true, write: false },
