@@ -46,3 +46,8 @@ Für die erste lokale Verbindung werden später benötigt:
 - numerische Xiaomi DID des X20+
 
 Diese Werte gehören ausschließlich in die Adapterinstanz-Konfiguration bzw. sichere lokale Testumgebung. Sie dürfen nicht in GitHub-Issues, Screenshots, Commits oder Logs erscheinen.
+
+
+## Dual-robot configuration (requested)
+
+The adapter must support the Roidmi EVE Plus and Xiaomi X20+ simultaneously in a single adapter instance. Do not use an exclusive robot-model dropdown. Configuration uses independent enable switches (`enableRoidmi`, `enableXiaomi`) and separate connection credentials for each device. Existing Roidmi settings remain unchanged for backward compatibility. Xiaomi credentials are stored separately (`xiaomiHost`, `xiaomiDid`, `xiaomiToken`), and `xiaomiToken` must be encrypted in ioBroker native settings. Each enabled robot gets its own protocol/client/polling path and object namespace. Poll cycles must not overlap; failures for one robot must not mark the other disconnected or stop its polling. Xiaomi remains read-only until verified on the physical X20+.
