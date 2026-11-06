@@ -1,7 +1,7 @@
 {
   "common": {
     "name": "roidmi",
-    "version": "0.1.36",
+    "version": "0.1.37",
     "title": "Roidmi",
     "titleLang": {
       "en": "Roidmi",
@@ -23,7 +23,8 @@
     "type": "household",
     "encryptedNative": [
       "token",
-      "cloudPassword"
+      "cloudPassword",
+      "xiaomiToken"
     ],
     "news": {
       "0.1.4": {
@@ -153,6 +154,10 @@
       "0.1.36": {
         "de": "Xiaomi X20+ Modellprofil und getrennte Statusintegration vorbereitet",
         "en": "Prepare Xiaomi X20+ model profile and isolated status integration"
+      },
+      "0.1.37": {
+        "de": "Roidmi und Xiaomi X20+ können parallel aktiviert werden; getrennte Zugangsdaten",
+        "en": "Allow Roidmi and Xiaomi X20+ to run together with separate credentials"
       }
     },
     "adminUI": {
@@ -177,6 +182,10 @@
     "cloudSession": "",
     "debugMiio": false,
     "cloudControlEnabled": false,
-    "robotModel": "roidmi.eveplus"
+    "enableRoidmi": true,
+    "enableXiaomi": false,
+    "xiaomiHost": "",
+    "xiaomiDid": "",
+    "xiaomiToken": ""
   }
 }
