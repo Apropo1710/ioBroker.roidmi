@@ -1,5 +1,6 @@
 import { Adapter } from "@iobroker/adapter-core";
 import { MiioClient } from "./lib/miio-client";
+import { mapLegacyStateId, LEGACY_EMPTY_FOLDERS } from "./lib/object-tree-migration";
 import { XIAOMI_X20_PLUS_PROPERTIES, getXiaomiX20PlusStatusText } from "./lib/xiaomi-x20plus-profile";
 import { parseRoomCleaningRequest } from "./lib/room-cleaning";
 import { validateConfig } from "./lib/config";
@@ -351,11 +352,6 @@ class RoidmiAdapter extends Adapter {
      * once naturally: only legacy paths are considered, never the new folders.
      */
     private async migrateLegacyStateTree(): Promise<void> {
-        const legacyStatusIds = new Set([
-            "battery", "charging", "state", "errorCode", "fanSpeed", "sweepType",
-            "waterLevel", "doubleClean", "pathType", "individual",
-            "stateText", "errorCodeText", "chargingText"
-        ]);
         const view = await this.getObjectViewAsync("system", "state", {
             startkey: this.namespace + ".",
             endkey: this.namespace + ".\u9999"
@@ -364,22 +360,7 @@ class RoidmiAdapter extends Adapter {
             const oldFullId = row.id;
             if (!oldFullId.startsWith(this.namespace + ".")) continue;
             const oldId = oldFullId.slice(this.namespace.length + 1);
-            let newId: string | undefined;
-            if (oldId.startsWith("xiaomi.")) {
-                newId = "x20Plus." + oldId.slice("xiaomi.".length);
-            } else if (oldId.startsWith("control.")) {
-                newId = "evePlus.control." + oldId.slice("control.".length);
-            } else if (oldId.startsWith("map.")) {
-                newId = "evePlus.map." + oldId.slice("map.".length);
-            } else if (oldId.startsWith("rooms.")) {
-                newId = "evePlus.rooms." + oldId.slice("rooms.".length);
-            } else if (oldId.startsWith("timing.")) {
-                newId = "evePlus.timing." + oldId.slice("timing.".length);
-            } else if (oldId.startsWith("info.")) {
-                newId = "evePlus." + oldId;
-            } else if (legacyStatusIds.has(oldId)) {
-                newId = "evePlus.status." + oldId;
-            }
+            const newId = mapLegacyStateId(oldId);
             if (!newId) continue;
 
             const oldObject = row.value;
@@ -401,7 +382,7 @@ class RoidmiAdapter extends Adapter {
             await this.delObjectAsync(oldId);
         }
         // Remove empty legacy folders left behind by old versions.
-        for (const folder of ["control", "map", "rooms", "timing", "xiaomi"]) {
+        for (const folder of LEGACY_EMPTY_FOLDERS) {
             await this.delObjectAsync(folder, { recursive: true }).catch(() => undefined);
         }
         this.log.info("Legacy Roidmi/Xiaomi object tree migration completed");
