@@ -14,7 +14,21 @@ export interface MiotPropertyRef {
     readonly piid: number;
 }
 
-/** Read-only first-pass status fields; selected for low-overhead polling. */
+/**
+ * Core state is polled every 30s; maintenance properties are polled every 5min.
+ */
+export const XIAOMI_X20_PLUS_CONSUMABLE_PROPERTIES = {
+    mainBrushLeft: { siid: 9, piid: 1 },
+    mainBrushLife: { siid: 9, piid: 2 },
+    sideBrushLeft: { siid: 10, piid: 1 },
+    sideBrushLife: { siid: 10, piid: 2 },
+    filterLife: { siid: 11, piid: 1 },
+    filterLeft: { siid: 11, piid: 2 },
+    mopLife: { siid: 18, piid: 1 },
+    mopLeft: { siid: 18, piid: 2 }
+} as const satisfies Record<string, MiotPropertyRef>;
+
+export const XIAOMI_X20_PLUS_CONSUMABLE_POLL_INTERVAL_MS = 300000;
 export const XIAOMI_X20_PLUS_PROPERTIES = {
     status: { siid: 2, piid: 1 },
     fault: { siid: 2, piid: 2 },
@@ -27,10 +41,8 @@ export const XIAOMI_X20_PLUS_PROPERTIES = {
     mopMode: { siid: 4, piid: 5 },
     waterboxStatus: { siid: 4, piid: 6 },
     taskStatus: { siid: 4, piid: 7 },
-    mainBrushLife: { siid: 9, piid: 2 },
-    sideBrushLife: { siid: 10, piid: 2 },
-    filterLife: { siid: 11, piid: 1 },
-    mopLife: { siid: 18, piid: 1 }
+    dryLeftTime: { siid: 2, piid: 5 },
+    workMode: { siid: 4, piid: 1 }
 } as const satisfies Record<string, MiotPropertyRef>;
 
 /** Firmware status enum from the hardware-validated C102GL reference profile.
