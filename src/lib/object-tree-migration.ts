@@ -6,7 +6,11 @@ const LEGACY_STATUS_IDS = new Set([
 ]);
 
 export function mapLegacyStateId(oldId: string): string | undefined {
-  if (oldId.startsWith("xiaomi.")) return "x20Plus." + oldId.slice("xiaomi.".length);
+  if (oldId.startsWith("xiaomi.")) {
+    const suffix = oldId.slice("xiaomi.".length);
+    if (suffix.startsWith("info.")) return "x20Plus." + suffix;
+    return "x20Plus.status." + suffix;
+  }
   if (oldId.startsWith("control.")) return "evePlus.control." + oldId.slice("control.".length);
   if (oldId.startsWith("map.")) return "evePlus.map." + oldId.slice("map.".length);
   if (oldId.startsWith("rooms.")) return "evePlus.rooms." + oldId.slice("rooms.".length);
