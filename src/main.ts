@@ -1,5 +1,6 @@
 import { Adapter } from "@iobroker/adapter-core";
-import { MiioClient } from "./lib/miio-client";\nimport { XIAOMI_X20_PLUS_PROPERTIES, getXiaomiX20PlusStatusText } from "./lib/xiaomi-x20plus-profile";
+import { MiioClient } from "./lib/miio-client";
+import { XIAOMI_X20_PLUS_PROPERTIES, getXiaomiX20PlusStatusText } from "./lib/xiaomi-x20plus-profile";
 import { parseRoomCleaningRequest } from "./lib/room-cleaning";
 import { validateConfig } from "./lib/config";
 import { buildVacuumAction, getActionResponseError, getActionFailureStatus } from "./lib/roidmi-actions";
@@ -42,7 +43,9 @@ interface MiotAction {
 }
 
 class RoidmiAdapter extends Adapter {
-    private pollTimer?: NodeJS.Timeout;\n    private xiaomiPollTimer?: NodeJS.Timeout;\n    private xiaomiPollRunning = false;
+    private pollTimer?: NodeJS.Timeout;
+    private xiaomiPollTimer?: NodeJS.Timeout;
+    private xiaomiPollRunning = false;
     private stopping = false;
     private lastPollError = "";
     private commandRunning = false;
@@ -838,7 +841,8 @@ class RoidmiAdapter extends Adapter {
 
     private onUnload(callback: () => void): void {
         this.stopping = true;
-        if (this.pollTimer) clearTimeout(this.pollTimer);\n        if (this.xiaomiPollTimer) clearTimeout(this.xiaomiPollTimer);
+        if (this.pollTimer) clearTimeout(this.pollTimer);
+        if (this.xiaomiPollTimer) clearTimeout(this.xiaomiPollTimer);
         this.setState("info.connection", false, true);
         callback();
     }
