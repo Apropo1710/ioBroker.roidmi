@@ -1,5 +1,5 @@
 import { Adapter } from "@iobroker/adapter-core";
-import { MiioClient } from "./lib/miio-client";
+import { MiioClient } from "./lib/miio-client";\nimport { XIAOMI_X20_PLUS_PROPERTIES, getXiaomiX20PlusStatusText } from "./lib/xiaomi-x20plus-profile";
 import { parseRoomCleaningRequest } from "./lib/room-cleaning";
 import { validateConfig } from "./lib/config";
 import { buildVacuumAction, getActionResponseError, getActionFailureStatus } from "./lib/roidmi-actions";
@@ -37,7 +37,7 @@ interface MiotAction {
 }
 
 class RoidmiAdapter extends Adapter {
-    private pollTimer?: NodeJS.Timeout;
+    private pollTimer?: NodeJS.Timeout;\n    private xiaomiPollTimer?: NodeJS.Timeout;\n    private xiaomiPollRunning = false;
     private stopping = false;
     private lastPollError = "";
     private commandRunning = false;
@@ -313,6 +313,99 @@ class RoidmiAdapter extends Adapter {
 
         await poll();
         scheduleNext(this.lastPollError ? Math.min(baseIntervalMs * 2, 300000) : baseIntervalMs);
+    }
+
+    /**
+     * Independent read-only Xiaomi X20+ status poller. It has its own client,
+     * connection states and timer so a Xiaomi failure cannot affect Roidmi.
+     */
+    private async startXiaomiPolling(config: RoidmiAdapterConfig): Promise<void> {
+        const prefix = "xiaomi.";
+        const infoStates = [
+            ["info.connection", "Xiaomi X20+ connection", "boolean", "indicator.reachable"],
+            ["info.connectionText", "Xiaomi X20+ connection status", "string", "text"],
+            ["info.lastPoll", "Xiaomi X20+ last successful poll", "string", "date"],
+            ["info.pollCount", "Xiaomi X20+ successful poll count", "number", "value"]
+        ] as const;
+        for (const [id, name, type, role] of infoStates) {
+            await this.setObjectNotExistsAsync(prefix + id, {
+                type: "state", common: { name, type, role, read: true, write: false }, native: {}
+            });
+        }
+        const fields = Object.entries(XIAOMI_X20_PLUS_PROPERTIES);
+        for (const [key, property] of fields) {
+            await this.setObjectNotExistsAsync(prefix + "status." + key, {
+                type: "state",
+                common: { name: "Xiaomi X20+ " + key, type: "number", role: "value", read: true, write: false },
+                native: { siid: property.siid, piid: property.piid }
+            });
+        }
+        await this.setObjectNotExistsAsync(prefix + "status.statusText", {
+            type: "state", common: { name: "Xiaomi X20+ status text", type: "string", role: "text", read: true, write: false }, native: {}
+        });
+        await this.setStateChangedAsync(prefix + "info.connection", { val: false, ack: true });
+
+        if (!config.xiaomiHost || !config.xiaomiDid || !config.xiaomiToken ||
+            !/^\\d{1,20}$/.test(config.xiaomiDid) || !/^[0-9a-fA-F]{32}$/.test(config.xiaomiToken)) {
+            await this.setStateChangedAsync(prefix + "info.connectionText", {
+                val: "Xiaomi X20+ enabled, but IP, numeric DID or 32-character token is missing/invalid.", ack: true
+            });
+            this.log.warn("Xiaomi X20+ enabled but its connection credentials are incomplete or invalid");
+            return;
+        }
+        const client = new MiioClient({ host: config.xiaomiHost, token: config.xiaomiToken });
+        const interval = (config.pollIntervalSeconds ?? 30) * 1000;
+        let pollCount = 0;
+        let failures = 0;
+        let lastError = "";
+        const poll = async (): Promise<void> => {
+            if (this.stopping || this.xiaomiPollRunning) return;
+            this.xiaomiPollRunning = true;
+            try {
+                const result = await client.call("get_properties", fields.map(([, property]) => ({
+                    did: config.xiaomiDid, siid: property.siid, piid: property.piid
+                })));
+                if (!Array.isArray(result)) throw new Error("Unexpected Xiaomi MIoT property response");
+                for (let index = 0; index < fields.length; index++) {
+                    const [key] = fields[index];
+                    const item = result[index] as { code?: number; value?: unknown } | undefined;
+                    if (item?.code === 0 && (typeof item.value === "number" || typeof item.value === "boolean")) {
+                        const value = typeof item.value === "boolean" ? Number(item.value) : item.value;
+                        await this.setStateChangedAsync(prefix + "status." + key, { val: value, ack: true });
+                        if (key === "status") {
+                            await this.setStateChangedAsync(prefix + "status.statusText", {
+                                val: getXiaomiX20PlusStatusText(value), ack: true
+                            });
+                        }
+                    }
+                }
+                pollCount++;
+                failures = 0;
+                lastError = "";
+                await this.setStateChangedAsync(prefix + "info.connection", { val: true, ack: true });
+                await this.setStateChangedAsync(prefix + "info.connectionText", { val: "Local Xiaomi miIO connection established", ack: true });
+                await this.setStateChangedAsync(prefix + "info.lastPoll", { val: new Date().toISOString(), ack: true });
+                await this.setStateChangedAsync(prefix + "info.pollCount", { val: pollCount, ack: true });
+            } catch (error) {
+                const message = error instanceof Error ? error.message : "Unknown Xiaomi miIO error";
+                failures++;
+                await this.setStateChangedAsync(prefix + "info.connection", { val: false, ack: true });
+                await this.setStateChangedAsync(prefix + "info.connectionText", { val: message, ack: true });
+                if (message !== lastError) this.log.warn("Xiaomi X20+ poll failed: " + message);
+                lastError = message;
+            } finally {
+                this.xiaomiPollRunning = false;
+            }
+        };
+        const schedule = (delay: number): void => {
+            if (this.stopping) return;
+            this.xiaomiPollTimer = setTimeout(async () => {
+                await poll();
+                schedule(lastError ? Math.min(interval * (2 ** Math.min(failures, 5)), 300000) : interval);
+            }, delay);
+        };
+        await poll();
+        schedule(lastError ? Math.min(interval * 2, 300000) : interval);
     }
 
     private async applyRoomMapConfig(config: RoomMapConfig): Promise<void> {
@@ -740,7 +833,7 @@ class RoidmiAdapter extends Adapter {
 
     private onUnload(callback: () => void): void {
         this.stopping = true;
-        if (this.pollTimer) clearTimeout(this.pollTimer);
+        if (this.pollTimer) clearTimeout(this.pollTimer);\n        if (this.xiaomiPollTimer) clearTimeout(this.xiaomiPollTimer);
         this.setState("info.connection", false, true);
         callback();
     }
