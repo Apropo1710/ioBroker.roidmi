@@ -9,21 +9,21 @@ test('accepts an empty initial configuration', () => {
 test('rejects hostnames and invalid IPv4 octets', () => {
   const valid = { host: '192.168.1.20', did: '441963123', token: '0123456789abcdef0123456789abcdef' };
   for (const host of ['robot.local', '192.168.1.999', '256.1.1.1', '192.168.1']) {
-    assert.deepEqual(validateRoidmiConfig({ ...valid, host }), ['host must be a valid IPv4 address']);
+    assert.deepEqual(validateRoidmiConfig({ ...valid, host }), ['Roidmi host must be a valid IPv4 address']);
   }
   assert.deepEqual(validateRoidmiConfig(valid), []);
 });
 
 test('validates numeric Xiaomi DID', () => {
   const valid = { host: '192.168.1.20', did: '441963123', token: '0123456789abcdef0123456789abcdef' };
-  assert.deepEqual(validateRoidmiConfig({ ...valid, did: 'not-a-device-id' }), ['did must be a numeric Xiaomi device ID']);
+  assert.deepEqual(validateRoidmiConfig({ ...valid, did: 'not-a-device-id' }), ['Roidmi DID must be a numeric device ID']);
   assert.deepEqual(validateRoidmiConfig(valid), []);
 });
 
 test('validates a 32-character hexadecimal miIO token', () => {
   const valid = { host: '192.168.1.20', did: '441963123', token: '0123456789abcdef0123456789abcdef' };
   assert.deepEqual(validateRoidmiConfig({ ...valid, token: 'not-a-token' }), [
-    'token must contain exactly 32 hexadecimal characters'
+    'Roidmi token must contain exactly 32 hexadecimal characters'
   ]);
   assert.deepEqual(validateRoidmiConfig(valid), []);
 });
