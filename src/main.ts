@@ -341,7 +341,7 @@ class RoidmiAdapter extends Adapter {
         ]);
         const view = await this.getObjectViewAsync("system", "state", {
             startkey: this.namespace + ".",
-            endkey: this.namespace + ".\\u9999"
+            endkey: this.namespace + ".\u9999"
         });
         for (const row of view.rows ?? []) {
             const oldFullId = row.id;
