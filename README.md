@@ -23,7 +23,7 @@ Die Installation aus GitHub ist eine Entwicklungsversion und erhält keine Prüf
 - **MIoT / miIO token:** 32-stelliger Token (wird in ioBroker verschlüsselt gespeichert).
 - **Polling interval:** Abfrageintervall in Sekunden, Standard 30; zulässig sind 5 bis 3600 Sekunden.
 
-Ohne gültige IP-Adresse, DID und Token startet der Adapter, bleibt aber getrennt und zeigt den Grund unter `info.connectionText` an.
+Ohne gültige IP-Adresse, DID und Token startet der Adapter, bleibt aber getrennt und zeigt den Grund unter `evePlus.info.connectionText` an.
 
 ## Xiaomi X20+ – IP-Adresse, DID und Token
 
@@ -34,7 +34,28 @@ Ohne gültige IP-Adresse, DID und Token startet der Adapter, bleibt aber getrenn
 
 ## Optionale Xiaomi-Cloud-Kartenerkennung
 
-Die Xiaomi-Cloud-Anbindung ist **optional** und standardmäßig ausgeschaltet. Sie wird ausschließlich benötigt, um die gespeicherte Karte sowie Raum-IDs und Raumnamen automatisch aus dem Xiaomi-Konto abzurufen. Ohne diese Funktion bleiben lokale Statusabfragen und die lokale Robotersteuerung nutzbar. Die Cloud wird nicht periodisch abgefragt: Der Abruf startet nur, wenn `control.refreshMap` manuell ausgelöst wird. Xiaomi-Benutzername und Passwort werden nur bei aktivierter Funktion verwendet und in ioBroker verschlüsselt gespeichert. Je nach Xiaomi-Konto kann eine Zwei-Faktor-Bestätigung erforderlich sein.
+Die Xiaomi-Cloud-Anbindung ist **optional** und standardmäßig ausgeschaltet. Sie wird ausschließlich benötigt, um die gespeicherte Karte sowie Raum-IDs und Raumnamen automatisch aus dem Xiaomi-Konto abzurufen. Ohne diese Funktion bleiben lokale Statusabfragen und die lokale Robotersteuerung nutzbar. Die Cloud wird nicht periodisch abgefragt: Der Abruf startet nur, wenn `evePlus.control.refreshMap` manuell ausgelöst wird. Xiaomi-Benutzername und Passwort werden nur bei aktivierter Funktion verwendet und in ioBroker verschlüsselt gespeichert. Je nach Xiaomi-Konto kann eine Zwei-Faktor-Bestätigung erforderlich sein.
+
+## Objektbaum
+
+Die Datenpunkte sind nach Robotern getrennt:
+
+```text
+roidmi.0
+├── info                         (Adapter-Metadaten)
+├── evePlus
+│   ├── info
+│   ├── status
+│   ├── control
+│   ├── map
+│   ├── rooms
+│   └── timing
+└── x20Plus
+    ├── info
+    └── status
+```
+
+Beim ersten Start mit der neuen Version werden bisherige Roidmi-Datenpunkte (z. B. `battery`, `control.*`, `map.*`, `rooms.*`, `timing.*`) sowie der frühere Xiaomi-Unterbaum `xiaomi.*` in die neuen Roboterordner verschoben. Dabei werden Objektdefinitionen und vorhandene Zustandswerte übernommen. Externe Skripte und Apps müssen danach die neuen IDs verwenden.
 
 ## Ziele
 
