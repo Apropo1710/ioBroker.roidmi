@@ -1,7 +1,7 @@
 import { Adapter } from "@iobroker/adapter-core";
 import { MiioClient } from "./lib/miio-client";
 import { mapLegacyStateId, LEGACY_EMPTY_FOLDERS } from "./lib/object-tree-migration";
-import { XIAOMI_X20_PLUS_PROPERTIES, getXiaomiX20PlusStatusText } from "./lib/xiaomi-x20plus-profile";
+import { XIAOMI_X20_PLUS_PROPERTIES, XIAOMI_X20_PLUS_CONSUMABLE_PROPERTIES, XIAOMI_X20_PLUS_CONSUMABLE_POLL_INTERVAL_MS, getXiaomiX20PlusStatusText } from "./lib/xiaomi-x20plus-profile";
 import { parseRoomCleaningRequest } from "./lib/room-cleaning";
 import { validateConfig, validateRoidmiConfig, validateXiaomiConfig, isRoidmiEnabled, isXiaomiEnabled } from "./lib/config";
 import { buildVacuumAction, getActionResponseError, getActionFailureStatus } from "./lib/roidmi-actions";
@@ -415,7 +415,9 @@ class RoidmiAdapter extends Adapter {
                 type: "state", common: { name, type, role, read: true, write: false }, native: {}
             });
         }
-        const fields = Object.entries(XIAOMI_X20_PLUS_PROPERTIES);
+        const fastFields = Object.entries(XIAOMI_X20_PLUS_PROPERTIES);
+        const consumableFields = Object.entries(XIAOMI_X20_PLUS_CONSUMABLE_PROPERTIES);
+        const fields = [...fastFields, ...consumableFields];
         for (const [key, property] of fields) {
             await this.setObjectNotExistsAsync(prefix + "status." + key, {
                 type: "state",
@@ -438,18 +440,21 @@ class RoidmiAdapter extends Adapter {
         const client = new MiioClient({ host: config.xiaomiHost!, token: config.xiaomiToken! });
         const interval = (config.pollIntervalSeconds ?? 30) * 1000;
         let pollCount = 0;
+        let lastConsumablesPoll = 0;
         let failures = 0;
         let lastError = "";
         const poll = async (): Promise<void> => {
             if (this.stopping || this.xiaomiPollRunning) return;
             this.xiaomiPollRunning = true;
             try {
-                const result = await client.call("get_properties", fields.map(([, property]) => ({
+                const includeConsumables = Date.now() - lastConsumablesPoll >= XIAOMI_X20_PLUS_CONSUMABLE_POLL_INTERVAL_MS;
+                const requestedFields = includeConsumables ? fields : fastFields;
+                const result = await client.call("get_properties", requestedFields.map(([, property]) => ({
                     did: config.xiaomiDid!, siid: property.siid, piid: property.piid
                 })));
                 if (!Array.isArray(result)) throw new Error("Unexpected Xiaomi MIoT property response");
-                for (let index = 0; index < fields.length; index++) {
-                    const [key] = fields[index];
+                for (let index = 0; index < requestedFields.length; index++) {
+                    const [key] = requestedFields[index];
                     const item = result[index] as { code?: number; value?: unknown } | undefined;
                     if (item?.code === 0 && (typeof item.value === "number" || typeof item.value === "boolean")) {
                         const value = typeof item.value === "boolean" ? Number(item.value) : item.value;
@@ -462,6 +467,7 @@ class RoidmiAdapter extends Adapter {
                     }
                 }
                 pollCount++;
+                if (includeConsumables) lastConsumablesPoll = Date.now();
                 failures = 0;
                 lastError = "";
                 await this.setStateChangedAsync(prefix + "info.connection", { val: true, ack: true });
