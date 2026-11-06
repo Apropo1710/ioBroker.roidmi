@@ -339,7 +339,7 @@ class RoidmiAdapter extends Adapter {
             "waterLevel", "doubleClean", "pathType", "individual",
             "stateText", "errorCodeText", "chargingText"
         ]);
-        const view = await this.getObjectViewAsync("state", "system", {
+        const view = await this.getObjectViewAsync("system", "state", {
             startkey: this.namespace + ".",
             endkey: this.namespace + ".\\u9999"
         });
@@ -369,7 +369,7 @@ class RoidmiAdapter extends Adapter {
             if (!oldObject) continue;
             const existingNewObject = await this.getObjectAsync(newId);
             if (!existingNewObject) {
-                const migratedObject = { ...oldObject, _id: this.namespace + "." + newId };
+                const { _id: _legacyObjectId, ...migratedObject } = oldObject;
                 await this.setObjectAsync(newId, migratedObject);
                 const oldState = await this.getStateAsync(oldId);
                 if (oldState) await this.setStateAsync(newId, oldState);
@@ -388,12 +388,12 @@ class RoidmiAdapter extends Adapter {
      * connection states and timer so a Xiaomi failure cannot affect Roidmi.
      */
     private async startXiaomiPolling(config: RoidmiAdapterConfig): Promise<void> {
-        const prefix = "x20Plus.;
+        const prefix = "x20Plus.";
         const infoStates = [
-            ["evePlus.info.connection", "Xiaomi X20+ connection", "boolean", "indicator.reachable"],
-            ["evePlus.info.connectionText", "Xiaomi X20+ connection status", "string", "text"],
-            ["evePlus.info.lastPoll", "Xiaomi X20+ last successful poll", "string", "date"],
-            ["evePlus.info.pollCount", "Xiaomi X20+ successful poll count", "number", "value"]
+            ["info.connection", "Xiaomi X20+ connection", "boolean", "indicator.reachable"],
+            ["info.connectionText", "Xiaomi X20+ connection status", "string", "text"],
+            ["info.lastPoll", "Xiaomi X20+ last successful poll", "string", "date"],
+            ["info.pollCount", "Xiaomi X20+ successful poll count", "number", "value"]
         ] as const;
         for (const [id, name, type, role] of infoStates) {
             await this.setObjectNotExistsAsync(prefix + id, {
