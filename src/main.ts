@@ -357,7 +357,7 @@ class RoidmiAdapter extends Adapter {
         await this.setStateChangedAsync(prefix + "info.connection", { val: false, ack: true });
 
         if (!config.xiaomiHost || !config.xiaomiDid || !config.xiaomiToken ||
-            !/^\\d{1,20}$/.test(config.xiaomiDid) || !/^[0-9a-fA-F]{32}$/.test(config.xiaomiToken)) {
+            !/^\d{1,20}$/.test(config.xiaomiDid) || !/^[0-9a-fA-F]{32}$/.test(config.xiaomiToken)) {
             await this.setStateChangedAsync(prefix + "info.connectionText", {
                 val: "Xiaomi X20+ enabled, but IP, numeric DID or 32-character token is missing/invalid.", ack: true
             });
