@@ -388,8 +388,15 @@ class RoidmiAdapter extends Adapter {
             if (!existingNewObject) {
                 const { _id: _legacyObjectId, ...migratedObject } = oldObject;
                 await this.setObjectAsync(newId, migratedObject);
-                const oldState = await this.getStateAsync(oldId);
-                if (oldState) await this.setStateAsync(newId, oldState);
+            }
+
+            // Merge state values independently of object metadata. A target object
+            // may already exist from a previous partial migration or adapter startup.
+            // Preserve a valid target state; copy the legacy value only when absent.
+            const oldState = await this.getStateAsync(oldId);
+            if (oldState) {
+                const existingNewState = await this.getStateAsync(newId);
+                if (!existingNewState) await this.setStateAsync(newId, oldState);
             }
             await this.delObjectAsync(oldId);
         }
