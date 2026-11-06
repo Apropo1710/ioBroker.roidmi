@@ -175,32 +175,55 @@
         "en": "Enable only after Xiaomi Cloud login succeeds. Commands will use cloud transport instead of LAN; status polling remains local."
       }
     },
-    "robotModel": {
-      "type": "select",
+    "enableRoidmi": {
+      "type": "checkbox",
       "label": {
-        "de": "Robotermodell",
-        "en": "Robot model"
+        "de": "Roidmi EVE Plus aktivieren",
+        "en": "Enable Roidmi EVE Plus"
       },
-      "options": [
-        {
-          "value": "roidmi.eveplus",
-          "label": {
-            "de": "Roidmi EVE Plus",
-            "en": "Roidmi EVE Plus"
-          }
-        },
-        {
-          "value": "xiaomi.x20plus",
-          "label": {
-            "de": "Xiaomi Robot Vacuum X20+",
-            "en": "Xiaomi Robot Vacuum X20+"
-          }
-        }
-      ],
-      "default": "roidmi.eveplus",
+      "default": true
+    },
+    "enableXiaomi": {
+      "type": "checkbox",
+      "label": {
+        "de": "Xiaomi X20+ aktivieren",
+        "en": "Enable Xiaomi X20+"
+      },
+      "default": false,
       "help": {
-        "de": "Standard bleibt Roidmi. Xiaomi X20+ nutzt ein eigenes, zunächst nur lesendes MIoT-Profil.",
-        "en": "Roidmi remains the default. Xiaomi X20+ uses a separate, initially read-only MIoT profile."
+        "de": "Kann parallel zum Roidmi aktiviert werden. Eigene Verbindungsdaten verwenden.",
+        "en": "Can be enabled alongside Roidmi. Uses its own connection credentials."
+      }
+    },
+    "xiaomiHost": {
+      "type": "text",
+      "label": {
+        "de": "Xiaomi X20+ – IP-Adresse",
+        "en": "Xiaomi X20+ – IP address"
+      },
+      "default": "",
+      "help": {
+        "de": "Lokale IPv4-Adresse des Xiaomi X20+.",
+        "en": "Local IPv4 address of Xiaomi X20+."
+      }
+    },
+    "xiaomiDid": {
+      "type": "text",
+      "label": {
+        "de": "Xiaomi X20+ – Geräte-DID",
+        "en": "Xiaomi X20+ – device DID"
+      },
+      "default": ""
+    },
+    "xiaomiToken": {
+      "type": "password",
+      "label": {
+        "de": "Xiaomi X20+ – MIoT-/miIO-Token",
+        "en": "Xiaomi X20+ – MIoT / miIO token"
+      },
+      "help": {
+        "de": "Separater Token für den X20+. Nicht mit dem Roidmi-Token verwechseln oder teilen.",
+        "en": "Separate token for X20+. Do not confuse or share with the Roidmi token."
       }
     }
   },
