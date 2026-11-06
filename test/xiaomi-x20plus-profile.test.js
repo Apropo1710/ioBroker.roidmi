@@ -3,6 +3,8 @@ const assert = require("node:assert/strict");
 const {
   XIAOMI_X20_PLUS_MODEL,
   XIAOMI_X20_PLUS_PROPERTIES,
+  XIAOMI_X20_PLUS_CONSUMABLE_PROPERTIES,
+  XIAOMI_X20_PLUS_CONSUMABLE_POLL_INTERVAL_MS,
   XIAOMI_X20_PLUS_STATUS,
   getXiaomiX20PlusStatusText
 } = require("../build/lib/xiaomi-x20plus-profile.js");
@@ -11,6 +13,11 @@ test("Xiaomi X20+ model profile stays model-specific", () => {
   assert.equal(XIAOMI_X20_PLUS_MODEL, "xiaomi.vacuum.c102gl");
   assert.deepEqual(XIAOMI_X20_PLUS_PROPERTIES.battery, { siid: 3, piid: 1 });
   assert.deepEqual(XIAOMI_X20_PLUS_PROPERTIES.status, { siid: 2, piid: 1 });
+  assert.deepEqual(XIAOMI_X20_PLUS_PROPERTIES.dryLeftTime, { siid: 2, piid: 5 });
+  assert.deepEqual(XIAOMI_X20_PLUS_CONSUMABLE_PROPERTIES.mainBrushLeft, { siid: 9, piid: 1 });
+  assert.deepEqual(XIAOMI_X20_PLUS_CONSUMABLE_PROPERTIES.filterLeft, { siid: 11, piid: 2 });
+  assert.deepEqual(XIAOMI_X20_PLUS_CONSUMABLE_PROPERTIES.mopLeft, { siid: 18, piid: 2 });
+  assert.equal(XIAOMI_X20_PLUS_CONSUMABLE_POLL_INTERVAL_MS, 300000);
 });
 
 test("Xiaomi X20+ status labels map known firmware values", () => {
