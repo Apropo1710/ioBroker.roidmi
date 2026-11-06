@@ -155,8 +155,8 @@ class RoidmiAdapter extends Adapter {
         // This avoids flooding the ioBroker log during normal polling.
         const miioTrace: string[] = [];
         this.client = new MiioClient({
-            host: config.host,
-            token: config.token,
+            host: config.host!,
+            token: config.token!,
             debug: true,
             onDebug: (message) => {
                 miioTrace.push(message);
@@ -435,7 +435,7 @@ class RoidmiAdapter extends Adapter {
             this.log.warn("Xiaomi X20+ configuration invalid: " + message);
             return;
         }
-        const client = new MiioClient({ host: config.xiaomiHost, token: config.xiaomiToken });
+        const client = new MiioClient({ host: config.xiaomiHost!, token: config.xiaomiToken! });
         const interval = (config.pollIntervalSeconds ?? 30) * 1000;
         let pollCount = 0;
         let failures = 0;
@@ -445,7 +445,7 @@ class RoidmiAdapter extends Adapter {
             this.xiaomiPollRunning = true;
             try {
                 const result = await client.call("get_properties", fields.map(([, property]) => ({
-                    did: config.xiaomiDid, siid: property.siid, piid: property.piid
+                    did: config.xiaomiDid!, siid: property.siid, piid: property.piid
                 })));
                 if (!Array.isArray(result)) throw new Error("Unexpected Xiaomi MIoT property response");
                 for (let index = 0; index < fields.length; index++) {
