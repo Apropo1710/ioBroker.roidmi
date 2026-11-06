@@ -3,7 +3,7 @@ import { MiioClient } from "./lib/miio-client";
 import { mapLegacyStateId, LEGACY_EMPTY_FOLDERS } from "./lib/object-tree-migration";
 import { XIAOMI_X20_PLUS_PROPERTIES, getXiaomiX20PlusStatusText } from "./lib/xiaomi-x20plus-profile";
 import { parseRoomCleaningRequest } from "./lib/room-cleaning";
-import { validateConfig } from "./lib/config";
+import { validateConfig, validateRoidmiConfig, validateXiaomiConfig, isRoidmiEnabled, isXiaomiEnabled } from "./lib/config";
 import { buildVacuumAction, getActionResponseError, getActionFailureStatus } from "./lib/roidmi-actions";
 import { parseRoomMapConfig, RoomMapConfig } from "./lib/room-map";
 import { getRoidmiSetting } from "./lib/roidmi-settings";
@@ -124,20 +124,30 @@ class RoidmiAdapter extends Adapter {
         const config = this.config as RoidmiAdapterConfig;
         // Start Xiaomi independently before Roidmi-specific validation/early returns.
         // This allows Xiaomi-only installations and prevents one robot's config from blocking the other.
-        if (config.enableXiaomi === true) void this.startXiaomiPolling(config);
-        const errors = validateConfig(config);
+        if (isXiaomiEnabled(config)) void this.startXiaomiPolling(config);
+        const globalErrors = validateConfig(config);
 
         await this.setStateChangedAsync("evePlus.info.connection", { val: false, ack: true });
-        if (errors.length) {
-            const message = errors.join(" ");
+        if (globalErrors.length) {
+            const message = globalErrors.join(" ");
             await this.setStateChangedAsync("evePlus.info.connectionText", { val: message, ack: true });
             this.log.error(message);
             return;
         }
-        if (!config.host || !config.did || !config.token) {
-            const message = "Configuration incomplete: enter robot IP, numeric Xiaomi device DID and MIoT/miIO token.";
+
+        // Xiaomi-only mode must not initialize the Roidmi client or poller.
+        if (!isRoidmiEnabled(config)) {
+            await this.setStateChangedAsync("evePlus.info.connectionText", {
+                val: "Roidmi EVE Plus disabled in configuration.", ack: true
+            });
+            return;
+        }
+
+        const roidmiErrors = validateRoidmiConfig(config);
+        if (roidmiErrors.length) {
+            const message = roidmiErrors.join(" ");
             await this.setStateChangedAsync("evePlus.info.connectionText", { val: message, ack: true });
-            this.log.info(message);
+            this.log.error(message);
             return;
         }
 
