@@ -922,6 +922,7 @@ class RoidmiAdapter extends Adapter {
         if (this.pollTimer) clearTimeout(this.pollTimer);
         if (this.xiaomiPollTimer) clearTimeout(this.xiaomiPollTimer);
         this.setState("evePlus.info.connection", false, true);
+        this.setState("x20Plus.info.connection", false, true);
         callback();
     }
 }
