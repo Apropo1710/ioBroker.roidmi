@@ -820,7 +820,10 @@ class RoidmiAdapter extends Adapter {
 
     private async sendProperty(stateId: string, property: MiotPropertyWrite, value: number): Promise<void> {
         const config = this.config as RoidmiAdapterConfig;
-        const previousValue = this.lastKnownSettings[stateId.slice(this.namespace.length + 1)] ?? 0;
+        const propertyKey = stateId.startsWith(this.namespace + ".evePlus.status.")
+            ? stateId.slice((this.namespace + ".evePlus.status.").length)
+            : stateId.slice(this.namespace.length + 1);
+        const previousValue = this.lastKnownSettings[propertyKey] ?? 0;
         if (!this.client || !config.did || this.commandRunning) {
             this.log.warn("Property write ignored because the device is unavailable or another command is running");
             await this.setStateAsync(stateId, { val: previousValue, ack: true });
@@ -838,8 +841,8 @@ class RoidmiAdapter extends Adapter {
                 }
             }
             await this.setStateAsync(stateId, { val: value, ack: true });
-            this.lastKnownSettings[stateId.slice(this.namespace.length + 1)] = value;
-            this.log.info("Robot setting updated: " + stateId.slice(this.namespace.length + 1) + " = " + value);
+            this.lastKnownSettings[propertyKey] = value;
+            this.log.info("Robot setting updated: " + propertyKey + " = " + value);
         } catch (error) {
             const message = error instanceof Error ? error.message : "Unknown property write error";
             this.log.warn("Robot setting failed: " + message);
