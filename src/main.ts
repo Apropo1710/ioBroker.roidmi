@@ -21,6 +21,11 @@ interface RoidmiAdapterConfig {
     cloudPassword?: string;
     cloudCountry?: string;
     cloudSession?: string;
+    enableRoidmi?: boolean;
+    enableXiaomi?: boolean;
+    xiaomiHost?: string;
+    xiaomiDid?: string;
+    xiaomiToken?: string;
 }
 
 interface MiotPropertyWrite {
