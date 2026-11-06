@@ -10,15 +10,28 @@ export interface AdapterConfig {
     xiaomiToken?: string;
 }
 
-/** Validate only enabled robot settings; legacy configs keep Roidmi enabled by default. */
+/** Validate enabled robot settings while preserving old Roidmi-only configurations. */
 export function validateConfig(config: AdapterConfig): string[] {
     const errors: string[] = [];
-    const roidmiEnabled = config.enableRoidmi !== false;
-    const xiaomiEnabled = config.enableXiaomi === true;
+    const explicitSelection = config.enableRoidmi !== undefined || config.enableXiaomi !== undefined;
 
-    if (!roidmiEnabled && !xiaomiEnabled) {
-        errors.push("Enable at least one robot (Roidmi EVE Plus or Xiaomi X20+).");
+    // Older saved adapter instances predate the enable switches. Keep their
+    // validation behavior unchanged (validate fields only when supplied).
+    if (!explicitSelection) {
+        if (config.host && !isIPv4Address(config.host)) errors.push("host must be a valid IPv4 address");
+        if (config.did && !/^\\d{1,20}$/.test(config.did)) errors.push("did must be a numeric Xiaomi device ID");
+        if (config.token && !/^[0-9a-fA-F]{32}$/.test(config.token)) errors.push("token must contain exactly 32 hexadecimal characters");
+        if (config.pollIntervalSeconds !== undefined &&
+            (!Number.isInteger(config.pollIntervalSeconds) || config.pollIntervalSeconds < 5 || config.pollIntervalSeconds > 3600)) {
+            errors.push("pollIntervalSeconds must be an integer between 5 and 3600");
+        }
+        return errors;
     }
+
+    const roidmiEnabled = config.enableRoidmi === true;
+    const xiaomiEnabled = config.enableXiaomi === true;
+    if (!roidmiEnabled && !xiaomiEnabled) errors.push("Enable at least one robot (Roidmi EVE Plus or Xiaomi X20+).");
+
     if (roidmiEnabled) {
         if (!config.host || !isIPv4Address(config.host)) errors.push("Roidmi host must be a valid IPv4 address");
         if (!config.did || !/^\\d{1,20}$/.test(config.did)) errors.push("Roidmi DID must be a numeric Xiaomi device ID");
@@ -30,9 +43,7 @@ export function validateConfig(config: AdapterConfig): string[] {
         if (!config.xiaomiToken || !/^[0-9a-fA-F]{32}$/.test(config.xiaomiToken)) errors.push("Xiaomi X20+ token must contain exactly 32 hexadecimal characters");
     }
     if (config.pollIntervalSeconds !== undefined &&
-        (!Number.isInteger(config.pollIntervalSeconds) ||
-         config.pollIntervalSeconds < 5 ||
-         config.pollIntervalSeconds > 3600)) {
+        (!Number.isInteger(config.pollIntervalSeconds) || config.pollIntervalSeconds < 5 || config.pollIntervalSeconds > 3600)) {
         errors.push("pollIntervalSeconds must be an integer between 5 and 3600");
     }
     return errors;
