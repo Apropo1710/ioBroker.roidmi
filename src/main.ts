@@ -428,12 +428,11 @@ class RoidmiAdapter extends Adapter {
         });
         await this.setStateChangedAsync(prefix + "info.connection", { val: false, ack: true });
 
-        if (!config.xiaomiHost || !config.xiaomiDid || !config.xiaomiToken ||
-            !/^\d{1,20}$/.test(config.xiaomiDid) || !/^[0-9a-fA-F]{32}$/.test(config.xiaomiToken)) {
-            await this.setStateChangedAsync(prefix + "info.connectionText", {
-                val: "Xiaomi X20+ enabled, but IP, numeric DID or 32-character token is missing/invalid.", ack: true
-            });
-            this.log.warn("Xiaomi X20+ enabled but its connection credentials are incomplete or invalid");
+        const xiaomiErrors = validateXiaomiConfig(config);
+        if (xiaomiErrors.length) {
+            const message = xiaomiErrors.join(" ");
+            await this.setStateChangedAsync(prefix + "info.connectionText", { val: message, ack: true });
+            this.log.warn("Xiaomi X20+ configuration invalid: " + message);
             return;
         }
         const client = new MiioClient({ host: config.xiaomiHost, token: config.xiaomiToken });
