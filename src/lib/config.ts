@@ -19,7 +19,7 @@ export function validateConfig(config: AdapterConfig): string[] {
     // validation behavior unchanged (validate fields only when supplied).
     if (!explicitSelection) {
         if (config.host && !isIPv4Address(config.host)) errors.push("host must be a valid IPv4 address");
-        if (config.did && !/^\\d{1,20}$/.test(config.did)) errors.push("did must be a numeric Xiaomi device ID");
+        if (config.did && !/^\d{1,20}$/.test(config.did)) errors.push("did must be a numeric Xiaomi device ID");
         if (config.token && !/^[0-9a-fA-F]{32}$/.test(config.token)) errors.push("token must contain exactly 32 hexadecimal characters");
         if (config.pollIntervalSeconds !== undefined &&
             (!Number.isInteger(config.pollIntervalSeconds) || config.pollIntervalSeconds < 5 || config.pollIntervalSeconds > 3600)) {
@@ -34,12 +34,12 @@ export function validateConfig(config: AdapterConfig): string[] {
 
     if (roidmiEnabled) {
         if (!config.host || !isIPv4Address(config.host)) errors.push("Roidmi host must be a valid IPv4 address");
-        if (!config.did || !/^\\d{1,20}$/.test(config.did)) errors.push("Roidmi DID must be a numeric Xiaomi device ID");
+        if (!config.did || !/^\d{1,20}$/.test(config.did)) errors.push("Roidmi DID must be a numeric Xiaomi device ID");
         if (!config.token || !/^[0-9a-fA-F]{32}$/.test(config.token)) errors.push("Roidmi token must contain exactly 32 hexadecimal characters");
     }
     if (xiaomiEnabled) {
         if (!config.xiaomiHost || !isIPv4Address(config.xiaomiHost)) errors.push("Xiaomi X20+ host must be a valid IPv4 address");
-        if (!config.xiaomiDid || !/^\\d{1,20}$/.test(config.xiaomiDid)) errors.push("Xiaomi X20+ DID must be a numeric device ID");
+        if (!config.xiaomiDid || !/^\d{1,20}$/.test(config.xiaomiDid)) errors.push("Xiaomi X20+ DID must be a numeric device ID");
         if (!config.xiaomiToken || !/^[0-9a-fA-F]{32}$/.test(config.xiaomiToken)) errors.push("Xiaomi X20+ token must contain exactly 32 hexadecimal characters");
     }
     if (config.pollIntervalSeconds !== undefined &&
@@ -52,7 +52,7 @@ export function validateConfig(config: AdapterConfig): string[] {
 function isIPv4Address(value: string): boolean {
     const octets = value.split(".");
     return octets.length === 4 && octets.every((octet) =>
-        /^\\d{1,3}$/.test(octet) && Number(octet) >= 0 && Number(octet) <= 255
+        /^\d{1,3}$/.test(octet) && Number(octet) >= 0 && Number(octet) <= 255
     );
 }
 
