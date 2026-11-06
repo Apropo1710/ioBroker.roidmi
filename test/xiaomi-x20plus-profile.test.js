@@ -17,6 +17,8 @@ test("Xiaomi X20+ status labels map known firmware values", () => {
   assert.equal(getXiaomiX20PlusStatusText(1), "Saugen");
   assert.equal(getXiaomiX20PlusStatusText(6), "Lädt");
   assert.equal(getXiaomiX20PlusStatusText(12), "Saugen und Wischen");
+  assert.equal(getXiaomiX20PlusStatusText(13), "Ladung abgeschlossen");
+  assert.equal(getXiaomiX20PlusStatusText(8), "Trocknet");
 });
 
 test("unknown Xiaomi statuses remain explicit", () => {
