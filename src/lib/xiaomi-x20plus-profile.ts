@@ -33,7 +33,9 @@ export const XIAOMI_X20_PLUS_PROPERTIES = {
     mopLife: { siid: 18, piid: 1 }
 } as const satisfies Record<string, MiotPropertyRef>;
 
-/** Firmware status enum from the C102GL profile; live hardware still required. */
+/** Firmware status enum from the hardware-validated C102GL reference profile.
+ * Status 13 (Charging complete) is also confirmed by the user's live X20+ data.
+ */
 export const XIAOMI_X20_PLUS_STATUS: Readonly<Record<number, string>> = {
     1: "Saugen",
     2: "Bereit",
