@@ -47,6 +47,8 @@ class RoidmiAdapter extends Adapter {
     private pollTimer?: NodeJS.Timeout;
     private xiaomiPollTimer?: NodeJS.Timeout;
     private xiaomiPollRunning = false;
+    private xiaomiCommandRunning = false;
+    private xiaomiClient?: MiioClient;
     private stopping = false;
     private lastPollError = "";
     private commandRunning = false;
@@ -76,7 +78,8 @@ class RoidmiAdapter extends Adapter {
             { id: "evePlus.timing", name: "Zeitpläne" },
             { id: "x20Plus", name: "Xiaomi X20+" },
             { id: "x20Plus.info", name: "Information" },
-            { id: "x20Plus.status", name: "Status" }
+            { id: "x20Plus.status", name: "Status" },
+            { id: "x20Plus.control", name: "Steuerung" }
         ];
         for (const channel of deviceChannels) {
             await this.setObjectNotExistsAsync(channel.id, {
@@ -465,6 +468,26 @@ class RoidmiAdapter extends Adapter {
         await this.setObjectNotExistsAsync(prefix + "status.statusText", {
             type: "state", common: { name: "Xiaomi X20+ status text", type: "string", role: "text", read: true, write: false }, native: {}
         });
+        // X20+ controls: only commands with model-specific evidence are exposed.
+        await this.setObjectNotExistsAsync(prefix + "control.start", {
+            type: "state",
+            common: { name: "Start whole-house cleaning", type: "boolean", role: "button", read: false, write: true, def: false },
+            native: { siid: 2, aiid: 1 }
+        });
+        await this.subscribeStatesAsync(prefix + "control.start");
+        await this.setObjectNotExistsAsync(prefix + "control.locate", {
+            type: "state",
+            common: { name: "Find robot (play sound)", type: "boolean", role: "button", read: false, write: true, def: false },
+            native: { siid: 7, aiid: 2 }
+        });
+        await this.subscribeStatesAsync(prefix + "control.locate");
+        await this.setObjectNotExistsAsync(prefix + "control.suction", {
+            type: "state",
+            common: { name: "Suction power", type: "number", role: "level", min: 0, max: 3, states: { 0: "Leise", 1: "Standard", 2: "Stark", 3: "Turbo" }, read: true, write: true },
+            native: { siid: 2, piid: 3 }
+        });
+        await this.subscribeStatesAsync(prefix + "control.suction");
+
         await this.setStateChangedAsync(prefix + "info.connection", { val: false, ack: true });
 
         const xiaomiErrors = validateXiaomiConfig(config);
@@ -475,13 +498,14 @@ class RoidmiAdapter extends Adapter {
             return;
         }
         const client = new MiioClient({ host: config.xiaomiHost!, token: config.xiaomiToken! });
+        this.xiaomiClient = client;
         const interval = (config.pollIntervalSeconds ?? 30) * 1000;
         let pollCount = 0;
         let lastConsumablesPoll = 0;
         let failures = 0;
         let lastError = "";
         const poll = async (): Promise<void> => {
-            if (this.stopping || this.xiaomiPollRunning) return;
+            if (this.stopping || this.xiaomiPollRunning || this.xiaomiCommandRunning) return;
             this.xiaomiPollRunning = true;
             try {
                 const includeConsumables = Date.now() - lastConsumablesPoll >= XIAOMI_X20_PLUS_CONSUMABLE_POLL_INTERVAL_MS;
@@ -622,6 +646,62 @@ class RoidmiAdapter extends Adapter {
 
     private async onStateChange(id: string, state: ioBroker.State | null | undefined): Promise<void> {
         if (!state || state.ack) return;
+
+        const xiaomiControlPrefix = this.namespace + ".x20Plus.control.";
+        if (id.startsWith(xiaomiControlPrefix)) {
+            const command = id.slice(xiaomiControlPrefix.length);
+            if (command === "start" || command === "locate") {
+                if (state.val === true) {
+                    if (!this.xiaomiClient || this.xiaomiCommandRunning) {
+                        this.log.warn("Xiaomi X20+ command skipped: device unavailable or another command is running");
+                    } else {
+                        this.xiaomiCommandRunning = true;
+                        try {
+                            const action = command === "start" ? { siid: 2, aiid: 1 } : { siid: 7, aiid: 2 };
+                            const result = await this.xiaomiClient.call("miIO.info", []);
+                            // A successful local handshake/RPC confirms connectivity before issuing the action.
+                            if (!result) throw new Error("Xiaomi device did not respond to the command preflight");
+                            const actionResult = await this.xiaomiClient.call("miIO.miotspecv2", [{
+                                did: (this.config as RoidmiAdapterConfig).xiaomiDid,
+                                siid: action.siid,
+                                aiid: action.aiid,
+                                in: []
+                            }]);
+                            this.log.info(`Xiaomi X20+ ${command} command sent (MIoT ${action.siid}/${action.aiid}); response: ${JSON.stringify(actionResult)}`);
+                        } catch (error) {
+                            this.log.warn(`Xiaomi X20+ ${command} command failed: ${error instanceof Error ? error.message : "unknown error"}`);
+                        } finally {
+                            this.xiaomiCommandRunning = false;
+                        }
+                    }
+                }
+                await this.setStateAsync("x20Plus.control." + command, { val: false, ack: true });
+                return;
+            }
+            if (command === "suction") {
+                if (typeof state.val !== "number" || !Number.isInteger(state.val) || state.val < 0 || state.val > 3) {
+                    this.log.warn("Xiaomi X20+ suction setting rejected: expected 0..3");
+                } else if (!this.xiaomiClient || this.xiaomiCommandRunning) {
+                    this.log.warn("Xiaomi X20+ suction setting skipped: device unavailable or another command is running");
+                } else {
+                    this.xiaomiCommandRunning = true;
+                    try {
+                        const result = await this.xiaomiClient.call("set_properties", [{
+                            did: (this.config as RoidmiAdapterConfig).xiaomiDid,
+                            siid: 2,
+                            piid: 3,
+                            value: state.val
+                        }]);
+                        this.log.info("Xiaomi X20+ suction setting sent; response: " + JSON.stringify(result));
+                    } catch (error) {
+                        this.log.warn("Xiaomi X20+ suction setting failed: " + (error instanceof Error ? error.message : "unknown error"));
+                    } finally {
+                        this.xiaomiCommandRunning = false;
+                    }
+                }
+                return;
+            }
+        }
 
         const importId = this.namespace + ".evePlus.control.importRooms";
         if (id === importId) {
