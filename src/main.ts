@@ -723,8 +723,7 @@ class RoidmiAdapter extends Adapter {
             const propertyMap: Record<string, { siid: number; piid: number; min: number; max: number; statusKey: string }> = {
                 suction: { siid: 2, piid: 3, min: 0, max: 3, statusKey: "suction" },
                 cleaningMode: { siid: 4, piid: 4, min: 0, max: 3, statusKey: "cleaningMode" },
-                mopMode: { siid: 4, piid: 5, min: 0, max: 3, statusKey: "mopMode" },
-                waterLevel: { siid: 4, piid: 6, min: 1, max: 3, statusKey: "waterboxStatus" }
+                mopMode: { siid: 4, piid: 5, min: 1, max: 3, statusKey: "mopMode" }
             };
             if (command in propertyMap) {
                 const property = propertyMap[command];
