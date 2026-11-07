@@ -1,7 +1,7 @@
 {
   "common": {
     "name": "roidmi",
-    "version": "0.1.35",
+    "version": "0.1.46",
     "title": "Roidmi",
     "titleLang": {
       "en": "Roidmi",
@@ -23,7 +23,8 @@
     "type": "household",
     "encryptedNative": [
       "token",
-      "cloudPassword"
+      "cloudPassword",
+      "xiaomiToken"
     ],
     "news": {
       "0.1.4": {
@@ -149,6 +150,50 @@
       "0.1.34": {
         "de": "Neue schreibbare Reinigungsoptionen: doppelte Reinigung, Wischmuster und individuelle Profile",
         "en": "Add writable cleaning options: double cleaning, mopping pattern and individual profiles"
+      },
+      "0.1.36": {
+        "de": "Xiaomi X20+ Modellprofil und getrennte Statusintegration vorbereitet",
+        "en": "Prepare Xiaomi X20+ model profile and isolated status integration"
+      },
+      "0.1.37": {
+        "de": "Roidmi und Xiaomi X20+ können parallel aktiviert werden; getrennte Zugangsdaten",
+        "en": "Allow Roidmi and Xiaomi X20+ to run together with separate credentials"
+      },
+      "0.1.38": {
+        "en": "Fix Xiaomi X20+ control object initialization and align package version",
+        "de": "Initialisierung der Xiaomi-X20+-Steuerungsobjekte korrigiert und Paketversion angeglichen"
+      },
+      "0.1.39": {
+        "en": "Added Xiaomi miIO timeout diagnostics",
+        "de": "Diagnose für Xiaomi-miIO-Timeouts ergänzt"
+      },
+      "0.1.40": {
+        "en": "Split Xiaomi X20+ local MIoT property polling into smaller batches",
+        "de": "Lokale Xiaomi-X20+-MIoT-Abfragen in kleinere Pakete aufgeteilt"
+      },
+      "0.1.41": {
+        "en": "Split Roidmi EVE Plus local MIoT status polling into batches of six",
+        "de": "Lokale Roidmi-EVE-Plus-MIoT-Statusabfragen in Pakete mit sechs Eigenschaften aufgeteilt"
+      },
+      "0.1.42": {
+        "en": "Add device/batch-specific MIoT timeout diagnostics and one targeted status-poll retry",
+        "de": "Geräte- und Batch-spezifische MIoT-Timeoutdiagnose mit einer gezielten Wiederholung"
+      },
+      "0.1.43": {
+        "en": "Use Xiaomi Cloud MIoT find action for X20+ locate",
+        "de": "Xiaomi-Cloud-MIoT-Find-Aktion für Locate beim X20+ verwenden"
+      },
+      "0.1.44": {
+        "en": "Added on-demand Xiaomi X20+ FDS room-map import",
+        "de": "Xiaomi-X20+-FDS-Raumkartenimport auf Abruf ergänzt"
+      },
+      "0.1.45": {
+        "en": "Filter unnamed X20+ map segments from room selection",
+        "de": "Unbenannte X20+-Kartensegmente aus Raum-Auswahl gefiltert"
+      },
+      "0.1.46": {
+        "en": "Improve X20+ room-clean status and room filtering tests",
+        "de": "X20+-Raumreinigungsstatus und Raumfilter-Tests verbessert"
       }
     },
     "adminUI": {
@@ -172,6 +217,11 @@
     "cloudCountry": "de",
     "cloudSession": "",
     "debugMiio": false,
-    "cloudControlEnabled": false
+    "cloudControlEnabled": false,
+    "enableRoidmi": true,
+    "enableXiaomi": false,
+    "xiaomiHost": "",
+    "xiaomiDid": "",
+    "xiaomiToken": ""
   }
 }
