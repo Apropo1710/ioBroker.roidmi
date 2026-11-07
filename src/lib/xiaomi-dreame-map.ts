@@ -75,6 +75,11 @@ export function parseXiaomiDreameFdsMap(body: Buffer | string, suffix: string): 
     return rooms;
 }
 
+/** Keep only segments explicitly assigned to a Xiaomi Home room; outdoor/window phantom segments lack roomID. */
+export function filterXiaomiHomeRooms(rooms: XiaomiDreameRoom[]): XiaomiDreameRoom[] {
+    return rooms.filter((room) => typeof room.roomId === "string" && room.roomId.trim().length > 0);
+}
+
 /** Extract the FDS object announcement (object path + per-object suffix) from MIoT 6.3 history. */
 export function parseXiaomiFdsAnnouncement(value: unknown): { objectName: string; suffix: string } {
     let raw = value;

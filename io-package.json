@@ -1,7 +1,7 @@
 {
   "common": {
     "name": "roidmi",
-    "version": "0.1.45",
+    "version": "0.1.46",
     "title": "Roidmi",
     "titleLang": {
       "en": "Roidmi",
@@ -190,6 +190,10 @@
       "0.1.45": {
         "en": "Filter unnamed X20+ map segments from room selection",
         "de": "Unbenannte X20+-Kartensegmente aus Raum-Auswahl gefiltert"
+      },
+      "0.1.46": {
+        "en": "Improve X20+ room-clean status and room filtering tests",
+        "de": "X20+-Raumreinigungsstatus und Raumfilter-Tests verbessert"
       }
     },
     "adminUI": {

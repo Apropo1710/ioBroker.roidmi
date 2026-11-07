@@ -4,6 +4,7 @@ import { mapLegacyStateId, LEGACY_EMPTY_FOLDERS } from "./lib/object-tree-migrat
 import { XIAOMI_X20_PLUS_PROPERTIES, XIAOMI_X20_PLUS_CONSUMABLE_PROPERTIES, XIAOMI_X20_PLUS_OPTIONAL_SETTINGS, XIAOMI_X20_PLUS_LIFETIME_PROPERTIES, XIAOMI_X20_PLUS_CONSUMABLE_POLL_INTERVAL_MS, getXiaomiX20PlusStatusText } from "./lib/xiaomi-x20plus-profile";
 import { parseRoomCleaningRequest } from "./lib/room-cleaning";
 import { parseXiaomiRoomCleanRequest } from "./lib/xiaomi-room-cleaning";
+import { filterXiaomiHomeRooms } from "./lib/xiaomi-dreame-map";
 import { validateConfig, validateRoidmiConfig, validateXiaomiConfig, isRoidmiEnabled, isXiaomiEnabled } from "./lib/config";
 import { buildVacuumAction, getActionResponseError, getActionFailureStatus } from "./lib/roidmi-actions";
 import { parseRoomMapConfig, RoomMapConfig } from "./lib/room-map";
@@ -546,6 +547,7 @@ class RoidmiAdapter extends Adapter {
             native: { siid: 4, aiid: 1 }
         });
         await this.subscribeStatesAsync(prefix + "control.cleanRooms");
+        await this.setObjectNotExistsAsync(prefix + "control.cleanRoomsStatus", { type: "state", common: { name: "X20+ room-clean command status", type: "string", role: "text", read: true, write: false }, native: {} });
         // Expose the standard C102GL MIoT actions for hardware testing.
         // Different references report local/cloud firmware behavior differently;
         // the real robot test decides whether these actions execute on this firmware.
@@ -835,7 +837,7 @@ class RoidmiAdapter extends Adapter {
                             await this.persistCloudSession();
                         });
                         // Only Xiaomi Home rooms have a roomId. Exclude outdoor/window false-positive segments.
-                        const selectableRooms = rooms.filter((room) => Boolean(room.roomId));
+                        const selectableRooms = filterXiaomiHomeRooms(rooms);
                         const json = JSON.stringify(selectableRooms, null, 2);
                         await this.setStateAsync("x20Plus.rooms.roomsJson", { val: json, ack: true });
                         const oldSegments = await this.getObjectAsync("x20Plus.rooms.segments");
@@ -876,7 +878,9 @@ class RoidmiAdapter extends Adapter {
                             if (!knownIds.has(room.segmentId)) throw new Error("Unknown X20+ room segmentId " + room.segmentId + ". Refresh the map and use an ID from roomsJson.");
                         }
                         if (!this.xiaomiClient || this.xiaomiCommandRunning || this.xiaomiPollRunning) {
-                            this.log.warn("Xiaomi X20+ room cleaning skipped: device unavailable or MIoT busy");
+                            const message = "Room-clean command skipped: Xiaomi client unavailable or MIoT busy; no command sent.";
+                            this.log.warn(message);
+                            await this.setStateAsync("x20Plus.control.cleanRoomsStatus", { val: message, ack: true });
                         } else {
                             this.xiaomiCommandRunning = true;
                             try {
@@ -889,13 +893,17 @@ class RoidmiAdapter extends Adapter {
                                         in: roomAction.inputs
                                     }
                                 }]);
-                                this.log.info("Xiaomi X20+ room-clean action sent (4/1); response: " + JSON.stringify(result));
+                                const message = "Room-clean action 4/1 sent. Robot execution is not yet physically verified. Response: " + JSON.stringify(result);
+                                this.log.info("Xiaomi X20+ " + message);
+                                await this.setStateAsync("x20Plus.control.cleanRoomsStatus", { val: message, ack: true });
                             } finally {
                                 this.xiaomiCommandRunning = false;
                             }
                         }
                     } catch (error) {
-                        this.log.warn("Xiaomi X20+ room-clean request rejected/failed: " + (error instanceof Error ? error.message : "unknown error"));
+                        const message = "Room-clean request rejected/failed: " + (error instanceof Error ? error.message : "unknown error");
+                        this.log.warn("Xiaomi X20+ " + message);
+                        await this.setStateAsync("x20Plus.control.cleanRoomsStatus", { val: message, ack: true });
                     }
                 }
                 await this.setStateAsync("x20Plus.control.cleanRooms", { val: "", ack: true });
