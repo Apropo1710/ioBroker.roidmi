@@ -515,7 +515,13 @@ class RoidmiAdapter extends Adapter {
         await this.subscribeStatesAsync(prefix + "control.cleaningMode");
         await this.setObjectNotExistsAsync(prefix + "control.mopMode", {
             type: "state",
-            common: { name: "Mop mode", type: "number", role: "level", min: 0, max: 3, states: { 0: "Aus", 1: "Niedrig", 2: "Mittel", 3: "Hoch" }, read: true, write: true },
+            common: { name: "Wasserfluss beim Wischen", type: "number", role: "level", min: 1, max: 3, states: { 1: "Niedrig", 2: "Mittel", 3: "Hoch" }, read: true, write: true },
+            native: { siid: 4, piid: 5 }
+        });
+        // Correct metadata on existing installations as well (setObjectNotExists
+        // does not update common metadata). Keep the value and native data intact.
+        await this.extendObjectAsync(prefix + "control.mopMode", {
+            common: { name: "Wasserfluss beim Wischen", min: 1, max: 3, states: { 1: "Niedrig", 2: "Mittel", 3: "Hoch" }, read: true, write: true },
             native: { siid: 4, piid: 5 }
         });
         await this.subscribeStatesAsync(prefix + "control.mopMode");
