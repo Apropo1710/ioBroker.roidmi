@@ -683,8 +683,12 @@ class RoidmiAdapter extends Adapter {
             }
             if (command === "suction") {
                 if (typeof state.val !== "number" || !Number.isInteger(state.val) || state.val < 0 || state.val > 3) {
+                    const current = await this.getStateAsync("x20Plus.status.suction");
+                    if (typeof current?.val === "number") await this.setStateAsync("x20Plus.control.suction", { val: current.val, ack: true });
                     this.log.warn("Xiaomi X20+ suction setting rejected: expected 0..3");
                 } else if (!this.xiaomiClient || this.xiaomiCommandRunning || this.xiaomiPollRunning) {
+                    const current = await this.getStateAsync("x20Plus.status.suction");
+                    if (typeof current?.val === "number") await this.setStateAsync("x20Plus.control.suction", { val: current.val, ack: true });
                     this.log.warn("Xiaomi X20+ suction setting skipped: device unavailable or another MIoT request is running");
                 } else {
                     this.xiaomiCommandRunning = true;
