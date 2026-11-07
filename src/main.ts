@@ -519,6 +519,12 @@ class RoidmiAdapter extends Adapter {
             common: { name: "Reinigungsintensität", type: "number", role: "level", min: 0, max: 3, states: { 0: "Leise", 1: "Standard", 2: "Mittel", 3: "Stark" }, read: true, write: true },
             native: { siid: 4, piid: 4 }
         });
+        // Correct old installations too: cleaningMode is intensity, not vacuum/mop mode.
+        // Preserve the stored value while updating only common/native metadata.
+        await this.extendObjectAsync(prefix + "control.cleaningMode", {
+            common: { name: "Reinigungsintensität", min: 0, max: 3, states: { 0: "Leise", 1: "Standard", 2: "Mittel", 3: "Stark" }, read: true, write: true },
+            native: { siid: 4, piid: 4 }
+        });
         await this.subscribeStatesAsync(prefix + "control.cleaningMode");
         await this.setObjectNotExistsAsync(prefix + "control.mopMode", {
             type: "state",
