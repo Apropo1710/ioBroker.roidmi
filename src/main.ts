@@ -1,7 +1,7 @@
 import { Adapter } from "@iobroker/adapter-core";
 import { MiioClient } from "./lib/miio-client";
 import { mapLegacyStateId, LEGACY_EMPTY_FOLDERS } from "./lib/object-tree-migration";
-import { XIAOMI_X20_PLUS_PROPERTIES, XIAOMI_X20_PLUS_CONSUMABLE_PROPERTIES, XIAOMI_X20_PLUS_LIFETIME_PROPERTIES, XIAOMI_X20_PLUS_CONSUMABLE_POLL_INTERVAL_MS, getXiaomiX20PlusStatusText } from "./lib/xiaomi-x20plus-profile";
+import { XIAOMI_X20_PLUS_PROPERTIES, XIAOMI_X20_PLUS_CONSUMABLE_PROPERTIES, XIAOMI_X20_PLUS_OPTIONAL_SETTINGS, XIAOMI_X20_PLUS_LIFETIME_PROPERTIES, XIAOMI_X20_PLUS_CONSUMABLE_POLL_INTERVAL_MS, getXiaomiX20PlusStatusText } from "./lib/xiaomi-x20plus-profile";
 import { parseRoomCleaningRequest } from "./lib/room-cleaning";
 import { parseXiaomiRoomCleanRequest } from "./lib/xiaomi-room-cleaning";
 import { validateConfig, validateRoidmiConfig, validateXiaomiConfig, isRoidmiEnabled, isXiaomiEnabled } from "./lib/config";
@@ -457,8 +457,9 @@ class RoidmiAdapter extends Adapter {
         const fastFields = Object.entries(XIAOMI_X20_PLUS_PROPERTIES);
         const consumableFields = Object.entries(XIAOMI_X20_PLUS_CONSUMABLE_PROPERTIES);
         const lifetimeFields = Object.entries(XIAOMI_X20_PLUS_LIFETIME_PROPERTIES);
+        const optionalSettingsFields = Object.entries(XIAOMI_X20_PLUS_OPTIONAL_SETTINGS);
         // Maintenance and lifetime counters are read on the slow cycle only.
-        const fields = [...fastFields, ...consumableFields, ...lifetimeFields];
+        const fields = [...fastFields, ...consumableFields, ...lifetimeFields, ...optionalSettingsFields];
         for (const [key, property] of fields) {
             // MIoT property "status" is the vacuum state; avoid creating status.status.
             const stateKey = key === "status" ? "vacuumState" : key;
@@ -526,6 +527,22 @@ class RoidmiAdapter extends Adapter {
             native: { siid: 4, piid: 4 }
         });
         await this.subscribeStatesAsync(prefix + "control.cleaningMode");
+        // Optional C102GL settings are read on the slow cycle only. These
+        // property ids are spec-based and remain unverified on this robot firmware.
+        for (const [key, property] of Object.entries(XIAOMI_X20_PLUS_OPTIONAL_SETTINGS)) {
+            await this.setObjectNotExistsAsync(prefix + "status." + key, {
+                type: "state", common: { name: "Xiaomi X20+ " + key, type: "boolean", role: "indicator", read: true, write: false },
+                native: { siid: property.siid, piid: property.piid, provisional: true }
+            });
+            await this.setObjectNotExistsAsync(prefix + "control." + key, {
+                type: "state", common: { name: "Xiaomi X20+ " + key, type: "boolean", role: "switch", read: true, write: true },
+                native: { siid: property.siid, piid: property.piid, provisional: true }
+            });
+            await this.extendObjectAsync(prefix + "status." + key, { common: { type: "boolean", role: "indicator", read: true, write: false }, native: { siid: property.siid, piid: property.piid, provisional: true } });
+            await this.extendObjectAsync(prefix + "control." + key, { common: { type: "boolean", role: "switch", read: true, write: true }, native: { siid: property.siid, piid: property.piid, provisional: true } });
+            await this.subscribeStatesAsync(prefix + "control." + key);
+        }
+
         await this.setObjectNotExistsAsync(prefix + "control.mopMode", {
             type: "state",
             common: { name: "Wasserfluss beim Wischen", type: "number", role: "level", min: 1, max: 3, states: { 1: "Niedrig", 2: "Mittel", 3: "Hoch" }, read: true, write: true },
@@ -574,6 +591,9 @@ class RoidmiAdapter extends Adapter {
                         // the channel. Store the value as vacuumState to avoid status.status.
                         const stateKey = key === "status" ? "vacuumState" : key;
                         await this.setStateChangedAsync(prefix + "status." + stateKey, { val: value, ack: true });
+                        if (key === "childLock" || key === "carpetBoost" || key === "resumeAfterCharging") {
+                            await this.setStateChangedAsync(prefix + "control." + key, { val: Boolean(value), ack: true });
+                        }
                         if (key === "suction" || key === "cleaningMode" || key === "mopMode") {
                             await this.setStateChangedAsync(prefix + "control." + key, { val: value, ack: true });
                         }
@@ -774,6 +794,31 @@ class RoidmiAdapter extends Adapter {
                 cleaningMode: { siid: 4, piid: 4, min: 0, max: 3, statusKey: "cleaningMode" },
                 mopMode: { siid: 4, piid: 5, min: 1, max: 3, statusKey: "mopMode" }
             };
+            const optionalSetting = XIAOMI_X20_PLUS_OPTIONAL_SETTINGS[command as keyof typeof XIAOMI_X20_PLUS_OPTIONAL_SETTINGS];
+            if (optionalSetting) {
+                if (typeof state.val !== "boolean") {
+                    const current = await this.getStateAsync("x20Plus.status." + command);
+                    if (typeof current?.val === "boolean") await this.setStateAsync("x20Plus.control." + command, { val: current.val, ack: true });
+                    this.log.warn(`Xiaomi X20+ ${command} rejected: expected boolean`);
+                } else if (!this.xiaomiClient || this.xiaomiCommandRunning || this.xiaomiPollRunning) {
+                    const current = await this.getStateAsync("x20Plus.status." + command);
+                    if (typeof current?.val === "boolean") await this.setStateAsync("x20Plus.control." + command, { val: current.val, ack: true });
+                    this.log.warn(`Xiaomi X20+ ${command} skipped: robot unavailable or MIoT busy`);
+                } else {
+                    this.xiaomiCommandRunning = true;
+                    try {
+                        const result = await this.xiaomiClient.call("set_properties", [{ did: (this.config as RoidmiAdapterConfig).xiaomiDid, siid: optionalSetting.siid, piid: optionalSetting.piid, value: state.val }]);
+                        if (!Array.isArray(result) || !result.length || (result[0] as { code?: number })?.code !== 0) throw new Error("MIoT rejected optional setting write: " + JSON.stringify(result));
+                        await this.setStateAsync("x20Plus.control." + command, { val: state.val, ack: true });
+                        this.log.info(`Xiaomi X20+ ${command} write accepted (provisional property mapping)`);
+                    } catch (error) {
+                        const current = await this.getStateAsync("x20Plus.status." + command);
+                        if (typeof current?.val === "boolean") await this.setStateAsync("x20Plus.control." + command, { val: current.val, ack: true });
+                        this.log.warn(`Xiaomi X20+ ${command} failed: ${error instanceof Error ? error.message : "unknown error"}`);
+                    } finally { this.xiaomiCommandRunning = false; }
+                }
+                return;
+            }
             if (command in propertyMap) {
                 const property = propertyMap[command];
                 if (typeof state.val !== "number" || !Number.isInteger(state.val) || state.val < property.min || state.val > property.max) {
