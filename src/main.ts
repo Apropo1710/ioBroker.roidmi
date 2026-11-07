@@ -306,14 +306,19 @@ class RoidmiAdapter extends Adapter {
             if (!this.client || this.stopping || this.commandRunning) return;
             this.commandRunning = true;
             try {
-                // Read all status properties in one MIoT RPC to minimize UDP traffic and robot wakeups.
+                // Roidmi EVE Plus local MIoT also drops oversized property batches.
+                // Independent HA reports use max_properties=6 for this model.
+                // Use a single batch when possible, otherwise split into two calls.
                 miioTrace.length = 0;
-                const result = await this.client.call("get_properties", properties.map((property) => ({
-                    did: config.did, siid: property.siid, piid: property.piid
-                })));
-                if (!Array.isArray(result)) throw new Error("Unexpected MIoT property response");
-                for (let index = 0; index < properties.length; index++) {
-                    const property = properties[index];
+                const maxPropertiesPerRequest = 6;
+                for (let offset = 0; offset < properties.length; offset += maxPropertiesPerRequest) {
+                    const batchProperties = properties.slice(offset, offset + maxPropertiesPerRequest);
+                    const result = await this.client.call("get_properties", batchProperties.map((property) => ({
+                        did: config.did, siid: property.siid, piid: property.piid
+                    })));
+                    if (!Array.isArray(result)) throw new Error("Unexpected MIoT property response");
+                    for (let index = 0; index < batchProperties.length; index++) {
+                    const property = batchProperties[index];
                     const item = result[index] as { code?: number; value?: unknown } | undefined;
                     if (item?.code === 0 && (typeof item.value === "number" || typeof item.value === "boolean")) {
                         const propertyValue = typeof item.value === "boolean" ? Number(item.value) : item.value;
@@ -324,6 +329,7 @@ class RoidmiAdapter extends Adapter {
                         if (getRoidmiSetting(property.id)) this.lastKnownSettings[property.id] = propertyValue;
                     } else if (item && typeof item.code === "number" && item.code !== 0) {
                         throw new Error(`MIoT property read failed (SIID ${property.siid}, PIID ${property.piid}, code ${item.code})`);
+                    }
                     }
                 }
                 successfulPollCount++;
