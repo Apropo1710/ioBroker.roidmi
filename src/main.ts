@@ -793,8 +793,18 @@ class RoidmiAdapter extends Adapter {
                             piid: property.piid,
                             value: state.val
                         }]);
+                        // Do not acknowledge a setting as applied if MIoT returned an error.
+                        // Some firmwares resolve the RPC successfully but include a non-zero
+                        // per-property code in the response.
+                        if (!Array.isArray(result) || !result.length) {
+                            throw new Error("Unexpected MIoT property-write response");
+                        }
+                        const writeResult = result[0] as { code?: number } | undefined;
+                        if (!writeResult || typeof writeResult.code !== "number" || writeResult.code !== 0) {
+                            throw new Error(`MIoT write rejected (SIID ${property.siid}, PIID ${property.piid}, code ${writeResult?.code ?? "missing"})`);
+                        }
                         await this.setStateAsync("x20Plus.control." + command, { val: state.val, ack: true });
-                        this.log.info(`Xiaomi X20+ ${command} setting sent; response: ${JSON.stringify(result)}`);
+                        this.log.info(`Xiaomi X20+ ${command} setting accepted; response: ${JSON.stringify(result)}`);
                     } catch (error) {
                         const current = await this.getStateAsync("x20Plus.status." + property.statusKey);
                         if (typeof current?.val === "number") {
