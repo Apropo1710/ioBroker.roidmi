@@ -4,6 +4,7 @@ import { mapLegacyStateId, LEGACY_EMPTY_FOLDERS } from "./lib/object-tree-migrat
 import { XIAOMI_X20_PLUS_PROPERTIES, XIAOMI_X20_PLUS_CONSUMABLE_PROPERTIES, XIAOMI_X20_PLUS_OPTIONAL_SETTINGS, XIAOMI_X20_PLUS_LIFETIME_PROPERTIES, XIAOMI_X20_PLUS_CONSUMABLE_POLL_INTERVAL_MS, getXiaomiX20PlusStatusText } from "./lib/xiaomi-x20plus-profile";
 import { parseRoomCleaningRequest } from "./lib/room-cleaning";
 import { parseXiaomiRoomCleanRequest } from "./lib/xiaomi-room-cleaning";
+import { createRoomCleanObservationTracker, observeRoomCleanStatus, RoomCleanObservationTracker } from "./lib/xiaomi-room-clean-status";
 import { filterXiaomiHomeRooms } from "./lib/xiaomi-dreame-map";
 import { validateConfig, validateRoidmiConfig, validateXiaomiConfig, isRoidmiEnabled, isXiaomiEnabled } from "./lib/config";
 import { buildVacuumAction, getActionResponseError, getActionFailureStatus } from "./lib/roidmi-actions";
@@ -51,6 +52,7 @@ class RoidmiAdapter extends Adapter {
     private xiaomiPollRunning = false;
     private xiaomiCommandRunning = false;
     private xiaomiClient?: MiioClient;
+    private xiaomiRoomCleanTracker?: RoomCleanObservationTracker;
     private stopping = false;
     private lastPollError = "";
     private commandRunning = false;
@@ -696,6 +698,11 @@ class RoidmiAdapter extends Adapter {
                             await this.setStateChangedAsync(prefix + "status.statusText", {
                                 val: getXiaomiX20PlusStatusText(value), ack: true
                             });
+                            if (this.xiaomiRoomCleanTracker) {
+                                const observation = observeRoomCleanStatus(this.xiaomiRoomCleanTracker, value);
+                                await this.setStateChangedAsync(prefix + "control.cleanRoomsStatus", { val: observation.message, ack: true });
+                                if (observation.state !== "pending") this.xiaomiRoomCleanTracker = undefined;
+                            }
                         }
                     }
                     }
@@ -884,6 +891,8 @@ class RoidmiAdapter extends Adapter {
                         } else {
                             this.xiaomiCommandRunning = true;
                             try {
+                                const baselineState = await this.getStateAsync("x20Plus.status.vacuumState");
+                                const baselineStatus = typeof baselineState?.val === "number" ? baselineState.val : null;
                                 const result = await this.xiaomiClient.call("miIO.miotspecv2", [{
                                     method: "action",
                                     params: {
@@ -893,7 +902,14 @@ class RoidmiAdapter extends Adapter {
                                         in: roomAction.inputs
                                     }
                                 }]);
-                                const message = "Room-clean action 4/1 sent. Robot execution is not yet physically verified. Response: " + JSON.stringify(result);
+                                const responseError = getActionResponseError(result);
+                                if (responseError) throw new Error(responseError);
+                                this.xiaomiRoomCleanTracker = createRoomCleanObservationTracker(baselineStatus, 3);
+                                const initialObservation = this.xiaomiRoomCleanTracker.state === "ambiguous"
+                                    ? observeRoomCleanStatus(this.xiaomiRoomCleanTracker, baselineStatus)
+                                    : { state: "pending", message: "MIoT accepted the room-clean action; waiting for normal status polling (execution not yet verified)." };
+                                if (initialObservation.state !== "pending") this.xiaomiRoomCleanTracker = undefined;
+                                const message = initialObservation.message + " MIoT response: " + JSON.stringify(result);
                                 this.log.info("Xiaomi X20+ " + message);
                                 await this.setStateAsync("x20Plus.control.cleanRoomsStatus", { val: message, ack: true });
                             } finally {
