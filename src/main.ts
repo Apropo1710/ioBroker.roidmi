@@ -523,6 +523,9 @@ class RoidmiAdapter extends Adapter {
                         // the channel. Store the value as vacuumState to avoid status.status.
                         const stateKey = key === "status" ? "vacuumState" : key;
                         await this.setStateChangedAsync(prefix + "status." + stateKey, { val: value, ack: true });
+                        if (key === "suction") {
+                            await this.setStateChangedAsync(prefix + "control.suction", { val: value, ack: true });
+                        }
                         if (key === "status") {
                             await this.setStateChangedAsync(prefix + "status.statusText", {
                                 val: getXiaomiX20PlusStatusText(value), ack: true
@@ -658,14 +661,14 @@ class RoidmiAdapter extends Adapter {
                         this.xiaomiCommandRunning = true;
                         try {
                             const action = command === "start" ? { siid: 2, aiid: 1 } : { siid: 7, aiid: 2 };
-                            const result = await this.xiaomiClient.call("miIO.info", []);
-                            // A successful local handshake/RPC confirms connectivity before issuing the action.
-                            if (!result) throw new Error("Xiaomi device did not respond to the command preflight");
                             const actionResult = await this.xiaomiClient.call("miIO.miotspecv2", [{
-                                did: (this.config as RoidmiAdapterConfig).xiaomiDid,
-                                siid: action.siid,
-                                aiid: action.aiid,
-                                in: []
+                                method: "action",
+                                params: {
+                                    did: (this.config as RoidmiAdapterConfig).xiaomiDid,
+                                    siid: action.siid,
+                                    aiid: action.aiid,
+                                    in: []
+                                }
                             }]);
                             this.log.info(`Xiaomi X20+ ${command} command sent (MIoT ${action.siid}/${action.aiid}); response: ${JSON.stringify(actionResult)}`);
                         } catch (error) {
@@ -692,6 +695,7 @@ class RoidmiAdapter extends Adapter {
                             piid: 3,
                             value: state.val
                         }]);
+                        await this.setStateAsync("x20Plus.control.suction", { val: state.val, ack: true });
                         this.log.info("Xiaomi X20+ suction setting sent; response: " + JSON.stringify(result));
                     } catch (error) {
                         this.log.warn("Xiaomi X20+ suction setting failed: " + (error instanceof Error ? error.message : "unknown error"));
