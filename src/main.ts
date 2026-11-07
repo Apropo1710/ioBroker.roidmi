@@ -491,24 +491,21 @@ class RoidmiAdapter extends Adapter {
             native: { siid: 4, aiid: 1 }
         });
         await this.subscribeStatesAsync(prefix + "control.cleanRooms");
-        await this.setObjectNotExistsAsync(prefix + "control.pause", {
+        // Firmware-specific reference testing found pause/stop/return-to-dock
+        // actions are silently acknowledged but not executed on C102GL firmware.
+        // Remove previously exposed controls instead of presenting false functionality.
+        for (const unsupported of ["pause", "stop", "returnToDock"]) {
+            await this.delObjectAsync(prefix + "control." + unsupported).catch(() => undefined);
+        }
+        await this.setObjectNotExistsAsync(prefix + "info.unsupportedCommands", {
             type: "state",
-            common: { name: "Pause cleaning", type: "boolean", role: "button", read: false, write: true, def: false },
-            native: { siid: 2, aiid: 2 }
+            common: { name: "X20+ commands unsupported on current firmware", type: "string", role: "text", read: true, write: false },
+            native: {}
         });
-        await this.subscribeStatesAsync(prefix + "control.pause");
-        await this.setObjectNotExistsAsync(prefix + "control.stop", {
-            type: "state",
-            common: { name: "Stop current task", type: "boolean", role: "button", read: false, write: true, def: false },
-            native: { siid: 2, aiid: 3 }
+        await this.setStateChangedAsync(prefix + "info.unsupportedCommands", {
+            val: "Pause, Stop und Zurück zur Station werden von der geprüften C102GL-Firmware nicht ausgeführt. Bitte Xiaomi Home verwenden.",
+            ack: true
         });
-        await this.subscribeStatesAsync(prefix + "control.stop");
-        await this.setObjectNotExistsAsync(prefix + "control.returnToDock", {
-            type: "state",
-            common: { name: "Return to dock", type: "boolean", role: "button", read: false, write: true, def: false },
-            native: { siid: 2, aiid: 4 }
-        });
-        await this.subscribeStatesAsync(prefix + "control.returnToDock");
         await this.setObjectNotExistsAsync(prefix + "control.suction", {
             type: "state",
             common: { name: "Suction power", type: "number", role: "level", min: 0, max: 3, states: { 0: "Leise", 1: "Standard", 2: "Stark", 3: "Turbo" }, read: true, write: true },
@@ -755,11 +752,14 @@ class RoidmiAdapter extends Adapter {
                 await this.setStateAsync("x20Plus.control.cleanRooms", { val: "", ack: true });
                 return;
             }
+            // Do not execute known no-op commands on the C102GL firmware.
+            if (command === "pause" || command === "stop" || command === "returnToDock") {
+                this.log.warn(`Xiaomi X20+ ${command} is not supported by the tested firmware; use Xiaomi Home.`);
+                await this.setStateAsync("x20Plus.control." + command, { val: false, ack: true });
+                return;
+            }
             const actionMap: Record<string, { siid: number; aiid: number }> = {
                 start: { siid: 2, aiid: 1 },
-                pause: { siid: 2, aiid: 2 },
-                stop: { siid: 2, aiid: 3 },
-                returnToDock: { siid: 2, aiid: 4 },
                 locate: { siid: 7, aiid: 2 }
             };
             if (command in actionMap) {
