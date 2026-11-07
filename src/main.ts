@@ -449,7 +449,8 @@ class RoidmiAdapter extends Adapter {
             if (oldStatus && !(await this.getStateAsync("x20Plus.status.vacuumState"))) {
                 await this.setStateAsync("x20Plus.status.vacuumState", oldStatus);
             }
-            await this.delObjectAsync(obsoleteStatusId);
+            await this.delObjectAsync(obsoleteStatusId, { recursive: true }).catch(() => undefined);
+            await this.delStateAsync(obsoleteStatusId).catch(() => undefined);
             this.log.info("Removed obsolete Xiaomi X20+ duplicate status state");
         }
 
