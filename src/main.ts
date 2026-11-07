@@ -509,7 +509,7 @@ class RoidmiAdapter extends Adapter {
         await this.subscribeStatesAsync(prefix + "control.suction");
         await this.setObjectNotExistsAsync(prefix + "control.cleaningMode", {
             type: "state",
-            common: { name: "Cleaning mode", type: "number", role: "level", min: 0, max: 3, states: { 0: "Saugen", 1: "Wischen", 2: "Saugen und Wischen", 3: "Wischen nach Saugen" }, read: true, write: true },
+            common: { name: "Reinigungsintensität", type: "number", role: "level", min: 0, max: 3, states: { 0: "Leise", 1: "Standard", 2: "Mittel", 3: "Stark" }, read: true, write: true },
             native: { siid: 4, piid: 4 }
         });
         await this.subscribeStatesAsync(prefix + "control.cleaningMode");
@@ -519,12 +519,6 @@ class RoidmiAdapter extends Adapter {
             native: { siid: 4, piid: 5 }
         });
         await this.subscribeStatesAsync(prefix + "control.mopMode");
-        await this.setObjectNotExistsAsync(prefix + "control.waterLevel", {
-            type: "state",
-            common: { name: "Water level", type: "number", role: "level", min: 1, max: 3, states: { 1: "Niedrig", 2: "Mittel", 3: "Hoch" }, read: true, write: true },
-            native: { siid: 4, piid: 6 }
-        });
-        await this.subscribeStatesAsync(prefix + "control.waterLevel");
 
         await this.setStateChangedAsync(prefix + "info.connection", { val: false, ack: true });
 
@@ -563,9 +557,6 @@ class RoidmiAdapter extends Adapter {
                         await this.setStateChangedAsync(prefix + "status." + stateKey, { val: value, ack: true });
                         if (key === "suction" || key === "cleaningMode" || key === "mopMode") {
                             await this.setStateChangedAsync(prefix + "control." + key, { val: value, ack: true });
-                        }
-                        if (key === "waterboxStatus") {
-                            await this.setStateChangedAsync(prefix + "control.waterLevel", { val: value, ack: true });
                         }
                         if (key === "status") {
                             await this.setStateChangedAsync(prefix + "status.statusText", {
