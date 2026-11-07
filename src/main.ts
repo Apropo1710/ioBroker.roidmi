@@ -415,6 +415,28 @@ class RoidmiAdapter extends Adapter {
                 type: "state", common: { name, type, role, read: true, write: false }, native: {}
             });
         }
+        // Older Xiaomi poller versions created flat x20Plus.* states. Move those
+        // values into the single status channel and remove the obsolete duplicates.
+        const legacyXiaomiFields = [
+            "status", "fault", "suction", "battery", "chargingState", "cleaningTime",
+            "cleaningArea", "cleaningMode", "mopMode", "waterboxStatus", "taskStatus",
+            "dryLeftTime", "workMode", "mainBrushLeft", "mainBrushLife", "sideBrushLeft",
+            "sideBrushLife", "filterLife", "filterLeft", "mopLife", "mopLeft", "statusText"
+        ];
+        for (const oldField of legacyXiaomiFields) {
+            const oldId = "x20Plus." + oldField;
+            const newField = oldField === "status" ? "vacuumState" : oldField;
+            const newId = "x20Plus.status." + newField;
+            const oldObject = await this.getObjectAsync(oldId);
+            if (!oldObject || oldObject.type !== "state") continue;
+            await this.setObjectNotExistsAsync(newId, oldObject);
+            const oldState = await this.getStateAsync(oldId);
+            if (oldState && !(await this.getStateAsync(newId))) {
+                await this.setStateAsync(newId, oldState);
+            }
+            await this.delObjectAsync(oldId);
+        }
+
         const fastFields = Object.entries(XIAOMI_X20_PLUS_PROPERTIES);
         const consumableFields = Object.entries(XIAOMI_X20_PLUS_CONSUMABLE_PROPERTIES);
         const fields = [...fastFields, ...consumableFields];
@@ -459,7 +481,7 @@ class RoidmiAdapter extends Adapter {
                     if (item?.code === 0 && (typeof item.value === "number" || typeof item.value === "boolean")) {
                         const value = typeof item.value === "boolean" ? Number(item.value) : item.value;
                         await this.setStateChangedAsync(prefix + "status." + key, { val: value, ack: true });
-                        if (key === "status") {
+                        if (key === "vacuumState") {
                             await this.setStateChangedAsync(prefix + "status.statusText", {
                                 val: getXiaomiX20PlusStatusText(value), ack: true
                             });
