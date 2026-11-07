@@ -15,7 +15,7 @@ export interface MiotPropertyRef {
 }
 
 /**
- * Core state is polled every 30s; maintenance properties are polled every 5min.
+ * Consumables are polled every 5 minutes to reduce device traffic.
  */
 export const XIAOMI_X20_PLUS_CONSUMABLE_PROPERTIES = {
     mainBrushLeft: { siid: 9, piid: 1 },
@@ -29,6 +29,13 @@ export const XIAOMI_X20_PLUS_CONSUMABLE_PROPERTIES = {
 } as const satisfies Record<string, MiotPropertyRef>;
 
 export const XIAOMI_X20_PLUS_CONSUMABLE_POLL_INTERVAL_MS = 300000;
+export const XIAOMI_X20_PLUS_LIFETIME_PROPERTIES = {
+    firstClean: { siid: 12, piid: 1 },
+    totalCleaningTime: { siid: 12, piid: 2 },
+    totalCleaningCount: { siid: 12, piid: 3 },
+    totalCleaningArea: { siid: 12, piid: 4 }
+} as const satisfies Record<string, MiotPropertyRef>;
+
 export const XIAOMI_X20_PLUS_PROPERTIES = {
     vacuumState: { siid: 2, piid: 1 },
     fault: { siid: 2, piid: 2 },
