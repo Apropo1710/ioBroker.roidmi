@@ -444,14 +444,18 @@ class RoidmiAdapter extends Adapter {
         // The channel is x20Plus.status, so the actual vacuum status belongs in vacuumState.
         const obsoleteStatusId = "x20Plus.status.status";
         const obsoleteStatusObject = await this.getObjectAsync(obsoleteStatusId);
-        if (obsoleteStatusObject?.type === "state") {
-            const oldStatus = await this.getStateAsync(obsoleteStatusId);
-            if (oldStatus && !(await this.getStateAsync("x20Plus.status.vacuumState"))) {
-                await this.setStateAsync("x20Plus.status.vacuumState", oldStatus);
+        if (obsoleteStatusObject) {
+            // Depending on the adapter version, this ID may be a state (status.status)
+            // or a channel containing duplicated children (status.status.*).
+            if (obsoleteStatusObject.type === "state") {
+                const oldStatus = await this.getStateAsync(obsoleteStatusId);
+                if (oldStatus && !(await this.getStateAsync("x20Plus.status.vacuumState"))) {
+                    await this.setStateAsync("x20Plus.status.vacuumState", oldStatus);
+                }
             }
             await this.delObjectAsync(obsoleteStatusId, { recursive: true }).catch(() => undefined);
             await this.delStateAsync(obsoleteStatusId).catch(() => undefined);
-            this.log.info("Removed obsolete Xiaomi X20+ duplicate status state");
+            this.log.info("Removed obsolete Xiaomi X20+ duplicate status branch");
         }
 
         const fastFields = Object.entries(XIAOMI_X20_PLUS_PROPERTIES);
