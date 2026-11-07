@@ -416,6 +416,12 @@ class RoidmiAdapter extends Adapter {
      */
     private async startXiaomiPolling(config: RoidmiAdapterConfig): Promise<void> {
         const prefix = "x20Plus.";
+        // Ensure the control channel independently inside Xiaomi initialization as well.
+        // This makes the object tree resilient to interrupted legacy migrations or
+        // installations where the top-level channel creation was incomplete.
+        await this.setObjectNotExistsAsync(prefix + "control", {
+            type: "channel", common: { name: "Xiaomi X20+ Steuerung" }, native: {}
+        });
         const infoStates = [
             ["info.connection", "Xiaomi X20+ connection", "boolean", "indicator.reachable"],
             ["info.connectionText", "Xiaomi X20+ connection status", "string", "text"],
