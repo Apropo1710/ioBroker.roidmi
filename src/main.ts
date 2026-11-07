@@ -602,12 +602,18 @@ class RoidmiAdapter extends Adapter {
             try {
                 const includeConsumables = Date.now() - lastConsumablesPoll >= XIAOMI_X20_PLUS_CONSUMABLE_POLL_INTERVAL_MS;
                 const requestedFields = includeConsumables ? fields : fastFields;
-                const result = await client.call("get_properties", requestedFields.map(([, property]) => ({
-                    did: config.xiaomiDid!, siid: property.siid, piid: property.piid
-                })));
-                if (!Array.isArray(result)) throw new Error("Unexpected Xiaomi MIoT property response");
-                for (let index = 0; index < requestedFields.length; index++) {
-                    const [key] = requestedFields[index];
+                // C102GL firmware silently drops oversized get_properties responses.
+                // Independent integrations have verified batches of 10; use 8 to
+                // leave room for larger values and avoid UDP response truncation.
+                const maxPropertiesPerRequest = 8;
+                for (let offset = 0; offset < requestedFields.length; offset += maxPropertiesPerRequest) {
+                    const batchFields = requestedFields.slice(offset, offset + maxPropertiesPerRequest);
+                    const result = await client.call("get_properties", batchFields.map(([, property]) => ({
+                        did: config.xiaomiDid!, siid: property.siid, piid: property.piid
+                    })));
+                    if (!Array.isArray(result)) throw new Error("Unexpected Xiaomi MIoT property response");
+                    for (let index = 0; index < batchFields.length; index++) {
+                    const [key] = batchFields[index];
                     const item = result[index] as { code?: number; value?: unknown } | undefined;
                     if (item?.code === 0 && (typeof item.value === "number" || typeof item.value === "boolean")) {
                         const value = typeof item.value === "boolean" ? Number(item.value) : item.value;
@@ -627,6 +633,7 @@ class RoidmiAdapter extends Adapter {
                                 val: getXiaomiX20PlusStatusText(value), ack: true
                             });
                         }
+                    }
                     }
                 }
                 pollCount++;
