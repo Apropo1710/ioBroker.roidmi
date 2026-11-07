@@ -126,6 +126,12 @@ class RoidmiAdapter extends Adapter {
         let successfulPollCount = 0;
 
         const config = this.config as RoidmiAdapterConfig;
+        // Cloud session storage is needed even when only the Xiaomi X20+ is enabled.
+        await this.setObjectNotExistsAsync("evePlus.map.cloudSession", {
+            type: "state",
+            common: { name: "Encrypted Xiaomi Cloud session (internal persistence)", type: "string", role: "text", read: false, write: false },
+            native: {}
+        });
         // Start Xiaomi independently before Roidmi-specific validation/early returns.
         // This allows Xiaomi-only installations and prevents one robot's config from blocking the other.
         if (isXiaomiEnabled(config)) void this.startXiaomiPolling(config);
