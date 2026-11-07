@@ -30,7 +30,7 @@ export const XIAOMI_X20_PLUS_CONSUMABLE_PROPERTIES = {
 
 export const XIAOMI_X20_PLUS_CONSUMABLE_POLL_INTERVAL_MS = 300000;
 export const XIAOMI_X20_PLUS_PROPERTIES = {
-    status: { siid: 2, piid: 1 },
+    vacuumState: { siid: 2, piid: 1 },
     fault: { siid: 2, piid: 2 },
     suction: { siid: 2, piid: 3 },
     battery: { siid: 3, piid: 1 },
