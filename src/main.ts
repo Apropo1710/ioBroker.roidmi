@@ -3,6 +3,7 @@ import { MiioClient } from "./lib/miio-client";
 import { mapLegacyStateId, LEGACY_EMPTY_FOLDERS } from "./lib/object-tree-migration";
 import { XIAOMI_X20_PLUS_PROPERTIES, XIAOMI_X20_PLUS_CONSUMABLE_PROPERTIES, XIAOMI_X20_PLUS_LIFETIME_PROPERTIES, XIAOMI_X20_PLUS_CONSUMABLE_POLL_INTERVAL_MS, getXiaomiX20PlusStatusText } from "./lib/xiaomi-x20plus-profile";
 import { parseRoomCleaningRequest } from "./lib/room-cleaning";
+import { parseXiaomiRoomCleanRequest } from "./lib/xiaomi-room-cleaning";
 import { validateConfig, validateRoidmiConfig, validateXiaomiConfig, isRoidmiEnabled, isXiaomiEnabled } from "./lib/config";
 import { buildVacuumAction, getActionResponseError, getActionFailureStatus } from "./lib/roidmi-actions";
 import { parseRoomMapConfig, RoomMapConfig } from "./lib/room-map";
@@ -483,6 +484,12 @@ class RoidmiAdapter extends Adapter {
             native: { siid: 7, aiid: 2 }
         });
         await this.subscribeStatesAsync(prefix + "control.locate");
+        await this.setObjectNotExistsAsync(prefix + "control.cleanRooms", {
+            type: "state",
+            common: { name: "X20+ ausgewählte Räume reinigen (JSON: rooms mit segmentId/repeat/suction/water)", type: "string", role: "json", read: false, write: true, def: "" },
+            native: { siid: 4, aiid: 1 }
+        });
+        await this.subscribeStatesAsync(prefix + "control.cleanRooms");
         await this.setObjectNotExistsAsync(prefix + "control.pause", {
             type: "state",
             common: { name: "Pause cleaning", type: "boolean", role: "button", read: false, write: true, def: false },
@@ -691,6 +698,36 @@ class RoidmiAdapter extends Adapter {
         const xiaomiControlPrefix = this.namespace + ".x20Plus.control.";
         if (id.startsWith(xiaomiControlPrefix)) {
             const command = id.slice(xiaomiControlPrefix.length);
+            if (command === "cleanRooms") {
+                if (typeof state.val === "string" && state.val.trim()) {
+                    try {
+                        const roomAction = parseXiaomiRoomCleanRequest(state.val);
+                        if (!this.xiaomiClient || this.xiaomiCommandRunning || this.xiaomiPollRunning) {
+                            this.log.warn("Xiaomi X20+ room cleaning skipped: device unavailable or MIoT busy");
+                        } else {
+                            this.xiaomiCommandRunning = true;
+                            try {
+                                const result = await this.xiaomiClient.call("miIO.miotspecv2", [{
+                                    method: "action",
+                                    params: {
+                                        did: (this.config as RoidmiAdapterConfig).xiaomiDid,
+                                        siid: roomAction.siid,
+                                        aiid: roomAction.aiid,
+                                        in: roomAction.inputs
+                                    }
+                                }]);
+                                this.log.info("Xiaomi X20+ room-clean action sent (4/1); response: " + JSON.stringify(result));
+                            } finally {
+                                this.xiaomiCommandRunning = false;
+                            }
+                        }
+                    } catch (error) {
+                        this.log.warn("Xiaomi X20+ room-clean request rejected/failed: " + (error instanceof Error ? error.message : "unknown error"));
+                    }
+                }
+                await this.setStateAsync("x20Plus.control.cleanRooms", { val: "", ack: true });
+                return;
+            }
             const actionMap: Record<string, { siid: number; aiid: number }> = {
                 start: { siid: 2, aiid: 1 },
                 pause: { siid: 2, aiid: 2 },
