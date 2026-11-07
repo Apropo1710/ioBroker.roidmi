@@ -834,24 +834,24 @@ class RoidmiAdapter extends Adapter {
                         const rooms = await this.cloudMapClient.fetchXiaomiRooms(config.cloudCountry || "de", config.xiaomiDid, async () => {
                             await this.persistCloudSession();
                         });
-                        const json = JSON.stringify(rooms, null, 2);
+                        // Only Xiaomi Home rooms have a roomId. Exclude outdoor/window false-positive segments.
+                        const selectableRooms = rooms.filter((room) => Boolean(room.roomId));
+                        const json = JSON.stringify(selectableRooms, null, 2);
                         await this.setStateAsync("x20Plus.rooms.roomsJson", { val: json, ack: true });
                         const oldSegments = await this.getObjectAsync("x20Plus.rooms.segments");
                         if (oldSegments) await this.delObjectAsync("x20Plus.rooms.segments", { recursive: true });
-                        await this.setObjectNotExistsAsync("x20Plus.rooms.segments", { type: "channel", common: { name: "Room segments" }, native: {} });
-                        for (const room of rooms) {
+                        await this.setObjectNotExistsAsync("x20Plus.rooms.segments", { type: "channel", common: { name: "Selectable Xiaomi Home rooms" }, native: {} });
+                        for (const room of selectableRooms) {
                             const channel = "x20Plus.rooms.segments." + room.segmentId;
-                            await this.setObjectNotExistsAsync(channel, { type: "channel", common: { name: room.name }, native: { segmentId: room.segmentId, source: "Xiaomi FDS map" } });
+                            await this.setObjectNotExistsAsync(channel, { type: "channel", common: { name: room.name }, native: { segmentId: room.segmentId, roomId: room.roomId, source: "Xiaomi FDS map" } });
                             await this.setObjectNotExistsAsync(channel + ".name", { type: "state", common: { name: "Room name", type: "string", role: "text", read: true, write: false }, native: {} });
                             await this.setStateAsync(channel + ".name", { val: room.name, ack: true });
-                            if (room.roomId) {
-                                await this.setObjectNotExistsAsync(channel + ".roomId", { type: "state", common: { name: "Xiaomi Home room ID", type: "string", role: "text", read: true, write: false }, native: {} });
-                                await this.setStateAsync(channel + ".roomId", { val: room.roomId, ack: true });
-                            }
+                            await this.setObjectNotExistsAsync(channel + ".roomId", { type: "state", common: { name: "Xiaomi Home room ID", type: "string", role: "text", read: true, write: false }, native: {} });
+                            await this.setStateAsync(channel + ".roomId", { val: room.roomId!, ack: true });
                         }
                         await this.setStateAsync("x20Plus.rooms.lastUpdate", { val: new Date().toISOString(), ack: true });
-                        await this.setStateAsync("x20Plus.rooms.mapStatus", { val: "Map refreshed: " + rooms.length + " rooms found. Use segmentId values from roomsJson in cleanRooms.", ack: true });
-                        this.log.info("Xiaomi X20+ saved room map refreshed from Xiaomi FDS: " + rooms.length + " rooms.");
+                        await this.setStateAsync("x20Plus.rooms.mapStatus", { val: "Map refreshed: " + selectableRooms.length + " named Xiaomi Home rooms (filtered " + (rooms.length - selectableRooms.length) + " unnamed/outdoor segments).", ack: true });
+                        this.log.info("Xiaomi X20+ saved room map refreshed from Xiaomi FDS: " + selectableRooms.length + " named rooms; filtered " + (rooms.length - selectableRooms.length) + " false-positive segments.");
                     } catch (error) {
                         const message = error instanceof Error ? error.message : "Unknown map refresh error";
                         await this.setStateAsync("x20Plus.rooms.mapStatus", { val: "Map refresh failed: " + message, ack: true });

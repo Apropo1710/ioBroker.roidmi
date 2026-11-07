@@ -1,7 +1,7 @@
 {
   "common": {
     "name": "roidmi",
-    "version": "0.1.44",
+    "version": "0.1.45",
     "title": "Roidmi",
     "titleLang": {
       "en": "Roidmi",
@@ -186,6 +186,10 @@
       "0.1.44": {
         "en": "Added on-demand Xiaomi X20+ FDS room-map import",
         "de": "Xiaomi-X20+-FDS-Raumkartenimport auf Abruf ergänzt"
+      },
+      "0.1.45": {
+        "en": "Filter unnamed X20+ map segments from room selection",
+        "de": "Unbenannte X20+-Kartensegmente aus Raum-Auswahl gefiltert"
       }
     },
     "adminUI": {
