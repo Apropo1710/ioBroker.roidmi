@@ -1,7 +1,7 @@
 import { Adapter } from "@iobroker/adapter-core";
 import { MiioClient } from "./lib/miio-client";
 import { mapLegacyStateId, LEGACY_EMPTY_FOLDERS } from "./lib/object-tree-migration";
-import { XIAOMI_X20_PLUS_PROPERTIES, XIAOMI_X20_PLUS_CONSUMABLE_PROPERTIES, XIAOMI_X20_PLUS_CONSUMABLE_POLL_INTERVAL_MS, getXiaomiX20PlusStatusText } from "./lib/xiaomi-x20plus-profile";
+import { XIAOMI_X20_PLUS_PROPERTIES, XIAOMI_X20_PLUS_CONSUMABLE_PROPERTIES, XIAOMI_X20_PLUS_LIFETIME_PROPERTIES, XIAOMI_X20_PLUS_CONSUMABLE_POLL_INTERVAL_MS, getXiaomiX20PlusStatusText } from "./lib/xiaomi-x20plus-profile";
 import { parseRoomCleaningRequest } from "./lib/room-cleaning";
 import { validateConfig, validateRoidmiConfig, validateXiaomiConfig, isRoidmiEnabled, isXiaomiEnabled } from "./lib/config";
 import { buildVacuumAction, getActionResponseError, getActionFailureStatus } from "./lib/roidmi-actions";
@@ -455,7 +455,9 @@ class RoidmiAdapter extends Adapter {
 
         const fastFields = Object.entries(XIAOMI_X20_PLUS_PROPERTIES);
         const consumableFields = Object.entries(XIAOMI_X20_PLUS_CONSUMABLE_PROPERTIES);
-        const fields = [...fastFields, ...consumableFields];
+        const lifetimeFields = Object.entries(XIAOMI_X20_PLUS_LIFETIME_PROPERTIES);
+        // Maintenance and lifetime counters are read on the slow cycle only.
+        const fields = [...fastFields, ...consumableFields, ...lifetimeFields];
         for (const [key, property] of fields) {
             // MIoT property "status" is the vacuum state; avoid creating status.status.
             const stateKey = key === "status" ? "vacuumState" : key;
