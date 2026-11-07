@@ -578,7 +578,18 @@ class RoidmiAdapter extends Adapter {
             this.log.warn("Xiaomi X20+ configuration invalid: " + message);
             return;
         }
-        const client = new MiioClient({ host: config.xiaomiHost!, token: config.xiaomiToken! });
+        // Keep a bounded trace of the Xiaomi UDP handshake/RPC so a timeout can
+        // be diagnosed (handshake vs. MIoT response) without logging tokens.
+        const xiaomiMiioTrace: string[] = [];
+        const client = new MiioClient({
+            host: config.xiaomiHost!,
+            token: config.xiaomiToken!,
+            debug: true,
+            onDebug: (message) => {
+                xiaomiMiioTrace.push(message);
+                if (xiaomiMiioTrace.length > 20) xiaomiMiioTrace.shift();
+            }
+        });
         this.xiaomiClient = client;
         const interval = (config.pollIntervalSeconds ?? 30) * 1000;
         let pollCount = 0;
@@ -631,7 +642,11 @@ class RoidmiAdapter extends Adapter {
                 failures++;
                 await this.setStateChangedAsync(prefix + "info.connection", { val: false, ack: true });
                 await this.setStateChangedAsync(prefix + "info.connectionText", { val: message, ack: true });
-                if (message !== lastError) this.log.warn("Xiaomi X20+ poll failed: " + message);
+                if (message !== lastError) {
+                    this.log.warn("Xiaomi X20+ poll failed: " + message);
+                    // Emit trace only on failure; normal successful polls remain quiet.
+                    for (const traceLine of xiaomiMiioTrace) this.log.debug("Xiaomi miIO trace: " + traceLine);
+                }
                 lastError = message;
             } finally {
                 this.xiaomiPollRunning = false;
