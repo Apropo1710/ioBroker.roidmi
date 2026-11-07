@@ -1,7 +1,7 @@
 {
   "common": {
     "name": "roidmi",
-    "version": "0.1.40",
+    "version": "0.1.41",
     "title": "Roidmi",
     "titleLang": {
       "en": "Roidmi",
@@ -170,6 +170,10 @@
       "0.1.40": {
         "en": "Split Xiaomi X20+ local MIoT property polling into smaller batches",
         "de": "Lokale Xiaomi-X20+-MIoT-Abfragen in kleinere Pakete aufgeteilt"
+      },
+      "0.1.41": {
+        "en": "Split Roidmi EVE Plus local MIoT status polling into batches of six",
+        "de": "Lokale Roidmi-EVE-Plus-MIoT-Statusabfragen in Pakete mit sechs Eigenschaften aufgeteilt"
       }
     },
     "adminUI": {
