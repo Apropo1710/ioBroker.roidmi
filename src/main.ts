@@ -481,6 +481,24 @@ class RoidmiAdapter extends Adapter {
             native: { siid: 7, aiid: 2 }
         });
         await this.subscribeStatesAsync(prefix + "control.locate");
+        await this.setObjectNotExistsAsync(prefix + "control.pause", {
+            type: "state",
+            common: { name: "Pause cleaning", type: "boolean", role: "button", read: false, write: true, def: false },
+            native: { siid: 2, aiid: 2 }
+        });
+        await this.subscribeStatesAsync(prefix + "control.pause");
+        await this.setObjectNotExistsAsync(prefix + "control.stop", {
+            type: "state",
+            common: { name: "Stop current task", type: "boolean", role: "button", read: false, write: true, def: false },
+            native: { siid: 2, aiid: 3 }
+        });
+        await this.subscribeStatesAsync(prefix + "control.stop");
+        await this.setObjectNotExistsAsync(prefix + "control.returnToDock", {
+            type: "state",
+            common: { name: "Return to dock", type: "boolean", role: "button", read: false, write: true, def: false },
+            native: { siid: 2, aiid: 4 }
+        });
+        await this.subscribeStatesAsync(prefix + "control.returnToDock");
         await this.setObjectNotExistsAsync(prefix + "control.suction", {
             type: "state",
             common: { name: "Suction power", type: "number", role: "level", min: 0, max: 3, states: { 0: "Leise", 1: "Standard", 2: "Stark", 3: "Turbo" }, read: true, write: true },
@@ -653,14 +671,21 @@ class RoidmiAdapter extends Adapter {
         const xiaomiControlPrefix = this.namespace + ".x20Plus.control.";
         if (id.startsWith(xiaomiControlPrefix)) {
             const command = id.slice(xiaomiControlPrefix.length);
-            if (command === "start" || command === "locate") {
+            const actionMap: Record<string, { siid: number; aiid: number }> = {
+                start: { siid: 2, aiid: 1 },
+                pause: { siid: 2, aiid: 2 },
+                stop: { siid: 2, aiid: 3 },
+                returnToDock: { siid: 2, aiid: 4 },
+                locate: { siid: 7, aiid: 2 }
+            };
+            if (command in actionMap) {
                 if (state.val === true) {
                     if (!this.xiaomiClient || this.xiaomiCommandRunning || this.xiaomiPollRunning) {
                         this.log.warn("Xiaomi X20+ command skipped: device unavailable or another MIoT request is running");
                     } else {
                         this.xiaomiCommandRunning = true;
                         try {
-                            const action = command === "start" ? { siid: 2, aiid: 1 } : { siid: 7, aiid: 2 };
+                            const action = actionMap[command];
                             const actionResult = await this.xiaomiClient.call("miIO.miotspecv2", [{
                                 method: "action",
                                 params: {
