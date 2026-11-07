@@ -454,7 +454,9 @@ class RoidmiAdapter extends Adapter {
         const consumableFields = Object.entries(XIAOMI_X20_PLUS_CONSUMABLE_PROPERTIES);
         const fields = [...fastFields, ...consumableFields];
         for (const [key, property] of fields) {
-            await this.setObjectNotExistsAsync(prefix + "status." + key, {
+            // MIoT property "status" is the vacuum state; avoid creating status.status.
+            const stateKey = key === "status" ? "vacuumState" : key;
+            await this.setObjectNotExistsAsync(prefix + "status." + stateKey, {
                 type: "state",
                 common: { name: "Xiaomi X20+ " + key, type: "number", role: "value", read: true, write: false },
                 native: { siid: property.siid, piid: property.piid }
