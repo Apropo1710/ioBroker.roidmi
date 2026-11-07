@@ -855,20 +855,21 @@ class RoidmiAdapter extends Adapter {
                             const action = actionMap[command];
                             let actionResult: unknown;
                             const config = this.config as RoidmiAdapterConfig;
-                            if (this.cloudMapClient.hasSession() && command !== "locate") {
-                                // Cloud MIoT path is an independent alternative to local MIoT.
-                                // It is used when a valid existing Xiaomi Cloud session is available.
+                            if (this.cloudMapClient.hasSession()) {
+                                // Xiaomi Cloud uses a different MIoT action ID for locate/find
+                                // than the local C102GL action mapping.
+                                const cloudAction = command === "locate" ? { siid: 6, aiid: 1 } : action;
                                 actionResult = await this.cloudMapClient.callAction(config.cloudCountry || "de", {
                                     did: config.xiaomiDid!,
-                                    siid: action.siid,
-                                    aiid: action.aiid,
+                                    siid: cloudAction.siid,
+                                    aiid: cloudAction.aiid,
                                     in: []
                                 }, async () => {
                                     await this.setStateAsync("evePlus.map.cloudSession", {
                                         val: this.encrypt(this.cloudMapClient.exportSession()), ack: true
                                     });
                                 });
-                                this.log.info(`Xiaomi X20+ ${command} command sent via Xiaomi Cloud MIoT (${action.siid}/${action.aiid}); response: ${JSON.stringify(actionResult)}`);
+                                this.log.info(`Xiaomi X20+ ${command} command sent via Xiaomi Cloud MIoT (${cloudAction.siid}/${cloudAction.aiid}); response: ${JSON.stringify(actionResult)}`);
                             } else {
                                 actionResult = await this.xiaomiClient.call("miIO.miotspecv2", [{
                                     method: "action",
