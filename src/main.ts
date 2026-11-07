@@ -313,9 +313,30 @@ class RoidmiAdapter extends Adapter {
                 const maxPropertiesPerRequest = 6;
                 for (let offset = 0; offset < properties.length; offset += maxPropertiesPerRequest) {
                     const batchProperties = properties.slice(offset, offset + maxPropertiesPerRequest);
-                    const result = await this.client.call("get_properties", batchProperties.map((property) => ({
-                        did: config.did, siid: property.siid, piid: property.piid
-                    })));
+                    const batchLabel = `EVE Plus batch ${Math.floor(offset / maxPropertiesPerRequest) + 1}/${Math.ceil(properties.length / maxPropertiesPerRequest)} [${batchProperties.map(p => `s${p.siid}p${p.piid}:${p.id}`).join(", ")}]`;
+                    miioTrace.length = 0;
+                    let result: unknown;
+                    try {
+                        result = await this.client.call("get_properties", batchProperties.map((property) => ({
+                            did: config.did, siid: property.siid, piid: property.piid
+                        })));
+                    } catch (firstError) {
+                        const firstMessage = firstError instanceof Error ? firstError.message : String(firstError);
+                        if (!firstMessage.includes("timed out")) throw firstError;
+                        this.log.warn(`[miIO] ${batchLabel} timed out; retrying this batch once`);
+                        for (const line of miioTrace) this.log.debug(`[miIO] ${batchLabel} first attempt: ${line}`);
+                        miioTrace.length = 0;
+                        try {
+                            result = await this.client.call("get_properties", batchProperties.map((property) => ({
+                                did: config.did, siid: property.siid, piid: property.piid
+                            })));
+                        } catch (retryError) {
+                            const retryMessage = retryError instanceof Error ? retryError.message : String(retryError);
+                            this.log.warn(`[miIO] ${batchLabel} retry failed: ${retryMessage}`);
+                            for (const line of miioTrace) this.log.debug(`[miIO] ${batchLabel} retry trace: ${line}`);
+                            throw retryError;
+                        }
+                    }
                     if (!Array.isArray(result)) throw new Error("Unexpected MIoT property response");
                     for (let index = 0; index < batchProperties.length; index++) {
                     const property = batchProperties[index];
@@ -614,9 +635,30 @@ class RoidmiAdapter extends Adapter {
                 const maxPropertiesPerRequest = 8;
                 for (let offset = 0; offset < requestedFields.length; offset += maxPropertiesPerRequest) {
                     const batchFields = requestedFields.slice(offset, offset + maxPropertiesPerRequest);
-                    const result = await client.call("get_properties", batchFields.map(([, property]) => ({
-                        did: config.xiaomiDid!, siid: property.siid, piid: property.piid
-                    })));
+                    const batchLabel = `Xiaomi X20+ batch ${Math.floor(offset / maxPropertiesPerRequest) + 1}/${Math.ceil(requestedFields.length / maxPropertiesPerRequest)} [${batchFields.map(([key, p]) => `${key}:s${p.siid}p${p.piid}`).join(", ")}]`;
+                    xiaomiMiioTrace.length = 0;
+                    let result: unknown;
+                    try {
+                        result = await client.call("get_properties", batchFields.map(([, property]) => ({
+                            did: config.xiaomiDid!, siid: property.siid, piid: property.piid
+                        })));
+                    } catch (firstError) {
+                        const firstMessage = firstError instanceof Error ? firstError.message : String(firstError);
+                        if (!firstMessage.includes("timed out")) throw firstError;
+                        this.log.warn(`[miIO] ${batchLabel} timed out; retrying this batch once`);
+                        for (const line of xiaomiMiioTrace) this.log.debug(`[miIO] ${batchLabel} first attempt: ${line}`);
+                        xiaomiMiioTrace.length = 0;
+                        try {
+                            result = await client.call("get_properties", batchFields.map(([, property]) => ({
+                                did: config.xiaomiDid!, siid: property.siid, piid: property.piid
+                            })));
+                        } catch (retryError) {
+                            const retryMessage = retryError instanceof Error ? retryError.message : String(retryError);
+                            this.log.warn(`[miIO] ${batchLabel} retry failed: ${retryMessage}`);
+                            for (const line of xiaomiMiioTrace) this.log.debug(`[miIO] ${batchLabel} retry trace: ${line}`);
+                            throw retryError;
+                        }
+                    }
                     if (!Array.isArray(result)) throw new Error("Unexpected Xiaomi MIoT property response");
                     for (let index = 0; index < batchFields.length; index++) {
                     const [key] = batchFields[index];
