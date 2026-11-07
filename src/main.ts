@@ -553,8 +553,11 @@ class RoidmiAdapter extends Adapter {
                         // the channel. Store the value as vacuumState to avoid status.status.
                         const stateKey = key === "status" ? "vacuumState" : key;
                         await this.setStateChangedAsync(prefix + "status." + stateKey, { val: value, ack: true });
-                        if (key === "suction") {
-                            await this.setStateChangedAsync(prefix + "control.suction", { val: value, ack: true });
+                        if (key === "suction" || key === "mopMode") {
+                            await this.setStateChangedAsync(prefix + "control." + key, { val: value, ack: true });
+                        }
+                        if (key === "waterboxStatus") {
+                            await this.setStateChangedAsync(prefix + "control.waterLevel", { val: value, ack: true });
                         }
                         if (key === "status") {
                             await this.setStateChangedAsync(prefix + "status.statusText", {
