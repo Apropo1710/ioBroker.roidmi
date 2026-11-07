@@ -505,6 +505,18 @@ class RoidmiAdapter extends Adapter {
             native: { siid: 2, piid: 3 }
         });
         await this.subscribeStatesAsync(prefix + "control.suction");
+        await this.setObjectNotExistsAsync(prefix + "control.mopMode", {
+            type: "state",
+            common: { name: "Mop mode", type: "number", role: "level", min: 0, max: 3, states: { 0: "Aus", 1: "Niedrig", 2: "Mittel", 3: "Hoch" }, read: true, write: true },
+            native: { siid: 4, piid: 5 }
+        });
+        await this.subscribeStatesAsync(prefix + "control.mopMode");
+        await this.setObjectNotExistsAsync(prefix + "control.waterLevel", {
+            type: "state",
+            common: { name: "Water level", type: "number", role: "level", min: 1, max: 3, states: { 1: "Niedrig", 2: "Mittel", 3: "Hoch" }, read: true, write: true },
+            native: { siid: 4, piid: 6 }
+        });
+        await this.subscribeStatesAsync(prefix + "control.waterLevel");
 
         await this.setStateChangedAsync(prefix + "info.connection", { val: false, ack: true });
 
@@ -706,32 +718,38 @@ class RoidmiAdapter extends Adapter {
                 await this.setStateAsync("x20Plus.control." + command, { val: false, ack: true });
                 return;
             }
-            if (command === "suction") {
-                if (typeof state.val !== "number" || !Number.isInteger(state.val) || state.val < 0 || state.val > 3) {
-                    const current = await this.getStateAsync("x20Plus.status.suction");
+            const propertyMap: Record<string, { siid: number; piid: number; min: number; max: number; statusKey: string }> = {
+                suction: { siid: 2, piid: 3, min: 0, max: 3, statusKey: "suction" },
+                mopMode: { siid: 4, piid: 5, min: 0, max: 3, statusKey: "mopMode" },
+                waterLevel: { siid: 4, piid: 6, min: 1, max: 3, statusKey: "waterboxStatus" }
+            };
+            if (command in propertyMap) {
+                const property = propertyMap[command];
+                if (typeof state.val !== "number" || !Number.isInteger(state.val) || state.val < property.min || state.val > property.max) {
+                    const current = await this.getStateAsync("x20Plus.status." + property.statusKey);
                     if (typeof current?.val === "number") await this.setStateAsync("x20Plus.control.suction", { val: current.val, ack: true });
-                    this.log.warn("Xiaomi X20+ suction setting rejected: expected 0..3");
+                    this.log.warn(`Xiaomi X20+ ${command} setting rejected: expected ${property.min}..${property.max}`);
                 } else if (!this.xiaomiClient || this.xiaomiCommandRunning || this.xiaomiPollRunning) {
-                    const current = await this.getStateAsync("x20Plus.status.suction");
-                    if (typeof current?.val === "number") await this.setStateAsync("x20Plus.control.suction", { val: current.val, ack: true });
+                    const current = await this.getStateAsync("x20Plus.status." + property.statusKey);
+                    if (typeof current?.val === "number") await this.setStateAsync("x20Plus.control." + command, { val: current.val, ack: true });
                     this.log.warn("Xiaomi X20+ suction setting skipped: device unavailable or another MIoT request is running");
                 } else {
                     this.xiaomiCommandRunning = true;
                     try {
                         const result = await this.xiaomiClient.call("set_properties", [{
                             did: (this.config as RoidmiAdapterConfig).xiaomiDid,
-                            siid: 2,
-                            piid: 3,
+                            siid: property.siid,
+                            piid: property.piid,
                             value: state.val
                         }]);
-                        await this.setStateAsync("x20Plus.control.suction", { val: state.val, ack: true });
-                        this.log.info("Xiaomi X20+ suction setting sent; response: " + JSON.stringify(result));
+                        await this.setStateAsync("x20Plus.control." + command, { val: state.val, ack: true });
+                        this.log.info(`Xiaomi X20+ ${command} setting sent; response: ${JSON.stringify(result)}`);
                     } catch (error) {
-                        const current = await this.getStateAsync("x20Plus.status.suction");
+                        const current = await this.getStateAsync("x20Plus.status." + property.statusKey);
                         if (typeof current?.val === "number") {
-                            await this.setStateAsync("x20Plus.control.suction", { val: current.val, ack: true });
+                            await this.setStateAsync("x20Plus.control." + command, { val: current.val, ack: true });
                         }
-                        this.log.warn("Xiaomi X20+ suction setting failed: " + (error instanceof Error ? error.message : "unknown error"));
+                        this.log.warn(`Xiaomi X20+ ${command} setting failed: ${error instanceof Error ? error.message : "unknown error"}`);
                     } finally {
                         this.xiaomiCommandRunning = false;
                     }
