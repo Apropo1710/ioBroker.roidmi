@@ -505,6 +505,12 @@ class RoidmiAdapter extends Adapter {
             native: { siid: 2, piid: 3 }
         });
         await this.subscribeStatesAsync(prefix + "control.suction");
+        await this.setObjectNotExistsAsync(prefix + "control.cleaningMode", {
+            type: "state",
+            common: { name: "Cleaning mode", type: "number", role: "level", min: 0, max: 3, states: { 0: "Saugen", 1: "Wischen", 2: "Saugen und Wischen", 3: "Wischen nach Saugen" }, read: true, write: true },
+            native: { siid: 4, piid: 4 }
+        });
+        await this.subscribeStatesAsync(prefix + "control.cleaningMode");
         await this.setObjectNotExistsAsync(prefix + "control.mopMode", {
             type: "state",
             common: { name: "Mop mode", type: "number", role: "level", min: 0, max: 3, states: { 0: "Aus", 1: "Niedrig", 2: "Mittel", 3: "Hoch" }, read: true, write: true },
@@ -553,7 +559,7 @@ class RoidmiAdapter extends Adapter {
                         // the channel. Store the value as vacuumState to avoid status.status.
                         const stateKey = key === "status" ? "vacuumState" : key;
                         await this.setStateChangedAsync(prefix + "status." + stateKey, { val: value, ack: true });
-                        if (key === "suction" || key === "mopMode") {
+                        if (key === "suction" || key === "cleaningMode" || key === "mopMode") {
                             await this.setStateChangedAsync(prefix + "control." + key, { val: value, ack: true });
                         }
                         if (key === "waterboxStatus") {
@@ -723,6 +729,7 @@ class RoidmiAdapter extends Adapter {
             }
             const propertyMap: Record<string, { siid: number; piid: number; min: number; max: number; statusKey: string }> = {
                 suction: { siid: 2, piid: 3, min: 0, max: 3, statusKey: "suction" },
+                cleaningMode: { siid: 4, piid: 4, min: 0, max: 3, statusKey: "cleaningMode" },
                 mopMode: { siid: 4, piid: 5, min: 0, max: 3, statusKey: "mopMode" },
                 waterLevel: { siid: 4, piid: 6, min: 1, max: 3, statusKey: "waterboxStatus" }
             };
