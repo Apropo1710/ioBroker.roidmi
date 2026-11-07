@@ -1,7 +1,7 @@
 {
   "common": {
     "name": "roidmi",
-    "version": "0.1.38",
+    "version": "0.1.39",
     "title": "Roidmi",
     "titleLang": {
       "en": "Roidmi",
@@ -162,6 +162,10 @@
       "0.1.38": {
         "en": "Fix Xiaomi X20+ control object initialization and align package version",
         "de": "Initialisierung der Xiaomi-X20+-Steuerungsobjekte korrigiert und Paketversion angeglichen"
+      },
+      "0.1.39": {
+        "en": "Added Xiaomi miIO timeout diagnostics",
+        "de": "Diagnose für Xiaomi-miIO-Timeouts ergänzt"
       }
     },
     "adminUI": {
