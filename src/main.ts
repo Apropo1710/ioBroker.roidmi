@@ -80,7 +80,8 @@ class RoidmiAdapter extends Adapter {
             { id: "x20Plus", name: "Xiaomi X20+" },
             { id: "x20Plus.info", name: "Information" },
             { id: "x20Plus.status", name: "Status" },
-            { id: "x20Plus.control", name: "Steuerung" }
+            { id: "x20Plus.control", name: "Steuerung" },
+            { id: "x20Plus.rooms", name: "Xiaomi X20+ Räume" }
         ];
         for (const channel of deviceChannels) {
             await this.setObjectNotExistsAsync(channel.id, {
@@ -526,6 +527,19 @@ class RoidmiAdapter extends Adapter {
             native: { siid: 7, aiid: 2 }
         });
         await this.subscribeStatesAsync(prefix + "control.locate");
+        await this.setObjectNotExistsAsync(prefix + "rooms.mapStatus", {
+            type: "state", common: { name: "X20+ map refresh status", type: "string", role: "text", read: true, write: false }, native: {}
+        });
+        await this.setObjectNotExistsAsync(prefix + "rooms.roomsJson", {
+            type: "state", common: { name: "X20+ room list (JSON)", type: "string", role: "json", read: true, write: false }, native: {}
+        });
+        await this.setObjectNotExistsAsync(prefix + "rooms.lastUpdate", {
+            type: "state", common: { name: "X20+ map last update", type: "string", role: "date", read: true, write: false }, native: {}
+        });
+        await this.setObjectNotExistsAsync(prefix + "control.refreshRooms", {
+            type: "state", common: { name: "Refresh Xiaomi X20+ room map from cloud", type: "boolean", role: "button", read: false, write: true, def: false }, native: {}
+        });
+        await this.subscribeStatesAsync(prefix + "control.refreshRooms");
         await this.setObjectNotExistsAsync(prefix + "control.cleanRooms", {
             type: "state",
             common: { name: "X20+ ausgewählte Räume reinigen (JSON: rooms mit segmentId/repeat/suction/water)", type: "string", role: "json", read: false, write: true, def: "" },
@@ -808,10 +822,59 @@ class RoidmiAdapter extends Adapter {
         const xiaomiControlPrefix = this.namespace + ".x20Plus.control.";
         if (id.startsWith(xiaomiControlPrefix)) {
             const command = id.slice(xiaomiControlPrefix.length);
+            if (command === "refreshRooms") {
+                if (state.val === true) {
+                    const config = this.config as RoidmiAdapterConfig;
+                    try {
+                        if (!this.cloudMapClient.hasSession()) {
+                            throw new Error("Xiaomi Cloud session is unavailable. Sign in through the existing EVE Plus cloud-map login first.");
+                        }
+                        if (!config.xiaomiDid) throw new Error("Xiaomi X20+ DID is missing from adapter configuration.");
+                        await this.setStateAsync("x20Plus.rooms.mapStatus", { val: "Refreshing saved X20+ map from Xiaomi Cloud…", ack: true });
+                        const rooms = await this.cloudMapClient.fetchXiaomiRooms(config.cloudCountry || "de", config.xiaomiDid, async () => {
+                            await this.persistCloudSession();
+                        });
+                        const json = JSON.stringify(rooms, null, 2);
+                        await this.setStateAsync("x20Plus.rooms.roomsJson", { val: json, ack: true });
+                        const oldSegments = await this.getObjectAsync("x20Plus.rooms.segments");
+                        if (oldSegments) await this.delObjectAsync("x20Plus.rooms.segments", { recursive: true });
+                        await this.setObjectNotExistsAsync("x20Plus.rooms.segments", { type: "channel", common: { name: "Room segments" }, native: {} });
+                        for (const room of rooms) {
+                            const channel = "x20Plus.rooms.segments." + room.segmentId;
+                            await this.setObjectNotExistsAsync(channel, { type: "channel", common: { name: room.name }, native: { segmentId: room.segmentId, source: "Xiaomi FDS map" } });
+                            await this.setObjectNotExistsAsync(channel + ".name", { type: "state", common: { name: "Room name", type: "string", role: "text", read: true, write: false }, native: {} });
+                            await this.setStateAsync(channel + ".name", { val: room.name, ack: true });
+                            if (room.roomId) {
+                                await this.setObjectNotExistsAsync(channel + ".roomId", { type: "state", common: { name: "Xiaomi Home room ID", type: "string", role: "text", read: true, write: false }, native: {} });
+                                await this.setStateAsync(channel + ".roomId", { val: room.roomId, ack: true });
+                            }
+                        }
+                        await this.setStateAsync("x20Plus.rooms.lastUpdate", { val: new Date().toISOString(), ack: true });
+                        await this.setStateAsync("x20Plus.rooms.mapStatus", { val: "Map refreshed: " + rooms.length + " rooms found. Use segmentId values from roomsJson in cleanRooms.", ack: true });
+                        this.log.info("Xiaomi X20+ saved room map refreshed from Xiaomi FDS: " + rooms.length + " rooms.");
+                    } catch (error) {
+                        const message = error instanceof Error ? error.message : "Unknown map refresh error";
+                        await this.setStateAsync("x20Plus.rooms.mapStatus", { val: "Map refresh failed: " + message, ack: true });
+                        this.log.warn("Xiaomi X20+ room map refresh failed: " + message);
+                    }
+                }
+                await this.setStateAsync("x20Plus.control.refreshRooms", { val: false, ack: true });
+                return;
+            }
             if (command === "cleanRooms") {
                 if (typeof state.val === "string" && state.val.trim()) {
                     try {
                         const roomAction = parseXiaomiRoomCleanRequest(state.val);
+                        const roomMapState = await this.getStateAsync("x20Plus.rooms.roomsJson");
+                        if (typeof roomMapState?.val !== "string" || !roomMapState.val.trim()) {
+                            throw new Error("X20+ room map is not imported yet. Press control.refreshRooms first.");
+                        }
+                        const knownRooms = JSON.parse(roomMapState.val) as Array<{ segmentId: number; name: string }>;
+                        const requested = JSON.parse(state.val) as { rooms?: Array<{ segmentId: number }> };
+                        const knownIds = new Set(knownRooms.map((room) => room.segmentId));
+                        for (const room of requested.rooms ?? []) {
+                            if (!knownIds.has(room.segmentId)) throw new Error("Unknown X20+ room segmentId " + room.segmentId + ". Refresh the map and use an ID from roomsJson.");
+                        }
                         if (!this.xiaomiClient || this.xiaomiCommandRunning || this.xiaomiPollRunning) {
                             this.log.warn("Xiaomi X20+ room cleaning skipped: device unavailable or MIoT busy");
                         } else {

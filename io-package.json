@@ -1,7 +1,7 @@
 {
   "common": {
     "name": "roidmi",
-    "version": "0.1.43",
+    "version": "0.1.44",
     "title": "Roidmi",
     "titleLang": {
       "en": "Roidmi",
@@ -182,6 +182,10 @@
       "0.1.43": {
         "en": "Use Xiaomi Cloud MIoT find action for X20+ locate",
         "de": "Xiaomi-Cloud-MIoT-Find-Aktion für Locate beim X20+ verwenden"
+      },
+      "0.1.44": {
+        "en": "Added on-demand Xiaomi X20+ FDS room-map import",
+        "de": "Xiaomi-X20+-FDS-Raumkartenimport auf Abruf ergänzt"
       }
     },
     "adminUI": {
