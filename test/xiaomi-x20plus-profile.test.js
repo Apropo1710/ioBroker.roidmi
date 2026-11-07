@@ -12,7 +12,7 @@ const {
 test("Xiaomi X20+ model profile stays model-specific", () => {
   assert.equal(XIAOMI_X20_PLUS_MODEL, "xiaomi.vacuum.c102gl");
   assert.deepEqual(XIAOMI_X20_PLUS_PROPERTIES.battery, { siid: 3, piid: 1 });
-  assert.deepEqual(XIAOMI_X20_PLUS_PROPERTIES.status, { siid: 2, piid: 1 });
+  assert.deepEqual(XIAOMI_X20_PLUS_PROPERTIES.vacuumState, { siid: 2, piid: 1 });
   assert.deepEqual(XIAOMI_X20_PLUS_PROPERTIES.dryLeftTime, { siid: 2, piid: 5 });
   assert.deepEqual(XIAOMI_X20_PLUS_CONSUMABLE_PROPERTIES.mainBrushLeft, { siid: 9, piid: 1 });
   assert.deepEqual(XIAOMI_X20_PLUS_CONSUMABLE_PROPERTIES.filterLeft, { siid: 11, piid: 2 });
