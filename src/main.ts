@@ -590,8 +590,9 @@ class RoidmiAdapter extends Adapter {
                         // The MIoT property is named "status", but "status" is already
                         // the channel. Store the value as vacuumState to avoid status.status.
                         const stateKey = key === "status" ? "vacuumState" : key;
-                        await this.setStateChangedAsync(prefix + "status." + stateKey, { val: value, ack: true });
-                        if (key === "childLock" || key === "carpetBoost" || key === "resumeAfterCharging") {
+                        const optionalBooleanSetting = key === "childLock" || key === "carpetBoost" || key === "resumeAfterCharging";
+                        await this.setStateChangedAsync(prefix + "status." + stateKey, { val: optionalBooleanSetting ? Boolean(value) : value, ack: true });
+                        if (optionalBooleanSetting) {
                             await this.setStateChangedAsync(prefix + "control." + key, { val: Boolean(value), ack: true });
                         }
                         if (key === "suction" || key === "cleaningMode" || key === "mopMode") {
