@@ -1,7 +1,7 @@
 {
   "common": {
     "name": "roidmi",
-    "version": "0.1.39",
+    "version": "0.1.40",
     "title": "Roidmi",
     "titleLang": {
       "en": "Roidmi",
@@ -166,6 +166,10 @@
       "0.1.39": {
         "en": "Added Xiaomi miIO timeout diagnostics",
         "de": "Diagnose für Xiaomi-miIO-Timeouts ergänzt"
+      },
+      "0.1.40": {
+        "en": "Split Xiaomi X20+ local MIoT property polling into smaller batches",
+        "de": "Lokale Xiaomi-X20+-MIoT-Abfragen in kleinere Pakete aufgeteilt"
       }
     },
     "adminUI": {
