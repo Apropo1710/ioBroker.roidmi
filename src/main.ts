@@ -771,16 +771,34 @@ class RoidmiAdapter extends Adapter {
                         this.xiaomiCommandRunning = true;
                         try {
                             const action = actionMap[command];
-                            const actionResult = await this.xiaomiClient.call("miIO.miotspecv2", [{
-                                method: "action",
-                                params: {
-                                    did: (this.config as RoidmiAdapterConfig).xiaomiDid,
+                            let actionResult: unknown;
+                            const config = this.config as RoidmiAdapterConfig;
+                            if (this.cloudMapClient.hasSession() && command !== "locate") {
+                                // Cloud MIoT path is an independent alternative to local MIoT.
+                                // It is used when a valid existing Xiaomi Cloud session is available.
+                                actionResult = await this.cloudMapClient.callAction(config.cloudCountry || "de", {
+                                    did: config.xiaomiDid!,
                                     siid: action.siid,
                                     aiid: action.aiid,
                                     in: []
-                                }
-                            }]);
-                            this.log.info(`Xiaomi X20+ ${command} command sent (MIoT ${action.siid}/${action.aiid}); response: ${JSON.stringify(actionResult)}`);
+                                }, async () => {
+                                    await this.setStateAsync("evePlus.map.cloudSession", {
+                                        val: this.encrypt(this.cloudMapClient.exportSession()), ack: true
+                                    });
+                                });
+                                this.log.info(`Xiaomi X20+ ${command} command sent via Xiaomi Cloud MIoT (${action.siid}/${action.aiid}); response: ${JSON.stringify(actionResult)}`);
+                            } else {
+                                actionResult = await this.xiaomiClient.call("miIO.miotspecv2", [{
+                                    method: "action",
+                                    params: {
+                                        did: config.xiaomiDid,
+                                        siid: action.siid,
+                                        aiid: action.aiid,
+                                        in: []
+                                    }
+                                }]);
+                                this.log.info(`Xiaomi X20+ ${command} command sent via local MIoT (${action.siid}/${action.aiid}); response: ${JSON.stringify(actionResult)}`);
+                            }
                         } catch (error) {
                             this.log.warn(`Xiaomi X20+ ${command} command failed: ${error instanceof Error ? error.message : "unknown error"}`);
                         } finally {
