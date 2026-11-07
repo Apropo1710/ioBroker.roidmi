@@ -495,8 +495,11 @@ class RoidmiAdapter extends Adapter {
                     const item = result[index] as { code?: number; value?: unknown } | undefined;
                     if (item?.code === 0 && (typeof item.value === "number" || typeof item.value === "boolean")) {
                         const value = typeof item.value === "boolean" ? Number(item.value) : item.value;
-                        await this.setStateChangedAsync(prefix + "status." + key, { val: value, ack: true });
-                        if (key === "vacuumState") {
+                        // The MIoT property is named "status", but "status" is already
+                        // the channel. Store the value as vacuumState to avoid status.status.
+                        const stateKey = key === "status" ? "vacuumState" : key;
+                        await this.setStateChangedAsync(prefix + "status." + stateKey, { val: value, ack: true });
+                        if (key === "status") {
                             await this.setStateChangedAsync(prefix + "status.statusText", {
                                 val: getXiaomiX20PlusStatusText(value), ack: true
                             });
