@@ -1,7 +1,7 @@
 {
   "common": {
     "name": "roidmi",
-    "version": "0.1.42",
+    "version": "0.1.43",
     "title": "Roidmi",
     "titleLang": {
       "en": "Roidmi",
@@ -178,6 +178,10 @@
       "0.1.42": {
         "en": "Add device/batch-specific MIoT timeout diagnostics and one targeted status-poll retry",
         "de": "Geräte- und Batch-spezifische MIoT-Timeoutdiagnose mit einer gezielten Wiederholung"
+      },
+      "0.1.43": {
+        "en": "Use Xiaomi Cloud MIoT find action for X20+ locate",
+        "de": "Xiaomi-Cloud-MIoT-Find-Aktion für Locate beim X20+ verwenden"
       }
     },
     "adminUI": {
