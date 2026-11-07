@@ -29,6 +29,13 @@ export const XIAOMI_X20_PLUS_CONSUMABLE_PROPERTIES = {
 } as const satisfies Record<string, MiotPropertyRef>;
 
 export const XIAOMI_X20_PLUS_CONSUMABLE_POLL_INTERVAL_MS = 300000;
+/** Optional C102GL settings; specification-based, not verified on user's firmware. */
+export const XIAOMI_X20_PLUS_OPTIONAL_SETTINGS = {
+    childLock: { siid: 4, piid: 27 },
+    carpetBoost: { siid: 4, piid: 12 },
+    resumeAfterCharging: { siid: 4, piid: 11 }
+} as const satisfies Record<string, MiotPropertyRef>;
+
 export const XIAOMI_X20_PLUS_LIFETIME_PROPERTIES = {
     firstClean: { siid: 12, piid: 1 },
     totalCleaningTime: { siid: 12, piid: 2 },
