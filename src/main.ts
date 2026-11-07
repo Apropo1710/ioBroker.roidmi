@@ -727,12 +727,12 @@ class RoidmiAdapter extends Adapter {
                 const property = propertyMap[command];
                 if (typeof state.val !== "number" || !Number.isInteger(state.val) || state.val < property.min || state.val > property.max) {
                     const current = await this.getStateAsync("x20Plus.status." + property.statusKey);
-                    if (typeof current?.val === "number") await this.setStateAsync("x20Plus.control.suction", { val: current.val, ack: true });
+                    if (typeof current?.val === "number") await this.setStateAsync("x20Plus.control." + command, { val: current.val, ack: true });
                     this.log.warn(`Xiaomi X20+ ${command} setting rejected: expected ${property.min}..${property.max}`);
                 } else if (!this.xiaomiClient || this.xiaomiCommandRunning || this.xiaomiPollRunning) {
                     const current = await this.getStateAsync("x20Plus.status." + property.statusKey);
                     if (typeof current?.val === "number") await this.setStateAsync("x20Plus.control." + command, { val: current.val, ack: true });
-                    this.log.warn("Xiaomi X20+ suction setting skipped: device unavailable or another MIoT request is running");
+                    this.log.warn(`Xiaomi X20+ ${command} setting skipped: device unavailable or another MIoT request is running`);
                 } else {
                     this.xiaomiCommandRunning = true;
                     try {
