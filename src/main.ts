@@ -655,8 +655,8 @@ class RoidmiAdapter extends Adapter {
             const command = id.slice(xiaomiControlPrefix.length);
             if (command === "start" || command === "locate") {
                 if (state.val === true) {
-                    if (!this.xiaomiClient || this.xiaomiCommandRunning) {
-                        this.log.warn("Xiaomi X20+ command skipped: device unavailable or another command is running");
+                    if (!this.xiaomiClient || this.xiaomiCommandRunning || this.xiaomiPollRunning) {
+                        this.log.warn("Xiaomi X20+ command skipped: device unavailable or another MIoT request is running");
                     } else {
                         this.xiaomiCommandRunning = true;
                         try {
@@ -684,8 +684,8 @@ class RoidmiAdapter extends Adapter {
             if (command === "suction") {
                 if (typeof state.val !== "number" || !Number.isInteger(state.val) || state.val < 0 || state.val > 3) {
                     this.log.warn("Xiaomi X20+ suction setting rejected: expected 0..3");
-                } else if (!this.xiaomiClient || this.xiaomiCommandRunning) {
-                    this.log.warn("Xiaomi X20+ suction setting skipped: device unavailable or another command is running");
+                } else if (!this.xiaomiClient || this.xiaomiCommandRunning || this.xiaomiPollRunning) {
+                    this.log.warn("Xiaomi X20+ suction setting skipped: device unavailable or another MIoT request is running");
                 } else {
                     this.xiaomiCommandRunning = true;
                     try {
@@ -698,6 +698,10 @@ class RoidmiAdapter extends Adapter {
                         await this.setStateAsync("x20Plus.control.suction", { val: state.val, ack: true });
                         this.log.info("Xiaomi X20+ suction setting sent; response: " + JSON.stringify(result));
                     } catch (error) {
+                        const current = await this.getStateAsync("x20Plus.status.suction");
+                        if (typeof current?.val === "number") {
+                            await this.setStateAsync("x20Plus.control.suction", { val: current.val, ack: true });
+                        }
                         this.log.warn("Xiaomi X20+ suction setting failed: " + (error instanceof Error ? error.message : "unknown error"));
                     } finally {
                         this.xiaomiCommandRunning = false;
