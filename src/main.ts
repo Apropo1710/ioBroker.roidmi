@@ -434,7 +434,10 @@ class RoidmiAdapter extends Adapter {
             if (oldState && !(await this.getStateAsync(newId))) {
                 await this.setStateAsync(newId, oldState);
             }
-            await this.delObjectAsync(oldId);
+            await this.delObjectAsync(oldId, { recursive: true }).catch(() => undefined);
+            // Also clear the state DB entry: older ioBroker installations can retain
+            // orphaned flat state values after the object itself has been deleted.
+            await this.delStateAsync(oldId).catch(() => undefined);
         }
 
         // Remove the obsolete nested x20Plus.status.status state left by earlier builds.
