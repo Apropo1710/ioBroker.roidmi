@@ -499,6 +499,14 @@ class RoidmiAdapter extends Adapter {
             this.log.info("Removed obsolete Xiaomi X20+ duplicate status state");
         }
 
+        // A legacy installation may have used x20Plus.status as a state object.
+        // The flat-state migration above deletes that object after moving its value,
+        // which also removes the status channel created earlier in onReady(). Recreate
+        // the channel now so the migrated status fields retain the intended hierarchy.
+        await this.setObjectNotExistsAsync(prefix + "status", {
+            type: "channel", common: { name: "Xiaomi X20+ Status" }, native: {}
+        });
+
         const fastFields = Object.entries(XIAOMI_X20_PLUS_PROPERTIES);
         const consumableFields = Object.entries(XIAOMI_X20_PLUS_CONSUMABLE_PROPERTIES);
         const lifetimeFields = Object.entries(XIAOMI_X20_PLUS_LIFETIME_PROPERTIES);
