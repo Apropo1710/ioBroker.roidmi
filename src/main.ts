@@ -129,6 +129,22 @@ class RoidmiAdapter extends Adapter {
         // Start Xiaomi independently before Roidmi-specific validation/early returns.
         // This allows Xiaomi-only installations and prevents one robot's config from blocking the other.
         if (isXiaomiEnabled(config)) void this.startXiaomiPolling(config);
+        // Restore the existing Xiaomi Cloud session before device-specific early returns.
+        // This also makes cloud control available in Xiaomi-only installations.
+        const storedCloudSession = await this.getStateAsync("evePlus.map.cloudSession");
+        const encryptedCloudSession = typeof storedCloudSession?.val === "string" && storedCloudSession.val
+            ? storedCloudSession.val
+            : config.cloudSession;
+        if (encryptedCloudSession) {
+            try {
+                this.cloudMapClient.restoreSession(this.decrypt(encryptedCloudSession));
+                this.log.info("Stored Xiaomi Cloud session restored");
+            } catch {
+                this.cloudMapClient.clearSession();
+                this.log.warn("Stored Xiaomi Cloud session could not be restored; a new Xiaomi login is required");
+            }
+        }
+
         const globalErrors = validateConfig(config);
 
         await this.setStateChangedAsync("evePlus.info.connection", { val: false, ack: true });
@@ -167,20 +183,6 @@ class RoidmiAdapter extends Adapter {
                 if (miioTrace.length > 20) miioTrace.shift();
             }
         });
-        const storedCloudSession = await this.getStateAsync("evePlus.map.cloudSession");
-        const encryptedCloudSession = typeof storedCloudSession?.val === "string" && storedCloudSession.val
-            ? storedCloudSession.val
-            : config.cloudSession;
-        if (encryptedCloudSession) {
-            try {
-                this.cloudMapClient.restoreSession(this.decrypt(encryptedCloudSession));
-                this.log.info("Stored Xiaomi Cloud session restored");
-            } catch {
-                this.cloudMapClient.clearSession();
-                this.log.warn("Stored Xiaomi Cloud session could not be restored; a new Xiaomi login is required");
-            }
-        }
-
         const properties = [
             { id: "battery", siid: 3, piid: 1, name: "Battery level", unit: "%" },
             { id: "charging", siid: 3, piid: 2, name: "Charging state" },
