@@ -1,7 +1,7 @@
 {
   "common": {
     "name": "roidmi",
-    "version": "0.1.41",
+    "version": "0.1.42",
     "title": "Roidmi",
     "titleLang": {
       "en": "Roidmi",
@@ -174,6 +174,10 @@
       "0.1.41": {
         "en": "Split Roidmi EVE Plus local MIoT status polling into batches of six",
         "de": "Lokale Roidmi-EVE-Plus-MIoT-Statusabfragen in Pakete mit sechs Eigenschaften aufgeteilt"
+      },
+      "0.1.42": {
+        "en": "Add device/batch-specific MIoT timeout diagnostics and one targeted status-poll retry",
+        "de": "Geräte- und Batch-spezifische MIoT-Timeoutdiagnose mit einer gezielten Wiederholung"
       }
     },
     "adminUI": {
