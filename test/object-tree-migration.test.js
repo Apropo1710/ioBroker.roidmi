@@ -11,8 +11,9 @@ test("legacy Roidmi paths map under evePlus", () => {
   assert.equal(mapLegacyStateId("info.connection"), "evePlus.info.connection");
 });
 
-test("legacy Xiaomi status paths map into x20Plus.status", () => {
+test("legacy Xiaomi paths map into the current x20Plus tree", () => {
   assert.equal(mapLegacyStateId("xiaomi.battery"), "x20Plus.status.battery");
+  assert.equal(mapLegacyStateId("xiaomi.status"), "x20Plus.status.vacuumState");
   assert.equal(mapLegacyStateId("xiaomi.statusText"), "x20Plus.status.statusText");
   assert.equal(mapLegacyStateId("xiaomi.info.connection"), "x20Plus.info.connection");
   assert.equal(mapLegacyStateId("xiaomi.info.lastPoll"), "x20Plus.info.lastPoll");

@@ -9,6 +9,9 @@ export function mapLegacyStateId(oldId: string): string | undefined {
   if (oldId.startsWith("xiaomi.")) {
     const suffix = oldId.slice("xiaomi.".length);
     if (suffix.startsWith("info.")) return "x20Plus." + suffix;
+    // Older Xiaomi object trees used "status" for the MIoT vacuum state.
+    // The current model-specific tree names this property "vacuumState".
+    if (suffix === "status") return "x20Plus.status.vacuumState";
     return "x20Plus.status." + suffix;
   }
   if (oldId.startsWith("control.")) return "evePlus.control." + oldId.slice("control.".length);
