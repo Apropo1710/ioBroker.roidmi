@@ -18,11 +18,26 @@ export interface MiioRpcResponse {
 
 /** Minimal one-shot local miIO UDP RPC client. Never logs or exposes the token. */
 export class MiioClient {
+    // Serialize local miIO transactions across both robots. Some vacuum firmware
+    // drops RPC replies when requests from multiple clients overlap.
+    private static requestQueue: Promise<void> = Promise.resolve();
     private requestId = 0;
 
     public constructor(private readonly options: MiioClientOptions) {}
 
     public async call(method: string, params: unknown[] = [], timeoutOverrideMs?: number): Promise<unknown> {
+        const previous = MiioClient.requestQueue;
+        let release!: () => void;
+        MiioClient.requestQueue = new Promise<void>((resolve) => { release = resolve; });
+        await previous;
+        try {
+            return await this.callUnlocked(method, params, timeoutOverrideMs);
+        } finally {
+            release();
+        }
+    }
+
+    private async callUnlocked(method: string, params: unknown[] = [], timeoutOverrideMs?: number): Promise<unknown> {
         if (!method.trim()) throw new Error("miIO method must not be empty");
         const port = this.options.port ?? 54321;
         const timeoutMs = timeoutOverrideMs ?? this.options.timeoutMs ?? 4000;
