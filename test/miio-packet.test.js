@@ -24,6 +24,7 @@ test("parses device ID and timestamp from miIO header", () => {
 
 test("encrypts and validates a miIO JSON packet", () => {
     const request = buildMiioRequest("get_properties", [{ siid: 3, piid: 1 }], 7, token, header);
+    assert.equal(request.readUInt32BE(12), header.stamp + 1);
     const parsed = parseMiioResponse(request, token);
     assert.deepEqual(parsed, {
         id: 7,
@@ -37,4 +38,10 @@ test("rejects wrong tokens, malformed packets and invalid tokens", () => {
     assert.throws(() => parseMiioResponse(packet, "ffffffffffffffffffffffffffffffff"), /checksum/);
     assert.throws(() => parseMiioResponse(Buffer.alloc(32), token), /Invalid/);
     assert.throws(() => buildMiioRequest("miIO.info", [], 1, "bad", header), /32 hexadecimal/);
+});
+
+
+test("increments the miIO request timestamp with 32-bit wraparound", () => {
+    const request = buildMiioRequest("miIO.info", [], 8, token, { deviceId: header.deviceId, stamp: 0xffffffff });
+    assert.equal(request.readUInt32BE(12), 0);
 });
