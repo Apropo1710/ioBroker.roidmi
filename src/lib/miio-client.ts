@@ -22,6 +22,7 @@ export class MiioClient {
     // drops RPC replies when requests from multiple clients overlap.
     private static requestQueue: Promise<void> = Promise.resolve();
     private requestId = 0;
+    private lastSuccessfulRpcAt?: number;
 
     public constructor(private readonly options: MiioClientOptions) {}
 
@@ -45,7 +46,8 @@ export class MiioClient {
         const startedAt = Date.now();
         const debug = (message: string): void => { this.options.onDebug?.(`${method}: +${Date.now() - startedAt}ms ${message}`); };
         let stage = "handshake";
-        debug(`starting RPC to ${this.options.host}:${port} (timeout ${timeoutMs}ms)`);
+        const sinceLastSuccess = this.lastSuccessfulRpcAt === undefined ? "no previous successful RPC" : `${Date.now() - this.lastSuccessfulRpcAt}ms since last successful RPC`;
+        debug(`starting RPC to ${this.options.host}:${port} (timeout ${timeoutMs}ms; ${sinceLastSuccess})`);
 
         return new Promise<unknown>((resolve, reject) => {
             let finished = false;
@@ -73,14 +75,15 @@ export class MiioClient {
                     if (!handshakeHeader) {
                         debug(`received handshake packet (${message.length} bytes)`);
                         handshakeHeader = parseMiioHeader(message);
-                        debug(`handshake parsed; device ID ${handshakeHeader.deviceId}`);
+                        const hostEpochSeconds = Math.floor(Date.now() / 1000);
+                        debug(`handshake parsed; device ID ${handshakeHeader.deviceId}; device stamp ${handshakeHeader.stamp}; host epoch ${hostEpochSeconds}; host-device delta ${hostEpochSeconds - handshakeHeader.stamp}s`);
                         if (handshakeHeader.deviceId === 0) throw new Error("Robot returned an invalid device ID");
                         this.requestId = (this.requestId % 9998) + 1;
                         expectedRequestId = this.requestId;
                         expectedDeviceId = handshakeHeader.deviceId;
                         const request = buildMiioRequest(method, params, expectedRequestId, this.options.token, handshakeHeader);
                         stage = "RPC response";
-                        debug(`sending RPC packet (${request.length} bytes; request ID ${expectedRequestId})`);
+                        debug(`sending RPC packet (${request.length} bytes; request ID ${expectedRequestId}; request stamp ${request.readUInt32BE(12)})`);
                         socket.send(request, port, this.options.host, (error) => {
                             if (error) { debug(`RPC send failed: ${error.message}`); finish(new Error(`Could not send miIO request: ${error.message}`)); }
                             else debug("RPC packet sent successfully");
@@ -112,6 +115,7 @@ export class MiioClient {
                         return;
                     }
                     debug("RPC completed successfully");
+                    this.lastSuccessfulRpcAt = Date.now();
                     finish(undefined, response && typeof response === "object" && "result" in response
                         ? response.result
                         : response);
