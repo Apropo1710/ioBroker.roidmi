@@ -50,6 +50,8 @@ export class MiioClient {
         return new Promise<unknown>((resolve, reject) => {
             let finished = false;
             let handshakeHeader: ReturnType<typeof parseMiioHeader> | undefined;
+            let expectedRequestId: number | undefined;
+            let expectedDeviceId: number | undefined;
             const timer = setTimeout(() => { debug(`timeout while waiting for ${stage}`); finish(new Error("miIO request timed out")); }, timeoutMs);
 
             const finish = (error?: Error, result?: unknown): void => {
@@ -74,8 +76,8 @@ export class MiioClient {
                         debug(`handshake parsed; device ID ${handshakeHeader.deviceId}`);
                         if (handshakeHeader.deviceId === 0) throw new Error("Robot returned an invalid device ID");
                         this.requestId = (this.requestId % 9998) + 1;
-                        const expectedRequestId = this.requestId;
-                        const expectedDeviceId = handshakeHeader.deviceId;
+                        expectedRequestId = this.requestId;
+                        expectedDeviceId = handshakeHeader.deviceId;
                         const request = buildMiioRequest(method, params, expectedRequestId, this.options.token, handshakeHeader);
                         stage = "RPC response";
                         debug(`sending RPC packet (${request.length} bytes; request ID ${expectedRequestId})`);
@@ -88,6 +90,9 @@ export class MiioClient {
 
                     debug(`received RPC response packet (${message.length} bytes) from ${remoteInfo.address}`);
                     const responseHeader = parseMiioHeader(message);
+                    if (expectedRequestId === undefined || expectedDeviceId === undefined) {
+                        throw new Error("miIO response received before request initialization");
+                    }
                     if (responseHeader.deviceId !== expectedDeviceId) {
                         debug(`ignored RPC response with unexpected device ID ${responseHeader.deviceId}; expected ${expectedDeviceId}`);
                         return;
