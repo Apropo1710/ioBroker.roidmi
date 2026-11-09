@@ -62,17 +62,23 @@ export class MiioClient {
             };
 
             socket.on("error", (error) => { debug(`UDP socket error: ${error.message}`); finish(new Error(`miIO UDP error: ${error.message}`)); });
-            socket.on("message", (message) => {
+            socket.on("message", (message, remoteInfo) => {
                 try {
+                    if (remoteInfo.address !== this.options.host) {
+                        debug(`ignored UDP packet from unexpected address ${remoteInfo.address}`);
+                        return;
+                    }
                     if (!handshakeHeader) {
                         debug(`received handshake packet (${message.length} bytes)`);
                         handshakeHeader = parseMiioHeader(message);
                         debug(`handshake parsed; device ID ${handshakeHeader.deviceId}`);
                         if (handshakeHeader.deviceId === 0) throw new Error("Robot returned an invalid device ID");
                         this.requestId = (this.requestId % 9998) + 1;
-                        const request = buildMiioRequest(method, params, this.requestId, this.options.token, handshakeHeader);
+                        const expectedRequestId = this.requestId;
+                        const expectedDeviceId = handshakeHeader.deviceId;
+                        const request = buildMiioRequest(method, params, expectedRequestId, this.options.token, handshakeHeader);
                         stage = "RPC response";
-                        debug(`sending RPC packet (${request.length} bytes; request ID ${this.requestId})`);
+                        debug(`sending RPC packet (${request.length} bytes; request ID ${expectedRequestId})`);
                         socket.send(request, port, this.options.host, (error) => {
                             if (error) { debug(`RPC send failed: ${error.message}`); finish(new Error(`Could not send miIO request: ${error.message}`)); }
                             else debug("RPC packet sent successfully");
@@ -80,8 +86,20 @@ export class MiioClient {
                         return;
                     }
 
-                    debug(`received RPC response packet (${message.length} bytes)`);
+                    debug(`received RPC response packet (${message.length} bytes) from ${remoteInfo.address}`);
+                    const responseHeader = parseMiioHeader(message);
+                    if (responseHeader.deviceId !== expectedDeviceId) {
+                        debug(`ignored RPC response with unexpected device ID ${responseHeader.deviceId}; expected ${expectedDeviceId}`);
+                        return;
+                    }
                     const response = parseMiioResponse(message, this.options.token) as MiioRpcResponse;
+                    if (!response || typeof response !== "object" || typeof response.id !== "number") {
+                        throw new Error("miIO response did not contain a numeric request ID");
+                    }
+                    if (response.id !== expectedRequestId) {
+                        debug(`ignored RPC response with unexpected request ID ${response.id}; expected ${expectedRequestId}`);
+                        return;
+                    }
                     debug("RPC response parsed successfully");
                     if (response && typeof response === "object" && response.error) {
                         debug(`RPC returned error code ${response.error.code ?? "unknown"}`);
