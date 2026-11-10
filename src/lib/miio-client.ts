@@ -54,7 +54,7 @@ export class MiioClient {
             let handshakeHeader: ReturnType<typeof parseMiioHeader> | undefined;
             let expectedRequestId: number | undefined;
             let expectedDeviceId: number | undefined;
-            let timer: ReturnType<typeof setTimeout>;
+            let timer: ReturnType<typeof setTimeout> | undefined;
             const armStageTimeout = (): void => {
                 clearTimeout(timer);
                 timer = setTimeout(() => {
@@ -67,7 +67,7 @@ export class MiioClient {
             const finish = (error?: Error, result?: unknown): void => {
                 if (finished) return;
                 finished = true;
-                clearTimeout(timer);
+                if (timer) clearTimeout(timer);
                 try { socket.close(); } catch { /* socket may already be closed */ }
                 if (error) reject(error);
                 else resolve(result);
