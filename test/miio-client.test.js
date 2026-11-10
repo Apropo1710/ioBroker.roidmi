@@ -68,3 +68,40 @@ test("ignores miIO replies with a foreign device ID or request ID", async () => 
         server.close();
     }
 });
+
+
+test("gives a delayed handshake and RPC response separate timeout windows", async () => {
+    const server = createSocket("udp4");
+    await new Promise((resolve) => server.bind(0, "127.0.0.1", resolve));
+    const port = server.address().port;
+    const client = new MiioClient({
+        host: "127.0.0.1",
+        port,
+        token,
+        timeoutMs: 200
+    });
+
+    server.on("message", (message, remote) => {
+        if (message.length === 32 && message[0] === 0x21 && message[1] === 0x31) {
+            const handshake = Buffer.alloc(32);
+            handshake[0] = 0x21;
+            handshake[1] = 0x31;
+            handshake.writeUInt16BE(32, 2);
+            handshake.writeUInt32BE(deviceId, 8);
+            handshake.writeUInt32BE(987654, 12);
+            setTimeout(() => server.send(handshake, remote.port, remote.address), 120);
+            return;
+        }
+        const request = parseMiioResponse(message, token);
+        setTimeout(() => {
+            server.send(responsePacket(request.id, ["accepted"]), remote.port, remote.address);
+        }, 120);
+    });
+
+    try {
+        const result = await client.call("get_properties", []);
+        assert.deepEqual(result, ["accepted"]);
+    } finally {
+        server.close();
+    }
+});
