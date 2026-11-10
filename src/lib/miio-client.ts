@@ -55,10 +55,18 @@ export class MiioClient {
             let expectedRequestId: number | undefined;
             let expectedDeviceId: number | undefined;
             let timer: ReturnType<typeof setTimeout> | undefined;
+            const localEndpoint = (): string => {
+                try {
+                    const address = socket.address();
+                    return typeof address === "string" ? address : `${address.address}:${address.port}`;
+                } catch {
+                    return "unbound";
+                }
+            };
             const armStageTimeout = (): void => {
                 clearTimeout(timer);
                 timer = setTimeout(() => {
-                    debug(`timeout while waiting for ${stage}`);
+                    debug(`timeout while waiting for ${stage} (local ${localEndpoint()} -> ${this.options.host}:${port}; request ID ${expectedRequestId ?? "not assigned"})`);
                     finish(new Error("miIO request timed out"));
                 }, timeoutMs);
             };
@@ -81,7 +89,7 @@ export class MiioClient {
                         return;
                     }
                     if (!handshakeHeader) {
-                        debug(`received handshake packet (${message.length} bytes)`);
+                        debug(`received handshake packet (${message.length} bytes) from ${remoteInfo.address}:${remoteInfo.port} to local ${localEndpoint()}`);
                         handshakeHeader = parseMiioHeader(message);
                         // Give the RPC response its own full timeout window. A slow
                         // handshake must not consume the robot's RPC response time.
@@ -98,12 +106,12 @@ export class MiioClient {
                         debug(`sending RPC packet (${request.length} bytes; request ID ${expectedRequestId}; request stamp ${request.readUInt32BE(12)})`);
                         socket.send(request, port, this.options.host, (error) => {
                             if (error) { debug(`RPC send failed: ${error.message}`); finish(new Error(`Could not send miIO request: ${error.message}`)); }
-                            else debug("RPC packet sent successfully");
+                            else debug(`RPC packet sent successfully from local ${localEndpoint()} to ${this.options.host}:${port} (request ID ${expectedRequestId})`);
                         });
                         return;
                     }
 
-                    debug(`received RPC response packet (${message.length} bytes) from ${remoteInfo.address}`);
+                    debug(`received RPC response packet (${message.length} bytes) from ${remoteInfo.address}:${remoteInfo.port} to local ${localEndpoint()} (expected request ID ${expectedRequestId ?? "not assigned"})`);
                     const responseHeader = parseMiioHeader(message);
                     if (expectedRequestId === undefined || expectedDeviceId === undefined) {
                         throw new Error("miIO response received before request initialization");
@@ -141,7 +149,7 @@ export class MiioClient {
             debug(`sending handshake packet (${handshake.length} bytes)`);
             socket.send(handshake, port, this.options.host, (error) => {
                 if (error) { debug(`handshake send failed: ${error.message}`); finish(new Error(`Could not send miIO handshake: ${error.message}`)); }
-                else debug("handshake packet sent successfully");
+                else debug(`handshake packet sent successfully from local ${localEndpoint()} to ${this.options.host}:${port}`);
             });
         });
     }
