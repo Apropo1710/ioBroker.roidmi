@@ -54,7 +54,15 @@ export class MiioClient {
             let handshakeHeader: ReturnType<typeof parseMiioHeader> | undefined;
             let expectedRequestId: number | undefined;
             let expectedDeviceId: number | undefined;
-            const timer = setTimeout(() => { debug(`timeout while waiting for ${stage}`); finish(new Error("miIO request timed out")); }, timeoutMs);
+            let timer: ReturnType<typeof setTimeout>;
+            const armStageTimeout = (): void => {
+                clearTimeout(timer);
+                timer = setTimeout(() => {
+                    debug(`timeout while waiting for ${stage}`);
+                    finish(new Error("miIO request timed out"));
+                }, timeoutMs);
+            };
+            armStageTimeout();
 
             const finish = (error?: Error, result?: unknown): void => {
                 if (finished) return;
@@ -75,6 +83,10 @@ export class MiioClient {
                     if (!handshakeHeader) {
                         debug(`received handshake packet (${message.length} bytes)`);
                         handshakeHeader = parseMiioHeader(message);
+                        // Give the RPC response its own full timeout window. A slow
+                        // handshake must not consume the robot's RPC response time.
+                        stage = "RPC response";
+                        armStageTimeout();
                         const hostEpochSeconds = Math.floor(Date.now() / 1000);
                         debug(`handshake parsed; device ID ${handshakeHeader.deviceId}; device stamp ${handshakeHeader.stamp}; host epoch ${hostEpochSeconds}; host-device delta ${hostEpochSeconds - handshakeHeader.stamp}s`);
                         if (handshakeHeader.deviceId === 0) throw new Error("Robot returned an invalid device ID");
@@ -82,7 +94,6 @@ export class MiioClient {
                         expectedRequestId = this.requestId;
                         expectedDeviceId = handshakeHeader.deviceId;
                         const request = buildMiioRequest(method, params, expectedRequestId, this.options.token, handshakeHeader);
-                        stage = "RPC response";
                         debug(`sending RPC packet (${request.length} bytes; request ID ${expectedRequestId}; request stamp ${request.readUInt32BE(12)})`);
                         socket.send(request, port, this.options.host, (error) => {
                             if (error) { debug(`RPC send failed: ${error.message}`); finish(new Error(`Could not send miIO request: ${error.message}`)); }
