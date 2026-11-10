@@ -532,12 +532,8 @@ class RoidmiAdapter extends Adapter {
             native: { siid: 2, aiid: 1 }
         });
         await this.subscribeStatesAsync(prefix + "control.start");
-        await this.setObjectNotExistsAsync(prefix + "control.locate", {
-            type: "state",
-            common: { name: "Find robot (play sound)", type: "boolean", role: "button", read: false, write: true, def: false },
-            native: { siid: 7, aiid: 2 }
-        });
-        await this.subscribeStatesAsync(prefix + "control.locate");
+        // The X20+ locate action did not work reliably; remove the obsolete state from existing installations.
+        await this.delObjectAsync(prefix + "control.locate").catch(() => undefined);
         await this.setObjectNotExistsAsync(prefix + "rooms.mapStatus", {
             type: "state", common: { name: "X20+ map refresh status", type: "string", role: "text", read: true, write: false }, native: {}
         });
@@ -937,8 +933,7 @@ class RoidmiAdapter extends Adapter {
                 start: { siid: 2, aiid: 1 },
                 pause: { siid: 2, aiid: 2 }, // C102GL pause is mapped to Stop in multiple cloud references
                 stop: { siid: 2, aiid: 2 },
-                returnToDock: { siid: 3, aiid: 1 },
-                locate: { siid: 7, aiid: 2 }
+                returnToDock: { siid: 3, aiid: 1 }
             };
             if (command in actionMap) {
                 if (state.val === true) {
@@ -951,20 +946,17 @@ class RoidmiAdapter extends Adapter {
                             let actionResult: unknown;
                             const config = this.config as RoidmiAdapterConfig;
                             if (this.cloudMapClient.hasSession()) {
-                                // Xiaomi Cloud uses a different MIoT action ID for locate/find
-                                // than the local C102GL action mapping.
-                                const cloudAction = command === "locate" ? { siid: 6, aiid: 1 } : action;
                                 actionResult = await this.cloudMapClient.callAction(config.cloudCountry || "de", {
                                     did: config.xiaomiDid!,
-                                    siid: cloudAction.siid,
-                                    aiid: cloudAction.aiid,
+                                    siid: action.siid,
+                                    aiid: action.aiid,
                                     in: []
                                 }, async () => {
                                     await this.setStateAsync("evePlus.map.cloudSession", {
                                         val: this.encrypt(this.cloudMapClient.exportSession()), ack: true
                                     });
                                 });
-                                this.log.info(`Xiaomi X20+ ${command} command sent via Xiaomi Cloud MIoT (${cloudAction.siid}/${cloudAction.aiid}); response: ${JSON.stringify(actionResult)}`);
+                                this.log.info(`Xiaomi X20+ ${command} command sent via Xiaomi Cloud MIoT (${action.siid}/${action.aiid}); response: ${JSON.stringify(actionResult)}`);
                             } else {
                                 actionResult = await this.xiaomiClient.call("miIO.miotspecv2", [{
                                     method: "action",
