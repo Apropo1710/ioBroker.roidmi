@@ -1038,8 +1038,28 @@ class RoidmiAdapter extends Adapter {
                         if (!writeResult || typeof writeResult.code !== "number" || writeResult.code !== 0) {
                             throw new Error(`MIoT write rejected (SIID ${property.siid}, PIID ${property.piid}, code ${writeResult?.code ?? "missing"})`);
                         }
-                        await this.setStateAsync("x20Plus.control." + command, { val: state.val, ack: true });
-                        this.log.info(`Xiaomi X20+ ${command} setting accepted; response: ${JSON.stringify(result)}`);
+                        // A successful set_properties response only confirms that the
+                        // command was accepted. Read this single property back once so the
+                        // states reflect the value the robot actually applied.
+                        const verifyResult = await this.xiaomiClient.call("get_properties", [{
+                            did: (this.config as RoidmiAdapterConfig).xiaomiDid,
+                            siid: property.siid,
+                            piid: property.piid
+                        }]);
+                        if (!Array.isArray(verifyResult) || !verifyResult.length) {
+                            throw new Error("Unexpected MIoT read-back response after setting write");
+                        }
+                        const verified = verifyResult[0] as { code?: number; value?: unknown } | undefined;
+                        if (!verified || verified.code !== 0 || typeof verified.value !== "number" || !Number.isInteger(verified.value)) {
+                            throw new Error("MIoT read-back did not return a valid numeric value: " + JSON.stringify(verifyResult));
+                        }
+                        await this.setStateAsync("x20Plus.status." + property.statusKey, { val: verified.value, ack: true });
+                        await this.setStateAsync("x20Plus.control." + command, { val: verified.value, ack: true });
+                        if (verified.value !== state.val) {
+                            this.log.warn(`Xiaomi X20+ ${command}: requested ${state.val}, robot reports ${verified.value} after write`);
+                        } else {
+                            this.log.info(`Xiaomi X20+ ${command} verified at ${verified.value}; write response: ${JSON.stringify(result)}`);
+                        }
                     } catch (error) {
                         const current = await this.getStateAsync("x20Plus.status." + property.statusKey);
                         if (typeof current?.val === "number") {
