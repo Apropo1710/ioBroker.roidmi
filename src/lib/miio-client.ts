@@ -87,8 +87,9 @@ export class MiioClient {
                         // handshake must not consume the robot's RPC response time.
                         stage = "RPC response";
                         armStageTimeout();
-                        const hostEpochSeconds = Math.floor(Date.now() / 1000);
-                        debug(`handshake parsed; device ID ${handshakeHeader.deviceId}; device stamp ${handshakeHeader.stamp}; host epoch ${hostEpochSeconds}; host-device delta ${hostEpochSeconds - handshakeHeader.stamp}s`);
+                        // The device stamp uses the robot's own clock domain and
+                        // must not be compared directly with the host Unix epoch.
+                        debug(`handshake parsed; device ID ${handshakeHeader.deviceId}; device stamp ${handshakeHeader.stamp}`);
                         if (handshakeHeader.deviceId === 0) throw new Error("Robot returned an invalid device ID");
                         this.requestId = (this.requestId % 9998) + 1;
                         expectedRequestId = this.requestId;
