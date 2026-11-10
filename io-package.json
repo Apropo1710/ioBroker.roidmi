@@ -1,7 +1,7 @@
 {
   "common": {
     "name": "roidmi",
-    "version": "0.1.47",
+    "version": "0.1.48",
     "title": "Roidmi",
     "titleLang": {
       "en": "Roidmi",
@@ -226,6 +226,20 @@
     "enableXiaomi": false,
     "xiaomiHost": "",
     "xiaomiDid": "",
-    "xiaomiToken": ""
+    "xiaomiToken": "",
+    "news": [
+      {
+        "version": "0.1.48",
+        "date": "2026-11-10",
+        "changes": {
+          "en": [
+            "Verify Xiaomi X20+ suction, cleaning intensity and mop settings by reading the single MIoT property back after each manual write; synchronize control and status with the value actually reported by the robot."
+          ],
+          "de": [
+            "Saugstärke, Reinigungsintensität und Wasserstufe des Xiaomi X20+ nach manueller Änderung durch einmaliges Rücklesen der jeweiligen MIoT-Eigenschaft verifizieren; Steuerungs- und Statusdatenpunkt auf den tatsächlich gemeldeten Roboterwert setzen."
+          ]
+        }
+      }
+    ]
   }
 }
