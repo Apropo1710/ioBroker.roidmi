@@ -457,7 +457,8 @@ class RoidmiAdapter extends Adapter {
             ["info.connection", "Xiaomi X20+ connection", "boolean", "indicator.reachable"],
             ["info.connectionText", "Xiaomi X20+ connection status", "string", "text"],
             ["info.lastPoll", "Xiaomi X20+ last successful poll", "string", "date"],
-            ["info.pollCount", "Xiaomi X20+ successful poll count", "number", "value"]
+            ["info.pollCount", "Xiaomi X20+ successful poll count", "number", "value"],
+            ["info.mopModeReadback", "Raw MIoT read result for mop water level", "string", "json"]
         ] as const;
         for (const [id, name, type, role] of infoStates) {
             await this.setObjectNotExistsAsync(prefix + id, {
@@ -713,6 +714,15 @@ class RoidmiAdapter extends Adapter {
                     const [key, requestedProperty] = batchFields[index];
                     const item = responseByProperty.get(`${requestedProperty.siid}/${requestedProperty.piid}`)
                         ?? result[index] as { code?: number; value?: unknown } | undefined;
+                    // Expose the existing poll response for mopMode without issuing an extra
+                    // robot request or flooding the log. This distinguishes stale device data
+                    // from a state-update/mapping problem.
+                    if (key === "mopMode") {
+                        await this.setStateChangedAsync(prefix + "info.mopModeReadback", {
+                            val: JSON.stringify({ siid: requestedProperty.siid, piid: requestedProperty.piid, code: item?.code ?? null, value: item?.value ?? null }),
+                            ack: true
+                        });
+                    }
                     if (item?.code === 0 && (typeof item.value === "number" || typeof item.value === "boolean")) {
                         const rawValue = typeof item.value === "boolean" ? Number(item.value) : item.value;
                         const value = key === "cleaningMode" && typeof rawValue === "number" ? rawValue & 0x03 : rawValue;
