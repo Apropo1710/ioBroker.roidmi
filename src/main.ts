@@ -700,9 +700,19 @@ class RoidmiAdapter extends Adapter {
                         }
                     }
                     if (!Array.isArray(result)) throw new Error("Unexpected Xiaomi MIoT property response");
+                    // MIoT responses carry the requested service/property identifiers.
+                    // Match by SIID/PIID instead of assuming the firmware preserves request
+                    // order; this is especially important for settings such as mopMode.
+                    const responseByProperty = new Map<string, { code?: number; value?: unknown }>();
+                    for (const entry of result as Array<{ siid?: number; piid?: number; code?: number; value?: unknown }>) {
+                        if (typeof entry?.siid === "number" && typeof entry?.piid === "number") {
+                            responseByProperty.set(`${entry.siid}/${entry.piid}`, entry);
+                        }
+                    }
                     for (let index = 0; index < batchFields.length; index++) {
-                    const [key] = batchFields[index];
-                    const item = result[index] as { code?: number; value?: unknown } | undefined;
+                    const [key, requestedProperty] = batchFields[index];
+                    const item = responseByProperty.get(`${requestedProperty.siid}/${requestedProperty.piid}`)
+                        ?? result[index] as { code?: number; value?: unknown } | undefined;
                     if (item?.code === 0 && (typeof item.value === "number" || typeof item.value === "boolean")) {
                         const rawValue = typeof item.value === "boolean" ? Number(item.value) : item.value;
                         const value = key === "cleaningMode" && typeof rawValue === "number" ? rawValue & 0x03 : rawValue;
