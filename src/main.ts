@@ -601,7 +601,7 @@ class RoidmiAdapter extends Adapter {
                     write: true
                 },
                 native: { ...cleaningModeObject.native, siid: 4, piid: 23, mask: 3 }
-            });
+            } as ioBroker.StateObject);
         }
         await this.subscribeStatesAsync(prefix + "control.cleaningMode");
         // Optional C102GL settings are read on the slow cycle only. These
