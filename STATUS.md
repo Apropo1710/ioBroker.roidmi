@@ -29,6 +29,14 @@ Draft-PR: https://github.com/Apropo1710/ioBroker.roidmi/pull/3 (nicht mergen)
 - Die Rohantwort wird nur im Diagnose-State sichtbar, sobald die entsprechende Wasserstufen-Property im normalen Poll verarbeitet wird. Zu prüfen bleiben deshalb nach Installation: Existenz des Objekts und anschließender Rohwert aus dem bestehenden Poll.
 - Keine zufälligen weiteren Varianten zur Objekterstellung ergänzen, bevor der Nutzer den aktuellen, geprüften Stand getestet hat.
 
+## Nutzerprüfung nach Installation des aktuellen Builds (11.11.2026, ca. 11:37)
+
+- Nutzer hat den aktuellen Branch-Build installiert und den Adapter anschließend manuell neu gestartet.
+- Log bestätigt eindeutig: `starting. Version 0.1.48 (non-npm: Apropo1710/ioBroker.roidmi#feature/xiaomi-x20plus)` um 11:37:09.755.
+- Um 11:37:14.995 meldete der normale Xiaomi-Poll für Batch 1/4 (`vacuumState:s2p1, fault:s2p2, suction:s2p3, battery:s3p1, chargingState:s3p2, cleaningTime:s4p2, cleaningArea:s4p3, cleaningMode:s4p23`) einen Timeout und startete den vorgesehenen einmaligen Retry. Das ist ein Kommunikations-/Polling-Thema, nicht automatisch ein Wasserstufen-Mappingfehler.
+- Der zuvor gezeigte Objektbaum-Screenshot mit nur vier `x20Plus.info`-States stammt von ca. 11:00 Uhr und liegt vor dem bestätigten Neustart. Ob `x20Plus.info.mopModeReadback` nach dem Neustart existiert, ist noch nicht verifiziert. Nicht behaupten, dass der Datenpunkt nach diesem Neustart weiterhin fehlt.
+- Nächster Schritt: aktuellen `x20Plus.info`-Objektbaum nach dem Neustart kontrollieren. Falls der State existiert, Wert nach einem erfolgreichen normalen Poll auslesen. Falls er fehlt, gezielt untersuchen, ob das Objekt unmittelbar nach Erstellung wieder entfernt wird bzw. ob ein Fehler beim Objekt-Write protokolliert wird. Keine weitere MIoT-Abfrage ergänzen.
+
 ## Aktuelles Hauptthema: Xiaomi X20+ – Wasserstufe wird aus Original-App nicht zurückgelesen
 
 Gerät: Xiaomi Robot Vacuum X20+ (Modell C102GL). Nicht mit Roidmi Eve Plus oder Mova1000 verwechseln.
