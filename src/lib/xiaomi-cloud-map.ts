@@ -108,7 +108,7 @@ export class XiaomiCloudMapClient {
         onSessionChanged?: () => Promise<void>
     ): Promise<unknown> {
         if (!this.hasSession()) throw new Error("Xiaomi Cloud session is unavailable; sign in and complete verification first.");
-        if (!/^\\d{1,20}$/.test(did)) throw new Error("Xiaomi X20+ DID is invalid.");
+        if (!/^\d{1,20}$/.test(did)) throw new Error("Xiaomi X20+ DID is invalid.");
         if (!properties.length) throw new Error("At least one MIoT property is required.");
         const base = `https://${country === "cn" ? "" : country + "."}api.io.mi.com/app`;
         const response = await this.api(base + "/v2/miotspec/prop/get", {
