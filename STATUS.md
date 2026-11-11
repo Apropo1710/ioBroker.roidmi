@@ -164,3 +164,10 @@ Gerät: Xiaomi Robot Vacuum X20+ (Modell C102GL). Nicht mit Roidmi Eve Plus oder
 - Quelle zur Setter-Implementierung: https://github.com/roquerodrigo/ha-xiaomi-vacuum/blob/main/custom_components/xiaomi_vacuum/select/base.py
 - Schlussfolgerung: **Kein Beleg für einen falschen SIID/PIID- oder Enum-Mappingfehler.** Die App-Auswahl „Grad 1“ ist auf dem Gerät zum Messzeitpunkt offenbar noch nicht in der live MIoT-Property angekommen (oder die App hält sie zunächst als Einstellung für den nächsten Reinigungslauf). Da der Roboter im Dock und nicht beim Wischen war, ist als nächster aussagekräftiger Test ein kurzer, kontrollierter Wischlauf mit Grad 1 nötig; danach lokale MIoT-Antwort und Cloud-Readback erneut vergleichen. Nicht die Werte im Adapter umbelegen.
 - Keine Codeänderung und kein zusätzlicher Poller: Die bestehenden lokalen Polls und der bereits vorhandene manuelle Cloud-Button reichen für den nächsten Test aus. Vor dem Test keine zusätzliche Belastung für Roboter oder ioBroker erzeugen.
+
+### Cloud-Gegenprobe nach Wischlaufversuch (11.11.2026, 12:14 MEZ)
+
+- Nutzer meldete nach dem vorgeschlagenen Wischlaufversuch eine weitere manuelle Cloud-Abfrage: `requestedAt=2026-11-11T11:14:06.637Z`, Ergebnis weiterhin `value: 3`, `code: 0`.
+- `updateTime` bleibt exakt `1794386936` (= 08:48:56 UTC / 09:48:56 MEZ), unverändert gegenüber den Cloud-Abfragen um 11:02Z und 11:06Z.
+- Damit ist die Xiaomi-Cloud-Property-Antwort für diese DID weiterhin ein alter Datenstand und kein brauchbarer Echtzeit-Nachweis für die App-Änderung bzw. den Wischlauf. Die Cloud-Abfrage liest nur den gespeicherten Cloud-Wert; sie stößt keinen Live-Read am Roboter an.
+- Nächster entscheidender Nachweis ist ausschließlich der lokale `x20Plus.info.mopModeReadback` aus dem regulären MIoT-Poll während/nachdem der Roboter tatsächlich wischt. Diesen Wert samt Poll-Zeitpunkt prüfen; keine weitere Cloud-Abfrage nötig. Wenn lokal ebenfalls 3 bleibt, den Versuch nicht als Fehler des Cloud-Mappings interpretieren; dann ist zu untersuchen, ob die App-Einstellung im gewählten Reinigungsmodus erst bei Jobstart/Übernahme geschrieben wird.
