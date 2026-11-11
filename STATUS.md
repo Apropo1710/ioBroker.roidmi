@@ -39,7 +39,7 @@ Draft-PR: https://github.com/Apropo1710/ioBroker.roidmi/pull/3 (nicht mergen)
   - Cloud=2, lokal=3: lokaler MIoT-Readback ist veraltet/abweichend.
   - Cloud=3, lokal=3: Xiaomi Cloud und lokaler Wert stimmen überein; App-Anzeige/Profil-Kontext oder verzögerte App-Synchronisierung untersuchen.
   - Cloud-Fehler: Session/API-Antwort untersuchen, nicht den Roboter-Poller ändern.
-- Neue Code-Commits: `007b1cdf26e6b68a86bef477b07240f91c1e2c47` (Cloud-Property-Read), `f259c092bc2c3c3f39ccd30097c3c63c88c93bee` (manueller Diagnose-Button) und `ecb4780050c3b7befb0e69b2e676ee06b374ffe5` (DID-Regex-Korrektur). Noch kein Build als installierbar freigegeben; CI/Tests abwarten.
+- Neue Code-Commits: `007b1cdf26e6b68a86bef477b07240f91c1e2c47` (Cloud-Property-Read), `f259c092bc2c3c3f39ccd30097c3c63c88c93bee` (manueller Diagnose-Button) und `ecb4780050c3b7befb0e69b2e676ee06b374ffe5` (DID-Regex-Korrektur). Verifiziert für Code-Commit `ecb4780050c3b7befb0e69b2e676ee06b374ffe5`: CI #385 erfolgreich; Test and build adapter #157 erfolgreich (npm test, lint, build). Artefakt `iobroker-roidmi-0.1.35` heruntergeladen und kontrolliert; `package.json` und `io-package.json` melden beide Version **0.1.48**. Im entpackten Build sind `control.readMopModeCloud` und `/v2/miotspec/prop/get` enthalten. Installation erst nach dieser Prüfung freigegeben.
 - Draft-PR #3 bleibt offen und ungemergt.
 
 ## App-/Adapter-Abgleich: Wasserstufe weicht ab (11.11.2026, ca. 11:41–11:42)
