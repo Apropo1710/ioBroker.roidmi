@@ -29,6 +29,19 @@ Draft-PR: https://github.com/Apropo1710/ioBroker.roidmi/pull/3 (nicht mergen)
 - Die Rohantwort wird nur im Diagnose-State sichtbar, sobald die entsprechende Wasserstufen-Property im normalen Poll verarbeitet wird. Zu prüfen bleiben deshalb nach Installation: Existenz des Objekts und anschließender Rohwert aus dem bestehenden Poll.
 - Keine zufälligen weiteren Varianten zur Objekterstellung ergänzen, bevor der Nutzer den aktuellen, geprüften Stand getestet hat.
 
+## Manuelle Xiaomi-Cloud-Gegenprobe für Wasserstufe (11.11.2026)
+
+- Unabhängige C102GL-Referenz `dacrypt/xiao` dokumentiert Wasserstufe `low/medium/high` und Beispiel `High (raw: 3)`; die öffentliche C102GL-MIoT-Spezifikation bestätigt SIID 4 / PIID 5 als Mop Mode mit Werten 1 Low, 2 Medium, 3 High.
+- Damit ist die numerische Zuordnung 1=Niedrig, 2=Mittel, 3=Hoch plausibel und unabhängig bestätigt. Die bisherigen erfolgreichen Schreib-/Readback-Logs passen dazu. Der App-Screenshot „Grad 2“ bei lokalem Rohwert 3 beweist daher keine verschobene Enum-Zuordnung; es muss geklärt werden, ob die lokale Antwort veraltet ist oder die App-Einstellung auf einem anderen Kontext/Profil liegt.
+- Neuer Diagnoseweg: `x20Plus.control.readMopModeCloud` ist ein manueller Button. Er liest genau SIID 4 / PIID 5 einmalig über Xiaomi Cloud `/v2/miotspec/prop/get` (datasource 1) und speichert die rohe Antwort in `x20Plus.info.mopModeCloudReadback`.
+- Diese Cloud-Abfrage ist ausdrücklich nicht Teil des regelmäßigen Pollings. Keine zusätzliche Roboterabfrage; nur eine einzelne manuell ausgelöste Cloud-Leseabfrage.
+- Nächster Schritt nach erfolgreichem Build/Installation: App-Wasserstufe auf Grad 2 belassen, normalen lokalen Readback notieren und einmal `control.readMopModeCloud` auslösen. Vergleich:
+  - Cloud=2, lokal=3: lokaler MIoT-Readback ist veraltet/abweichend.
+  - Cloud=3, lokal=3: Xiaomi Cloud und lokaler Wert stimmen überein; App-Anzeige/Profil-Kontext oder verzögerte App-Synchronisierung untersuchen.
+  - Cloud-Fehler: Session/API-Antwort untersuchen, nicht den Roboter-Poller ändern.
+- Neue Code-Commits: `007b1cdf26e6b68a86bef477b07240f91c1e2c47` (Cloud-Property-Read) und `f259c092bc2c3c3f39ccd30097c3c63c88c93bee` (manueller Diagnose-Button). Noch kein Build als installierbar freigegeben; CI/Tests abwarten.
+- Draft-PR #3 bleibt offen und ungemergt.
+
 ## App-/Adapter-Abgleich: Wasserstufe weicht ab (11.11.2026, ca. 11:41–11:42)
 
 - Nutzer-Screenshot der Xiaomi-App zeigt Standardmodus, Reinigungsart „Saugen vor Wischen“, Saugstärke „Stark“ und Wasserabgabe „Grad 2“ ausgewählt.
