@@ -461,8 +461,13 @@ class RoidmiAdapter extends Adapter {
             ["info.mopModeReadback", "Raw MIoT read result for mop water level", "string", "json"]
         ] as const;
         for (const [id, name, type, role] of infoStates) {
-            await this.setObjectNotExistsAsync(prefix + id, {
-                type: "state", common: { name, type, role, read: true, write: false }, native: {}
+            const objectId = prefix + id;
+            const existing = await this.getObjectAsync(objectId);
+            await this.setObjectAsync(objectId, {
+                ...(existing ?? {}),
+                type: "state",
+                common: { ...(existing?.common ?? {}), name, type, role, read: true, write: false },
+                native: { ...(existing?.native ?? {}) }
             });
         }
         // Older Xiaomi poller versions created flat x20Plus.* states. Move those
