@@ -60,7 +60,6 @@
 - Der ursprüngliche Timeout bleibt separat offen. Die bisherigen Logs zeigen erfolgreiche Handshake-Antwort und erfolgreiches UDP-Senden, danach aber keine passende RPC-Antwort innerhalb des Zeitfensters. Als nächster Untersuchungsansatz bleiben Antwortverlust/UDP-Fragmentierung, Roboterlast und Fremdclient-Interaktionen. Keine Belege erlauben derzeit eine eindeutige Ursache.
 - Build/CI für das Deaktivieren des Reuse-Pfads steht noch aus. Die Wasserstufen-Korrektur wurde nicht verändert.
 
-
 ## Experimentelle miIO-Handshake-Wiederverwendung repariert (11.11.2026)
 
 - Der konkrete Fehler im Reuse-Pfad wurde behoben: Wenn ein gültiger Handshake-Cache vorhanden ist, wird `handshakeHeader` vor Empfang der UDP-Pakete mit den gecachten Geräteinformationen initialisiert. Damit wird das erste eingehende Paket korrekt als RPC-Antwort behandelt und nicht fälschlich als neuer Handshake interpretiert; der RPC wird nicht doppelt gesendet.
@@ -69,13 +68,11 @@
 - Die ursprünglichen sporadischen RPC-Timeouts bestanden bereits vor dieser Optimierung und bleiben ein separates Beobachtungsthema. Die Reparatur ist zunächst durch CI/Build zu verifizieren und anschließend am realen Gerät zu beobachten.
 - Wasserstufen-Decodierung und bestätigte Live-Funktion bleiben unverändert.
 
-
 ## Handshake-Reuse: Regressionstest und Release-Kandidat 0.1.50 (11.11.2026)
 
 - Ergänzender UDP-Integrationstest deckt jetzt den zuvor fehlenden Reuse-Pfad ab: erster RPC mit Handshake, zweiter RPC mit Cache, genau ein RPC pro Aufruf und keine Fehlinterpretation der RPC-Antwort als Handshake.
 - Versionsstände in `package.json`, `package-lock.json` und `io-package.json` auf **0.1.50** angeglichen; News-Eintrag ergänzt.
 - Der reparierte Reuse-Pfad bleibt für den X20+ aktiviert. Freigabe zur Installation erst nach erfolgreichem Test-/Build-Workflow und Prüfung des erzeugten Installationsartefakts.
-
 
 ## Laufende Praxistest-Übersicht (Stand 11.11.2026, 23:20 Uhr)
 
@@ -96,7 +93,7 @@ Diese Übersicht ist die maßgebliche aktuelle Testliste. Bei jedem neuen Testbe
 | Wasserstufe zwischen Xiaomi-App und ioBroker in beide Richtungen | BESTANDEN | Live-Test am 11.11.; siehe Wasserstufenabschnitt |
 | Wasserstufe im Status während laufender Reinigung | BESTANDEN | Korrigierter Status in `status.mopMode` und `control.mopMode` live bestätigt |
 | Reinigungsmodus / `cleaningMode` Status | TEILWEISE BESTÄTIGT | Statuswert 3 („Saugen vor Wischen“) im Live-Screenshot; weitere Modi noch nicht systematisch geprüft |
-| Saugleistung / Saugstufen | TEILWEISE BESTÄTIGT – Rückrichtung offen bzw. fehlerhaft | Am 10.11.2026 wurde ioBroker → Roboter → Xiaomi-App erfolgreich beobachtet: Änderung der Reinigungsintensität bzw. von `cleaningMode` 2→3 änderte die App-Anzeige von Stark auf Turbo. Am 11.11.2026 wurde festgestellt, dass Änderungen in der Xiaomi-App (Saugleistung und Wasserstufe) nicht zuverlässig in ioBroker ankamen, während ioBroker → Roboter → App funktionierte. Status-Synchronisierung App → ioBroker ist damit noch offen; frühere Status-/Control-Abweichung ebenfalls beachten. Kein erneuter Test nötig, bis die Synchronisierung gezielt korrigiert/überprüft wird. |
+| Saugleistung / Saugstufen (`suction`) | **BESTANDEN** | Der Nutzer bestätigt, dass `suction` vollständig getestet wurde. Die Saugleistungsfunktion gilt als komplett bestätigt; sie ist ausdrücklich vom separaten Datenpunkt `cleaningMode` zu unterscheiden. |
 | Globale Reinigungsart umschalten | OFFEN | Nur bei Gelegenheit im normalen Betrieb testen |
 | Globalen Reinigungsstart aus ioBroker | OFFEN | Noch kein dokumentierter Live-Test |
 | Raumkartenimport | BESTANDEN | Neustartlog meldet erfolgreich geladene Karte mit 5 Räumen |
@@ -113,10 +110,9 @@ Diese Übersicht ist die maßgebliche aktuelle Testliste. Bei jedem neuen Testbe
 4. Nach jedem Ergebnis Status von OFFEN auf BESTANDEN, FEHLGESCHLAGEN oder TEILWEISE BESTÄTIGT setzen und Datum, Version sowie knappen Nachweis ergänzen.
 5. Bei Änderungen an Code, Paketversion, aktivem Branch oder PR-Status diese Übersicht und den Projektstatus im selben Commit aktualisieren. Beim Branchwechsel die aktuelle STATUS.md mitführen; keine abweichende veraltete Testliste stehen lassen.
 
+### Korrektur Saugleistungstest (11.11.2026)
 
-### Präzisierung Saugleistungstest (11.11.2026)
-
-- Korrektur der vorherigen Testmatrix: Saugleistung wurde bereits praktisch getestet; sie darf nicht als „nicht dokumentiert“ geführt werden.
-- Am 10.11.2026 wurde eine Änderung über ioBroker bis zur Xiaomi-Original-App verfolgt: `cleaningMode` von 2 auf 3 führte dort zur Anzeige von Stark auf Turbo. Das bestätigt die ioBroker→Roboter→App-Richtung für diesen beobachteten Einstellungswechsel.
-- Am 11.11.2026 meldete der Nutzer, dass Änderungen der Saugleistung (ebenso Wasserstufe) in der Xiaomi-App nicht in ioBroker aktualisiert wurden. Die Gegenrichtung ioBroker→Roboter→App funktionierte.
-- Ergebnis daher **teilweise bestätigt**, nicht vollständig bestanden: Der offene Punkt ist die Synchronisierung von Änderungen aus der Original-App zurück nach ioBroker. Die Wasserstufe hat inzwischen einen eigenen, separat live bestätigten Fix; daraus folgt nicht automatisch, dass die Saugleistungs-Synchronisierung ebenfalls behoben ist.
+- Der Nutzer hat klargestellt, dass die Saugleistung über den Datenpunkt `suction` vollständig bestätigt wurde.
+- Die frühere Einstufung „teilweise bestätigt“ beruhte auf einer Verwechslung bzw. Vermischung mit dem separaten Datenpunkt `cleaningMode` und wird zurückgenommen.
+- **Saugleistung / `suction`: BESTANDEN.** Nicht erneut als offenen Test führen und keine erneute Prüfung dafür einplanen.
+- `cleaningMode` bleibt ein eigener Datenpunkt mit eigenem, weiterhin nur teilweise bestätigtem Teststatus.
