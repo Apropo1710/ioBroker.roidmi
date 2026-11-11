@@ -617,10 +617,19 @@ class RoidmiAdapter extends Adapter {
             native: { siid: 2, piid: 3 }
         });
         await this.subscribeStatesAsync(prefix + "control.suction");
+        await this.setObjectNotExistsAsync(prefix + "status.mopMode", {
+            type: "state",
+            common: { name: "Wasserfluss beim Wischen", type: "number", role: "level", min: 1, max: 3, states: { 1: "Niedrig", 2: "Mittel", 3: "Hoch" }, read: true, write: false },
+            native: { siid: 4, piid: 23, mask: 0x30000, shift: 16 }
+        });
+        await this.extendObjectAsync(prefix + "status.mopMode", {
+            common: { name: "Wasserfluss beim Wischen", type: "number", role: "level", min: 1, max: 3, states: { 1: "Niedrig", 2: "Mittel", 3: "Hoch" }, read: true, write: false },
+            native: { siid: 4, piid: 23, mask: 0x30000, shift: 16 }
+        });
         await this.setObjectNotExistsAsync(prefix + "control.cleaningMode", {
             type: "state",
             common: { name: "Reinigungsart", type: "number", role: "level", min: 0, max: 3, states: { 0: "Saugen und Wischen", 1: "Wischen", 2: "Saugen", 3: "Saugen vor Wischen" }, read: true, write: true },
-            native: { siid: 4, piid: 23, mask: 3 }
+            native: { siid: 4, piid: 23, mask: 0x03, shift: 0 }
         });
         // Correct old installations too: cleaningMode is intensity, not vacuum/mop mode.
         // Preserve the stored value while updating only common/native metadata.
@@ -640,7 +649,7 @@ class RoidmiAdapter extends Adapter {
                     read: true,
                     write: true
                 },
-                native: { ...cleaningModeObject.native, siid: 4, piid: 23, mask: 3 }
+                native: { ...cleaningModeObject.native, siid: 4, piid: 23, mask: 0x03, shift: 0 }
             } as ioBroker.StateObject);
         }
         await this.subscribeStatesAsync(prefix + "control.cleaningMode");
@@ -669,7 +678,7 @@ class RoidmiAdapter extends Adapter {
         // does not update common metadata). Keep the value and native data intact.
         await this.extendObjectAsync(prefix + "control.mopMode", {
             common: { name: "Wasserfluss beim Wischen", min: 1, max: 3, states: { 1: "Niedrig", 2: "Mittel", 3: "Hoch" }, read: true, write: true },
-            native: { siid: 4, piid: 5 }
+            native: { siid: 4, piid: 23, mask: 0x30000, shift: 16 }
         });
         await this.subscribeStatesAsync(prefix + "control.mopMode");
         await this.setObjectNotExistsAsync(prefix + "control.readMopModeCloud", {
@@ -795,9 +804,16 @@ class RoidmiAdapter extends Adapter {
                         if (optionalBooleanSetting) {
                             await this.setStateChangedAsync(prefix + "control." + key, { val: Boolean(value), ack: true });
                         }
-                        if (key === "suction" || key === "cleaningMode" || key === "mopMode") {
+                        if (key === "suction" || key === "cleaningMode") {
                             const controlValue = key === "cleaningMode" ? Number(value) & 0x03 : value;
                             await this.setStateChangedAsync(prefix + "control." + key, { val: controlValue, ack: true });
+                        }
+                        if (key === "cleaningMode" && typeof rawValue === "number") {
+                            const waterLevel = (rawValue >>> 16) & 0x03;
+                            if (waterLevel >= 1 && waterLevel <= 3) {
+                                await this.setStateChangedAsync(prefix + "status.mopMode", { val: waterLevel, ack: true });
+                                await this.setStateChangedAsync(prefix + "control.mopMode", { val: waterLevel, ack: true });
+                            }
                         }
                         if (key === "status") {
                             await this.setStateChangedAsync(prefix + "status.statusText", {
@@ -1130,10 +1146,11 @@ class RoidmiAdapter extends Adapter {
                 await this.setStateAsync("x20Plus.control." + command, { val: false, ack: true });
                 return;
             }
-            const propertyMap: Record<string, { siid: number; piid: number; min: number; max: number; statusKey: string; mask?: number }> = {
+            const propertyMap: Record<string, { siid: number; piid: number; min: number; max: number; statusKey: string; mask?: number; shift?: number }> = {
                 suction: { siid: 2, piid: 3, min: 0, max: 3, statusKey: "suction" },
-                cleaningMode: { siid: 4, piid: 23, min: 0, max: 3, statusKey: "cleaningMode", mask: 0x03 },
-                mopMode: { siid: 4, piid: 5, min: 1, max: 3, statusKey: "mopMode" }
+                cleaningMode: { siid: 4, piid: 23, min: 0, max: 3, statusKey: "cleaningMode", mask: 0x03, shift: 0 },
+                // The user's three live app measurements confirmed water level in bits 16-17 of 4/23.
+                mopMode: { siid: 4, piid: 23, min: 1, max: 3, statusKey: "mopMode", mask: 0x30000, shift: 16 }
             };
             const optionalSetting = XIAOMI_X20_PLUS_OPTIONAL_SETTINGS[command as keyof typeof XIAOMI_X20_PLUS_OPTIONAL_SETTINGS];
             if (optionalSetting) {
@@ -1184,7 +1201,8 @@ class RoidmiAdapter extends Adapter {
                             if (!currentItem || currentItem.code !== 0 || typeof currentItem.value !== "number") {
                                 throw new Error("Could not read current packed cleaning settings before update");
                             }
-                            writeValue = (currentItem.value & ~property.mask) | (state.val & property.mask);
+                            const shift = property.shift ?? 0;
+                            writeValue = (currentItem.value & ~property.mask) | ((state.val << shift) & property.mask);
                         }
                         const result = await this.xiaomiClient.call("set_properties", [{
                             did: (this.config as RoidmiAdapterConfig).xiaomiDid,
@@ -1217,7 +1235,9 @@ class RoidmiAdapter extends Adapter {
                         if (!verified || verified.code !== 0 || typeof verified.value !== "number" || !Number.isInteger(verified.value)) {
                             throw new Error("MIoT read-back did not return a valid numeric value: " + JSON.stringify(verifyResult));
                         }
-                        const verifiedValue = property.mask !== undefined ? verified.value & property.mask : verified.value;
+                        const verifiedValue = property.mask !== undefined
+                            ? (verified.value & property.mask) >>> (property.shift ?? 0)
+                            : verified.value;
                         await this.setStateAsync("x20Plus.status." + property.statusKey, { val: verifiedValue, ack: true });
                         await this.setStateAsync("x20Plus.control." + command, { val: verifiedValue, ack: true });
                         if (verifiedValue !== state.val) {
