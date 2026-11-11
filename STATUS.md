@@ -1,5 +1,15 @@
 # Projektstatus – ioBroker.roidmi
 
+## Diagnose 4/23 – Rohwert des gepackten Reinigungssettings (11.11.2026)
+
+- Claude-Analyse: Beim X20+ C102GL ist SIID 4 / PIID 23 ein gepacktes Dreame-Clean-Setting. Der Adapter verwendet es bereits für `control.cleaningMode`, maskiert dort aber die unteren zwei Bits (`mask: 0x03`) und verwirft den übrigen Rohwert in der öffentlichen Reinigungsart.
+- Hypothese: Die Original-App könnte Wasserstufe oder weitere Reinigungsparameter über andere Bits dieses gepackten Werts setzen. Das ist noch nicht belegt; Bitlage und Bedeutung müssen aus einem Vorher-/Nachher-Diff ermittelt werden.
+- Codeänderung Commit `6ef3a00b4d76b365a47712315d4a02f7284341a3`: Neuer read-only Diagnose-State `x20Plus.info.cleanSettingReadback`. Er speichert den vollständigen Rohwert und Antwortcode von SIID 4 / PIID 23 aus dem ohnehin laufenden schnellen Poll.
+- **Keine zusätzliche MIoT-Abfrage**, kein zusätzlicher Poll und keine Schreiblogikänderung. Der bestehende `control.cleaningMode`-State bleibt unverändert und zeigt weiterhin nur die unteren zwei Bits.
+- Nächster Test nach erfolgreichem Build: Rohwert im normalen Poll erfassen, App-Wasserstufe ändern, nächsten regulären Poll abwarten und den Rohwert vergleichen. Wenn Bits wechseln, gezielt dekodieren; wenn nicht, andere Properties/App-Schreibpfad untersuchen.
+- Zusätzlich offen: Prüfen, ob benutzerdefinierte Raumreinigung aktiv ist und ob der Raumstart Wasserstufe separat in den Raumparametern übergibt.
+- Build/CI für den neuen Code-Commit: noch ausstehend.
+
 ## Ergebnis direkter Xiaomi-Cloud-Geräteabruf (11.11.2026, 11:27 UTC)
 
 - Nutzer hat den manuellen Diagnosebutton mit `datasource: 2` ausgelöst.
