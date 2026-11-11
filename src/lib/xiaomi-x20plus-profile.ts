@@ -12,6 +12,7 @@ export const XIAOMI_X20_PLUS_MODEL = "xiaomi.vacuum.c102gl";
 export interface MiotPropertyRef {
     readonly siid: number;
     readonly piid: number;
+    readonly mask?: number;
 }
 
 /**
@@ -51,7 +52,8 @@ export const XIAOMI_X20_PLUS_PROPERTIES = {
     chargingState: { siid: 3, piid: 2 },
     cleaningTime: { siid: 4, piid: 2 },
     cleaningArea: { siid: 4, piid: 3 },
-    cleaningMode: { siid: 4, piid: 4 },
+    // The X20+ packs sweep/mop type into the low two bits of Dreame clean-setting (4/23).
+    cleaningMode: { siid: 4, piid: 23, mask: 0x03 },
     mopMode: { siid: 4, piid: 5 },
     waterboxStatus: { siid: 4, piid: 6 },
     taskStatus: { siid: 4, piid: 7 },
