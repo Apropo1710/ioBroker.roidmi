@@ -1,7 +1,7 @@
 {
   "common": {
     "name": "roidmi",
-    "version": "0.1.48",
+    "version": "0.1.49",
     "title": "Roidmi",
     "titleLang": {
       "en": "Roidmi",
@@ -228,6 +228,18 @@
     "xiaomiDid": "",
     "xiaomiToken": "",
     "news": [
+      {
+        "version": "0.1.49",
+        "date": "2026-11-11",
+        "changes": {
+          "en": [
+            "Read and write X20+ mop water level from packed MIoT clean settings (SIID 4 / PIID 23), preserving unrelated setting bits."
+          ],
+          "de": [
+            "Wasserstufe des X20+ aus den gepackten MIoT-Reinigungseinstellungen (SIID 4 / PIID 23) lesen und schreiben; andere Einstellungsbits bleiben erhalten."
+          ]
+        }
+      },
       {
         "version": "0.1.48",
         "date": "2026-11-10",
