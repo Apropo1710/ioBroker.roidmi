@@ -43,3 +43,11 @@
 - Debug-Trace zeigt UDP-RPC-Aufrufe an `192.168.178.96:54321` mit 4.000-ms-Timeout. Beim 13:52-Versuch waren rund 30.025 ms seit dem letzten erfolgreichen RPC vergangen; beim 14:03-Versuch rund 38 ms. Der Trace zeigt Handshake-Wiederverwendung bzw. Invalidierung nach fehlgeschlagenem RPC und anschließenden frischen Handshake.
 - Die Screenshots belegen zunächst den Timeout des ersten Versuchs und den vorgesehenen einmaligen Retry. Ob jeder Retry erfolgreich war oder einzelne Pollzyklen vollständig ausfielen, ist anhand der sichtbaren Ausschnitte nicht abschließend erkennbar.
 - Noch kein bestätigter Geräte- oder Adapterfehler und keine Änderung vorgenommen. Während der Stabilitätsbeobachtung Häufigkeit, Retry-Ausgang und zeitlichen Zusammenhang mit laufender Reinigung weiter erfassen. Keine zusätzlichen Polls/Diagnoseabfragen einführen.
+
+## Zeitliche Einordnung der X20+-RPC-Timeouts und Handshake-Optimierung (11.11.2026)
+
+- Korrektur der bisherigen Interpretation: Die sporadischen miIO-RPC-Timeouts bestanden bereits vor der am Morgen des 11.11.2026 eingeführten Handshake-Wiederverwendung. Die Wiederverwendung ist daher nicht die Ursache der ursprünglich beobachteten Timeouts.
+- Claude hatte die Handshake-Wiederverwendung erst am Morgen als Optimierungsansatz vorgeschlagen; sie ist eine nachträgliche Änderung und bislang nicht als wirksame Verbesserung nachgewiesen.
+- Die am Nachmittag gezeigten Timeout-Logs sind zeitlich nach dieser Änderung entstanden. Sie können zur Bewertung des neuen Verhaltens dienen, erklären aber nicht den ursprünglichen Fehler.
+- Untersuchung muss deshalb bei der bereits vorher bestehenden UDP/miIO-Kommunikation ansetzen. Handshake-Wiederverwendung separat als Optimierungsversuch betrachten und nicht ohne Vergleich als Ursache oder Lösung deklarieren.
+- Keine Codeänderung aufgrund dieser Korrektur; Wasserstufen-Fix bleibt unverändert.
