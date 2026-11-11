@@ -97,3 +97,16 @@ Diese Werte stammen aus Screenshots des realen Geräts. Sie sind Beobachtungen, 
 - Neue lesbare Datenpunkte `stateText` und `chargingText`; Rohdatenpunkte bleiben unverändert.
 - `charging=1` wird nicht als aktives Laden interpretiert; Bedeutung ungeklärt.
 - Status 5 und 6 sind empirisch/vorläufig. Unbekannte Werte bleiben sichtbar.
+
+## Xiaomi X20+ – gepackte Wasserstufe (11.11.2026)
+
+- Protokollhinweis/Referenz: Der X20+-Support im Projekt `ha-xiaomi-vacuum` dokumentiert SIID 4 / PIID 23 als gepackten Einstellungswert. Der Hinweis führte zur Untersuchung dieses Feldes; die konkrete Bitlage wurde anhand von Messungen aus der Xiaomi-Original-App und anschließendem bidirektionalem Test am realen Gerät bestätigt.
+- SIID 4 / PIID 23 Rohwerte aus der Original-App:
+  - Wasserstufe Grad 1: `67585` (`0x10801`)
+  - Wasserstufe Grad 2: `133121` (`0x20801`)
+  - Wasserstufe Grad 3: `198657` (`0x30801`)
+- Im getesteten Gerät ändern sich für die Wasserstufe ausschließlich Bits 16–17: Maske `0x30000`, Shift `16`. Dekodierung: `(rawValue >>> 16) & 0x03`; Werte 1, 2 und 3 entsprechen Grad 1, 2 und 3.
+- Beim Schreiben ausschließlich diese Bits ersetzen und alle übrigen Bits des gepackten Werts erhalten. Der Adapter liest den aktuellen Wert vor dem Schreiben und verifiziert den Schreibvorgang durch Readback.
+- Live-Verifikation: Änderungen mehrfach in beide Richtungen getestet – Xiaomi-Original-App → Adapter und Adapter → Xiaomi-Original-App. Beide Richtungen funktionieren auf dem getesteten Gerät.
+- Firmware-Version des Testgeräts ist derzeit nicht erfasst. Die Bitbelegung ist daher für dieses Gerät/Firmware bestätigt, aber nicht als firmwareübergreifend garantiert anzusehen. Bei Tests mit anderen Firmwareständen Rohwerte und Firmware-Version ergänzen.
+- Lastverhalten: Die Wasserstufe wird aus dem bereits vorhandenen Pollwert 4/23 abgeleitet. Keine zusätzliche periodische Abfrage hinzufügen.
