@@ -1,5 +1,15 @@
 # Projektstatus – ioBroker.roidmi
 
+## Ergebnis direkter Xiaomi-Cloud-Geräteabruf (11.11.2026, 11:27 UTC)
+
+- Nutzer hat den manuellen Diagnosebutton mit `datasource: 2` ausgelöst.
+- Antwort: SIID 4 / PIID 5, `value: 3`, `code: 0`, `updateTime: 1794396436`, `exe_time: 12 ms`.
+- `updateTime` entspricht exakt `requestedAt` (11:27:16 UTC). Anders als die vorherigen datasource-1-Antworten mit feststehendem älterem Zeitstempel liefert dieser Abruf einen aktuellen Zeitstempel. Das spricht dafür, dass datasource 2 tatsächlich einen frischen Wert abgerufen hat.
+- Trotzdem meldet auch datasource 2 den Rohwert 3. Die Cache-Hypothese erklärt die Abweichung zwischen App-Anzeige und MIoT-Readback damit nicht.
+- Externe unabhängige C102GL-Implementierung `dacrypt/xiao` liest und schreibt Wasserstufe ebenfalls über SIID 4 / PIID 5 und dokumentiert 1=Low, 2=Medium, 3=High. Die Implementierung verwendet für den Readback denselben Property-Get-Endpunkt. Ihre Dokumentation bestätigt damit die bisherige Zuordnung, löst aber die Abweichung zwischen Xiaomi-App und Geräteeigenschaft nicht auf.
+- Keine Enum-Änderung und keine zusätzliche regelmäßige Abfrage. Keine Schreiboperation wurde durch diesen Diagnosebutton ausgeführt.
+- Nächster Analysepfad: untersuchen, ob die Xiaomi-App bei der gezeigten Reinigungsart/Standardmodus eine profil- oder raumbezogene Einstellung speichert, statt den globalen SIID-4/PIID-5-Wert zu ändern; außerdem die App-seitige Schreiboperation bzw. deren Bestätigung untersuchen. Nutzer soll vorerst keine weiteren Tests durchführen müssen.
+
 Zuletzt aktualisiert: 11.11.2026 (12:15 MEZ)  
 Aktiver Entwicklungsbranch: `feature/xiaomi-x20plus`  
 Repository: https://github.com/Apropo1710/ioBroker.roidmi  
