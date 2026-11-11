@@ -473,6 +473,7 @@ class RoidmiAdapter extends Adapter {
             ["info.lastPoll", "Xiaomi X20+ last successful poll", "string", "date"],
             ["info.pollCount", "Xiaomi X20+ successful poll count", "number", "value"],
             ["info.mopModeReadback", "Raw local MIoT read result for mop water level", "string", "json"],
+            ["info.cleanSettingReadback", "Raw local MIoT read result for packed clean settings (SIID 4 / PIID 23)", "string", "json"],
             ["info.mopModeCloudReadback", "Raw Xiaomi Cloud MIoT read result for mop water level (manual)", "string", "json"]
         ] as const;
         for (const [id, name, type, role] of infoStates) {
@@ -771,6 +772,15 @@ class RoidmiAdapter extends Adapter {
                     if (key === "mopMode") {
                         await this.setStateChangedAsync(prefix + "info.mopModeReadback", {
                             val: JSON.stringify({ siid: requestedProperty.siid, piid: requestedProperty.piid, code: item?.code ?? null, value: item?.value ?? null }),
+                            ack: true
+                        });
+                    }
+                    // cleaningMode already belongs to the regular fast poll. Preserve
+                    // its complete packed value for diagnosis; the public control state
+                    // below continues exposing only the documented low two mode bits.
+                    if (key === "cleaningMode") {
+                        await this.setStateChangedAsync(prefix + "info.cleanSettingReadback", {
+                            val: JSON.stringify({ siid: requestedProperty.siid, piid: requestedProperty.piid, code: item?.code ?? null, value: item?.value ?? null, readAt: new Date().toISOString() }),
                             ack: true
                         });
                     }
