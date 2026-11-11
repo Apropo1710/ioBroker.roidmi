@@ -472,7 +472,8 @@ class RoidmiAdapter extends Adapter {
             ["info.connectionText", "Xiaomi X20+ connection status", "string", "text"],
             ["info.lastPoll", "Xiaomi X20+ last successful poll", "string", "date"],
             ["info.pollCount", "Xiaomi X20+ successful poll count", "number", "value"],
-            ["info.mopModeReadback", "Raw MIoT read result for mop water level", "string", "json"]
+            ["info.mopModeReadback", "Raw local MIoT read result for mop water level", "string", "json"],
+            ["info.mopModeCloudReadback", "Raw Xiaomi Cloud MIoT read result for mop water level (manual)", "string", "json"]
         ] as const;
         for (const [id, name, type, role] of infoStates) {
             const objectId = prefix + id;
@@ -670,6 +671,19 @@ class RoidmiAdapter extends Adapter {
             native: { siid: 4, piid: 5 }
         });
         await this.subscribeStatesAsync(prefix + "control.mopMode");
+        await this.setObjectNotExistsAsync(prefix + "control.readMopModeCloud", {
+            type: "state",
+            common: {
+                name: "Read mop water level once via Xiaomi Cloud (diagnostic)",
+                type: "boolean",
+                role: "button",
+                read: false,
+                write: true,
+                def: false
+            },
+            native: {}
+        });
+        await this.subscribeStatesAsync(prefix + "control.readMopModeCloud");
 
         await this.setStateChangedAsync(prefix + "info.connection", { val: false, ack: true });
 
@@ -912,6 +926,54 @@ class RoidmiAdapter extends Adapter {
         const xiaomiControlPrefix = this.namespace + ".x20Plus.control.";
         if (id.startsWith(xiaomiControlPrefix)) {
             const command = id.slice(xiaomiControlPrefix.length);
+            if (command === "readMopModeCloud") {
+                if (state.val === true) {
+                    const config = this.config as RoidmiAdapterConfig;
+                    try {
+                        if (!config.xiaomiDid) throw new Error("Xiaomi X20+ DID is missing from adapter configuration.");
+                        if (!this.cloudMapClient.hasSession()) {
+                            throw new Error("Xiaomi Cloud session is unavailable. Use the existing Xiaomi Cloud login first.");
+                        }
+                        if (this.xiaomiCommandRunning) {
+                            throw new Error("Another Xiaomi command is running; retry the manual cloud read afterwards.");
+                        }
+                        this.xiaomiCommandRunning = true;
+                        const result = await this.cloudMapClient.getProperties(
+                            config.cloudCountry || "de",
+                            config.xiaomiDid,
+                            [{ siid: 4, piid: 5 }],
+                            async () => {
+                                await this.setStateAsync("evePlus.map.cloudSession", {
+                                    val: this.encrypt(this.cloudMapClient.exportSession()), ack: true
+                                });
+                            }
+                        );
+                        const snapshot = {
+                            source: "Xiaomi Cloud MIoT /v2/miotspec/prop/get",
+                            requestedAt: new Date().toISOString(),
+                            siid: 4,
+                            piid: 5,
+                            result
+                        };
+                        await this.setStateAsync("x20Plus.info.mopModeCloudReadback", {
+                            val: JSON.stringify(snapshot),
+                            ack: true
+                        });
+                        this.log.info("Xiaomi X20+ mopMode cloud read completed: " + JSON.stringify(result));
+                    } catch (error) {
+                        const message = error instanceof Error ? error.message : "Unknown Xiaomi Cloud read error";
+                        await this.setStateAsync("x20Plus.info.mopModeCloudReadback", {
+                            val: JSON.stringify({ source: "Xiaomi Cloud MIoT", requestedAt: new Date().toISOString(), error: message }),
+                            ack: true
+                        });
+                        this.log.warn("Xiaomi X20+ mopMode cloud read failed: " + message);
+                    } finally {
+                        this.xiaomiCommandRunning = false;
+                    }
+                }
+                await this.setStateAsync("x20Plus.control.readMopModeCloud", { val: false, ack: true });
+                return;
+            }
             if (command === "refreshRooms") {
                 if (state.val === true) {
                     const config = this.config as RoidmiAdapterConfig;
