@@ -1,7 +1,7 @@
 {
   "common": {
     "name": "roidmi",
-    "version": "0.1.49",
+    "version": "0.1.50",
     "title": "Roidmi",
     "titleLang": {
       "en": "Roidmi",
@@ -228,6 +228,18 @@
     "xiaomiDid": "",
     "xiaomiToken": "",
     "news": [
+      {
+        "version": "0.1.50",
+        "date": "2026-11-11",
+        "changes": {
+          "en": [
+            "Repair experimental miIO handshake reuse and avoid an unnecessary handshake for successful consecutive RPCs."
+          ],
+          "de": [
+            "Experimentelle miIO-Handshake-Wiederverwendung repariert; bei aufeinanderfolgenden erfolgreichen RPCs entfällt der zusätzliche Handshake."
+          ]
+        }
+      },
       {
         "version": "0.1.49",
         "date": "2026-11-11",

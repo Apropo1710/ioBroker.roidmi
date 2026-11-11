@@ -105,3 +105,51 @@ test("gives a delayed handshake and RPC response separate timeout windows", asyn
         server.close();
     }
 });
+
+
+test("reuses a successful handshake without treating the RPC reply as a handshake or sending twice", async () => {
+    const server = createSocket("udp4");
+    await new Promise((resolve) => server.bind(0, "127.0.0.1", resolve));
+    const port = server.address().port;
+    let handshakeCount = 0;
+    let rpcCount = 0;
+    const debug = [];
+    const client = new MiioClient({
+        host: "127.0.0.1",
+        port,
+        token,
+        timeoutMs: 500,
+        reuseHandshake: true,
+        onDebug: (message) => debug.push(message)
+    });
+
+    server.on("message", (message, remote) => {
+        if (message.length === 32 && message[0] === 0x21 && message[1] === 0x31 &&
+            message.readUInt32BE(8) === 0xffffffff) {
+            handshakeCount++;
+            const handshake = Buffer.alloc(32);
+            handshake[0] = 0x21;
+            handshake[1] = 0x31;
+            handshake.writeUInt16BE(32, 2);
+            handshake.writeUInt32BE(deviceId, 8);
+            handshake.writeUInt32BE(987654, 12);
+            server.send(handshake, remote.port, remote.address);
+            return;
+        }
+
+        rpcCount++;
+        const request = parseMiioResponse(message, token);
+        server.send(responsePacket(request.id, [{ call: rpcCount }]), remote.port, remote.address);
+    });
+
+    try {
+        assert.deepEqual(await client.call("get_properties", []), [{ call: 1 }]);
+        assert.deepEqual(await client.call("get_properties", []), [{ call: 2 }]);
+        assert.equal(handshakeCount, 1, "only the first RPC should perform a handshake");
+        assert.equal(rpcCount, 2, "each call must send exactly one RPC");
+        assert.ok(debug.some((line) => line.includes("reusing handshake")));
+        assert.equal(debug.filter((line) => line.includes("fresh handshake parsed")).length, 1);
+    } finally {
+        server.close();
+    }
+});

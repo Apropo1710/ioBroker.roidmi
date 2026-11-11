@@ -68,3 +68,10 @@
 - X20+ verwendet den reparierten Pfad wieder mit `reuseHandshake: true`. Es kommen keine zusätzlichen Polls oder RPCs hinzu; pro Aufruf entfällt im Erfolgsfall lediglich der separate Handshake-Austausch.
 - Die ursprünglichen sporadischen RPC-Timeouts bestanden bereits vor dieser Optimierung und bleiben ein separates Beobachtungsthema. Die Reparatur ist zunächst durch CI/Build zu verifizieren und anschließend am realen Gerät zu beobachten.
 - Wasserstufen-Decodierung und bestätigte Live-Funktion bleiben unverändert.
+
+
+## Handshake-Reuse: Regressionstest und Release-Kandidat 0.1.50 (11.11.2026)
+
+- Ergänzender UDP-Integrationstest deckt jetzt den zuvor fehlenden Reuse-Pfad ab: erster RPC mit Handshake, zweiter RPC mit Cache, genau ein RPC pro Aufruf und keine Fehlinterpretation der RPC-Antwort als Handshake.
+- Versionsstände in `package.json`, `package-lock.json` und `io-package.json` auf **0.1.50** angeglichen; News-Eintrag ergänzt.
+- Der reparierte Reuse-Pfad bleibt für den X20+ aktiviert. Freigabe zur Installation erst nach erfolgreichem Test-/Build-Workflow und Prüfung des erzeugten Installationsartefakts.
