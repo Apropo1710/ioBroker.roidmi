@@ -11,7 +11,8 @@
 - Schreiben von `control.mopMode`: aktuellen 4/23-Rohwert einmal lesen, ausschließlich Maske `0x30000` ersetzen und danach 4/23 einmal zurücklesen. `cleaningMode` bleibt in den unteren Bits `0x03`; beide Schreibpfade erhalten jeweils die anderen Bits.
 - Adapterversion auf **0.1.49** erhöht.
 - Code-Commits: `202e21a39c1c4efce76fbbbdae9ceb007c883728` (Hauptlogik), `7725da997278ada813fa1f2c7a50e1bef9f2e44c` (Pollprofil).
-- Build/CI für diesen Stand: ausstehend. Danach installierbares Artefakt prüfen und gezielt beide Richtungen testen (App → Adapter und Adapter → App).
+- Verifikation für Code-Head `515e2686abedb672fdd9bd6a3bc25ed0782fce42`: CI #399 und Test/Build #171 erfolgreich (Tests, Lint, Build und Paketprüfung). Artefakt-ID `13851653198` heruntergeladen und geprüft: inneres `package.json` meldet **0.1.49**; kompiliertes `build/main.js` enthält Wasserstufen-Dekodierung und Schreibmaske `0x30000`/Shift 16. ZIP-/Tar-Dateiname trägt weiterhin die bekannte veraltete Kennzeichnung `0.1.35`; tatsächliche Paketversion ist korrekt 0.1.49.
+- Nächster Schritt: installierbares Artefakt am X20+ testen, zuerst App → Adapter (Grad 1/2/3), danach Adapter → App mit einer einzelnen Änderung. Schreibbarkeit von 4/23 ist noch nicht live verifiziert.
 - Wichtige Einschränkung: Das Bitfeld ist durch drei Live-Messungen bestätigt. Die erfolgreiche Schreibbarkeit des 4/23-Wasserfelds muss noch am realen Gerät verifiziert werden. Bei einem Schreibfehler wird der bisherige Statuswert beibehalten und eine Warnung protokolliert.
 
 ## Verbindliche Projektregeln
