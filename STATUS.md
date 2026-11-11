@@ -9,13 +9,13 @@ Draft-PR: https://github.com/Apropo1710/ioBroker.roidmi/pull/3 (nicht mergen)
 
 ## Aktueller Stand
 
-- Neuester Commit: `e464a4fbf3768d76db32cb87944c66cdb8399bf0`
+- Neuester Code-Commit: `e464a4fbf3768d76db32cb87944c66cdb8399bf0`\n- Letzter Dokumentations-Commit: `b7616462cffa56d37352f6649c2029aef9ac57a8` (STATUS.md angelegt)
 - Commit-Nachricht: `Create Xiaomi mop diagnostic state during adapter startup`
 - GitHub Actions für genau diesen Commit:
   - CI #374: erfolgreich
   - Test and build adapter #146: erfolgreich
 - Die tatsächliche Adapterversion steht in `package.json` / `io-package.json`, nicht im Namen des GitHub-Artefakts. Vor Weitergabe eines ZIP immer die Paketversion prüfen.
-- Der letzte bekannte Build vor diesem Commit war Adapterversion 0.1.48; Artefaktnamen wie `iobroker-roidmi-0.1.35` sind nicht als Versionsquelle geeignet.
+- Für `e464a4f` wurde das Build-Artefakt `iobroker-roidmi-0.1.35` abgerufen und dessen Inhalt geprüft: `package.json` meldet Adapterversion **0.1.48**. Artefaktnamen sind nicht als Versionsquelle geeignet.
 
 ## Aktuelles Hauptthema: Xiaomi X20+ – Wasserstufe wird aus Original-App nicht zurückgelesen
 
