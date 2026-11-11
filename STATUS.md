@@ -17,6 +17,18 @@ Draft-PR: https://github.com/Apropo1710/ioBroker.roidmi/pull/3 (nicht mergen)
 - Die tatsächliche Adapterversion steht in `package.json` / `io-package.json`, nicht im Namen des GitHub-Artefakts. Vor Weitergabe eines ZIP immer die Paketversion prüfen.
 - Für `e464a4f` wurde das Build-Artefakt `iobroker-roidmi-0.1.35` abgerufen und dessen Inhalt geprüft: `package.json` meldet Adapterversion **0.1.48**. Artefaktnamen sind nicht als Versionsquelle geeignet.
 
+## Verifizierter Stand des aktuellen Branch-Heads (11.11.2026)
+
+- PR #3 zeigt auf `b50e5f34d654b775212a0b4e825a85920de5c6f4`; der PR ist weiterhin offen und Draft, nicht gemergt.
+- Für exakt diesen Head sind CI #377 (`build-and-test`) und Test and build adapter #149 (`test-build`) erfolgreich.
+- Das zugehörige Artefakt wurde abgerufen: `iobroker-roidmi-0.1.35`. Im enthaltenen Paket melden sowohl `package.json` als auch `io-package.json` die tatsächliche Version **0.1.48**.
+- Das entpackte Artefakt wurde lokal mit `node --test` geprüft: **73 Tests bestanden, 0 fehlgeschlagen**.
+- Die drei Commits seit `e464a4f` betreffen ausschließlich die `STATUS.md`; es gibt keine neuere Codeänderung.
+- Codeprüfung: `onReady()` ruft zuerst `migrateLegacyStateTree()` auf und legt anschließend Kanäle sowie `x20Plus.info.mopModeReadback` an. Die Migration scannt bestehende State-Objekte, mappt nur bekannte Legacy-IDs und löscht nach erfolgreicher Verarbeitung jeweils die alte ID. Sie mappt/löscht den neuen Diagnose-State nicht.
+- Der Xiaomi-Poller erstellt den Diagnose-State erneut vor dem Polling und schreibt den Rohwert im bestehenden Poll für SIID 4 / PIID 5. Es wird keine zusätzliche MIoT-Abfrage nur für die Diagnose ausgeführt.
+- Die Rohantwort wird nur im Diagnose-State sichtbar, sobald die entsprechende Wasserstufen-Property im normalen Poll verarbeitet wird. Zu prüfen bleiben deshalb nach Installation: Existenz des Objekts und anschließender Rohwert aus dem bestehenden Poll.
+- Keine zufälligen weiteren Varianten zur Objekterstellung ergänzen, bevor der Nutzer den aktuellen, geprüften Stand getestet hat.
+
 ## Aktuelles Hauptthema: Xiaomi X20+ – Wasserstufe wird aus Original-App nicht zurückgelesen
 
 Gerät: Xiaomi Robot Vacuum X20+ (Modell C102GL). Nicht mit Roidmi Eve Plus oder Mova1000 verwechseln.
@@ -47,12 +59,12 @@ Gerät: Xiaomi Robot Vacuum X20+ (Modell C102GL). Nicht mit Roidmi Eve Plus oder
 
 ### Nächste Schritte
 
-1. Build-Artefakt für Commit `e464a4f` abrufen und tatsächliche Version in `package.json` sowie `io-package.json` prüfen.
-2. Nutzer erhält erst danach Installationspaket und eine knappe Testanweisung.
-3. Nach Installation nur prüfen, ob `x20Plus.info.mopModeReadback` jetzt existiert und welchen Rohwert der normale Poll liefert.
-4. Falls State weiterhin fehlt: nicht weitere zufällige Erstellungsvarianten probieren. Startup-/Objektbaum-Lifecycle, Namespace, Objektlöschung/Migration und Adapter-Log gezielt anhand Code und ioBroker-Verhalten untersuchen.
-5. Wenn State erscheint: Rohantwort auswerten (SIID/PIID/code/value), um zu unterscheiden zwischen nicht aktualisierter Geräte-Property, Fehlercode/Lesesperre oder Mapping-Problem.
-6. Keine zusätzliche MIoT-Abfrage nur für Diagnose einführen; den bereits laufenden Poll verwenden, um Roboterlast gering zu halten.
+1. Der aktuelle Head-Build ist erstellt und geprüft; Artefaktversion im Paket ist 0.1.48.
+2. Nutzer kann den geprüften Build installieren.
+3. Danach nur prüfen, ob `x20Plus.info.mopModeReadback` existiert und welcher Rohwert aus dem normalen Poll angezeigt wird.
+4. Falls der State weiterhin fehlt: ioBroker-Objektbaum-Lifecycle, Namespace und Adapter-Log gezielt untersuchen; keine weiteren zufälligen Erstellungsvarianten.
+5. Wenn der State erscheint: Rohantwort (SIID/PIID/code/value) auswerten, um Geräte-Property, MIoT-Fehlercode oder Mapping zu unterscheiden.
+6. Keine zusätzliche MIoT-Abfrage nur für Diagnose einführen.
 
 ## Geräte- und Datenpunktstruktur
 
@@ -94,6 +106,7 @@ Gerät: Xiaomi Robot Vacuum X20+ (Modell C102GL). Nicht mit Roidmi Eve Plus oder
 ## Weitere offene Themen
 
 - Reale Gerätevalidierung der noch nicht getesteten Funktionen und Aktionen.
+- Rückmeldung des Nutzers zur Installation des Branch-Head-Builds und zum Datenpunkt `x20Plus.info.mopModeReadback` ausstehend.
 - Raum-/Mehrraumsteuerung lokal gegenüber Cloud weiter verifizieren.
 - HomePilot-Anbindung an die finale Xiaomi-Objektstruktur anpassen, wenn Adapterstruktur stabil ist.
 - Details siehe `docs/PROJECT_PLAN.md` und `docs/PROTOCOL_NOTES.md`.
