@@ -8,6 +8,8 @@ export interface MiioClientOptions {
     timeoutMs?: number;
     debug?: boolean;
     onDebug?: (message: string) => void;
+    /** Experimental: reuse the last device handshake and extrapolate its clock. */
+    reuseHandshake?: boolean;
 }
 
 export interface MiioRpcResponse {
@@ -23,6 +25,7 @@ export class MiioClient {
     private static requestQueue: Promise<void> = Promise.resolve();
     private requestId = 0;
     private lastSuccessfulRpcAt?: number;
+    private cachedHandshake?: { deviceId: number; stamp: number; receivedAt: number };
 
     public constructor(private readonly options: MiioClientOptions) {}
 
@@ -76,6 +79,10 @@ export class MiioClient {
                 if (finished) return;
                 finished = true;
                 if (timer) clearTimeout(timer);
+                if (error && this.options.reuseHandshake) {
+                    this.cachedHandshake = undefined;
+                    debug("cached handshake invalidated after failed RPC");
+                }
                 try { socket.close(); } catch { /* socket may already be closed */ }
                 if (error) reject(error);
                 else resolve(result);
@@ -91,23 +98,10 @@ export class MiioClient {
                     if (!handshakeHeader) {
                         debug(`received handshake packet (${message.length} bytes) from ${remoteInfo.address}:${remoteInfo.port} to local ${localEndpoint()}`);
                         handshakeHeader = parseMiioHeader(message);
-                        // Give the RPC response its own full timeout window. A slow
-                        // handshake must not consume the robot's RPC response time.
-                        stage = "RPC response";
-                        armStageTimeout();
-                        // The device stamp uses the robot's own clock domain and
-                        // must not be compared directly with the host Unix epoch.
-                        debug(`handshake parsed; device ID ${handshakeHeader.deviceId}; device stamp ${handshakeHeader.stamp}`);
                         if (handshakeHeader.deviceId === 0) throw new Error("Robot returned an invalid device ID");
-                        this.requestId = (this.requestId % 9998) + 1;
-                        expectedRequestId = this.requestId;
-                        expectedDeviceId = handshakeHeader.deviceId;
-                        const request = buildMiioRequest(method, params, expectedRequestId, this.options.token, handshakeHeader);
-                        debug(`sending RPC packet (${request.length} bytes; request ID ${expectedRequestId}; request stamp ${request.readUInt32BE(12)})`);
-                        socket.send(request, port, this.options.host, (error) => {
-                            if (error) { debug(`RPC send failed: ${error.message}`); finish(new Error(`Could not send miIO request: ${error.message}`)); }
-                            else debug(`RPC packet sent successfully from local ${localEndpoint()} to ${this.options.host}:${port} (request ID ${expectedRequestId})`);
-                        });
+                        this.cachedHandshake = { deviceId: handshakeHeader.deviceId, stamp: handshakeHeader.stamp, receivedAt: Date.now() };
+                        debug("fresh handshake parsed; device ID " + handshakeHeader.deviceId + "; device stamp " + handshakeHeader.stamp);
+                        sendRpc(handshakeHeader);
                         return;
                     }
 
@@ -145,12 +139,37 @@ export class MiioClient {
                 }
             });
 
-            const handshake = buildHandshakePacket();
-            debug(`sending handshake packet (${handshake.length} bytes)`);
-            socket.send(handshake, port, this.options.host, (error) => {
-                if (error) { debug(`handshake send failed: ${error.message}`); finish(new Error(`Could not send miIO handshake: ${error.message}`)); }
-                else debug(`handshake packet sent successfully from local ${localEndpoint()} to ${this.options.host}:${port}`);
-            });
+            const sendRpc = (header: { deviceId: number; stamp: number }): void => {
+                stage = "RPC response";
+                armStageTimeout();
+                const elapsedSeconds = this.options.reuseHandshake && this.cachedHandshake
+                    ? Math.floor((Date.now() - this.cachedHandshake.receivedAt) / 1000) : 0;
+                const requestHeader = { deviceId: header.deviceId, stamp: (header.stamp + elapsedSeconds) >>> 0 };
+                this.requestId = (this.requestId % 9998) + 1;
+                expectedRequestId = this.requestId;
+                expectedDeviceId = header.deviceId;
+                const request = buildMiioRequest(method, params, expectedRequestId, this.options.token, requestHeader);
+                debug("sending RPC packet (" + request.length + " bytes; request ID " + expectedRequestId +
+                    "; request stamp " + request.readUInt32BE(12) + "; " + (elapsedSeconds ? "cached handshake +" + elapsedSeconds + "s" : "fresh handshake") + ")");
+                socket.send(request, port, this.options.host, (error) => {
+                    if (error) { debug("RPC send failed: " + error.message); finish(new Error("Could not send miIO request: " + error.message)); }
+                    else debug("RPC packet sent successfully from local " + localEndpoint() + " to " + this.options.host + ":" + port + " (request ID " + expectedRequestId + ")");
+                });
+            };
+
+            if (this.options.reuseHandshake && this.cachedHandshake) {
+                const cached = this.cachedHandshake;
+                debug("reusing handshake for device ID " + cached.deviceId + " (" +
+                    Math.floor((Date.now() - cached.receivedAt) / 1000) + "s old)");
+                sendRpc({ deviceId: cached.deviceId, stamp: cached.stamp });
+            } else {
+                const handshake = buildHandshakePacket();
+                debug("sending handshake packet (" + handshake.length + " bytes)");
+                socket.send(handshake, port, this.options.host, (error) => {
+                    if (error) { debug("handshake send failed: " + error.message); finish(new Error("Could not send miIO handshake: " + error.message)); }
+                    else debug("handshake packet sent successfully from local " + localEndpoint() + " to " + this.options.host + ":" + port);
+                });
+            }
         });
     }
 }
