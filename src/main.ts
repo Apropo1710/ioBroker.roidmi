@@ -91,6 +91,20 @@ class RoidmiAdapter extends Adapter {
                 type: "channel", common: { name: channel.name }, native: {}
             });
         }
+        // Create the Xiaomi mop diagnostic state during the awaited adapter startup,
+        // before the independent poller is launched. This avoids a race with startup
+        // object-tree initialization on existing installations.
+        await this.setObjectNotExistsAsync("x20Plus.info.mopModeReadback", {
+            type: "state",
+            common: {
+                name: "Raw MIoT read result for mop water level",
+                type: "string",
+                role: "json",
+                read: true,
+                write: false
+            },
+            native: {}
+        });
         await this.setObjectNotExistsAsync("evePlus.info.connection", {
             type: "state",
             common: { name: "Device connection", type: "boolean", role: "indicator.reachable", read: true, write: false },
