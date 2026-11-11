@@ -462,12 +462,15 @@ class RoidmiAdapter extends Adapter {
         ] as const;
         for (const [id, name, type, role] of infoStates) {
             const objectId = prefix + id;
-            const existing = await this.getObjectAsync(objectId);
-            await this.setObjectAsync(objectId, {
-                ...(existing ?? {}),
+            await this.setObjectNotExistsAsync(objectId, {
                 type: "state",
-                common: { ...(existing?.common ?? {}), name, type, role, read: true, write: false },
-                native: { ...(existing?.native ?? {}) }
+                common: { name, type, role, read: true, write: false },
+                native: {}
+            });
+            // Also update metadata on existing installations; setObjectNotExistsAsync
+            // alone would leave the diagnostic state missing on older object trees.
+            await this.extendObjectAsync(objectId, {
+                common: { name, type, role, read: true, write: false }
             });
         }
         // Older Xiaomi poller versions created flat x20Plus.* states. Move those
