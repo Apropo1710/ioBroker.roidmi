@@ -787,11 +787,22 @@ class RoidmiAdapter extends Adapter {
                     // cleaningMode already belongs to the regular fast poll. Preserve
                     // its complete packed value for diagnosis; the public control state
                     // below continues exposing only the documented low two mode bits.
-                    if (key === "cleaningMode") {
+                    if (requestedProperty.siid === 4 && requestedProperty.piid === 23) {
                         await this.setStateChangedAsync(prefix + "info.cleanSettingReadback", {
                             val: JSON.stringify({ siid: requestedProperty.siid, piid: requestedProperty.piid, code: item?.code ?? null, value: item?.value ?? null, readAt: new Date().toISOString() }),
                             ack: true
                         });
+                        // Decode the water level by the MIoT property identity, not by
+                        // the public cleaningMode state key. Both controls share packed
+                        // property 4/23, and this keeps water-level synchronization
+                        // independent from the low-bit cleaning-mode mapping.
+                        if (item?.code === 0 && typeof item.value === "number") {
+                            const waterLevel = (item.value >>> 16) & 0x03;
+                            if (waterLevel >= 1 && waterLevel <= 3) {
+                                await this.setStateChangedAsync(prefix + "status.mopMode", { val: waterLevel, ack: true });
+                                await this.setStateChangedAsync(prefix + "control.mopMode", { val: waterLevel, ack: true });
+                            }
+                        }
                     }
                     if (item?.code === 0 && (typeof item.value === "number" || typeof item.value === "boolean")) {
                         const rawValue = typeof item.value === "boolean" ? Number(item.value) : item.value;
@@ -807,13 +818,6 @@ class RoidmiAdapter extends Adapter {
                         if (key === "suction" || key === "cleaningMode") {
                             const controlValue = key === "cleaningMode" ? Number(value) & 0x03 : value;
                             await this.setStateChangedAsync(prefix + "control." + key, { val: controlValue, ack: true });
-                        }
-                        if (key === "cleaningMode" && typeof rawValue === "number") {
-                            const waterLevel = (rawValue >>> 16) & 0x03;
-                            if (waterLevel >= 1 && waterLevel <= 3) {
-                                await this.setStateChangedAsync(prefix + "status.mopMode", { val: waterLevel, ack: true });
-                                await this.setStateChangedAsync(prefix + "control.mopMode", { val: waterLevel, ack: true });
-                            }
                         }
                         if (key === "status") {
                             await this.setStateChangedAsync(prefix + "status.statusText", {
