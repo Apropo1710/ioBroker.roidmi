@@ -96,7 +96,7 @@ Diese Übersicht ist die maßgebliche aktuelle Testliste. Bei jedem neuen Testbe
 | Wasserstufe zwischen Xiaomi-App und ioBroker in beide Richtungen | BESTANDEN | Live-Test am 11.11.; siehe Wasserstufenabschnitt |
 | Wasserstufe im Status während laufender Reinigung | BESTANDEN | Korrigierter Status in `status.mopMode` und `control.mopMode` live bestätigt |
 | Reinigungsmodus / `cleaningMode` Status | TEILWEISE BESTÄTIGT | Statuswert 3 („Saugen vor Wischen“) im Live-Screenshot; weitere Modi noch nicht systematisch geprüft |
-| Saugleistung in beide Richtungen | OFFEN / NICHT DOKUMENTIERT | Gezielter bidirektionaler Test fehlt in dieser Testliste |
+| Saugleistung / Saugstufen | TEILWEISE BESTÄTIGT – Rückrichtung offen bzw. fehlerhaft | Am 10.11.2026 wurde ioBroker → Roboter → Xiaomi-App erfolgreich beobachtet: Änderung der Reinigungsintensität bzw. von `cleaningMode` 2→3 änderte die App-Anzeige von Stark auf Turbo. Am 11.11.2026 wurde festgestellt, dass Änderungen in der Xiaomi-App (Saugleistung und Wasserstufe) nicht zuverlässig in ioBroker ankamen, während ioBroker → Roboter → App funktionierte. Status-Synchronisierung App → ioBroker ist damit noch offen; frühere Status-/Control-Abweichung ebenfalls beachten. Kein erneuter Test nötig, bis die Synchronisierung gezielt korrigiert/überprüft wird. |
 | Globale Reinigungsart umschalten | OFFEN | Nur bei Gelegenheit im normalen Betrieb testen |
 | Globalen Reinigungsstart aus ioBroker | OFFEN | Noch kein dokumentierter Live-Test |
 | Raumkartenimport | BESTANDEN | Neustartlog meldet erfolgreich geladene Karte mit 5 Räumen |
@@ -112,3 +112,11 @@ Diese Übersicht ist die maßgebliche aktuelle Testliste. Bei jedem neuen Testbe
 3. Vor einem Test prüfen, ob er zusätzliche Roboterkommunikation oder eine laufende Reinigung erfordert; keine zusätzlichen Poller oder parallelen Abfragen einführen.
 4. Nach jedem Ergebnis Status von OFFEN auf BESTANDEN, FEHLGESCHLAGEN oder TEILWEISE BESTÄTIGT setzen und Datum, Version sowie knappen Nachweis ergänzen.
 5. Bei Änderungen an Code, Paketversion, aktivem Branch oder PR-Status diese Übersicht und den Projektstatus im selben Commit aktualisieren. Beim Branchwechsel die aktuelle STATUS.md mitführen; keine abweichende veraltete Testliste stehen lassen.
+
+
+### Präzisierung Saugleistungstest (11.11.2026)
+
+- Korrektur der vorherigen Testmatrix: Saugleistung wurde bereits praktisch getestet; sie darf nicht als „nicht dokumentiert“ geführt werden.
+- Am 10.11.2026 wurde eine Änderung über ioBroker bis zur Xiaomi-Original-App verfolgt: `cleaningMode` von 2 auf 3 führte dort zur Anzeige von Stark auf Turbo. Das bestätigt die ioBroker→Roboter→App-Richtung für diesen beobachteten Einstellungswechsel.
+- Am 11.11.2026 meldete der Nutzer, dass Änderungen der Saugleistung (ebenso Wasserstufe) in der Xiaomi-App nicht in ioBroker aktualisiert wurden. Die Gegenrichtung ioBroker→Roboter→App funktionierte.
+- Ergebnis daher **teilweise bestätigt**, nicht vollständig bestanden: Der offene Punkt ist die Synchronisierung von Änderungen aus der Original-App zurück nach ioBroker. Die Wasserstufe hat inzwischen einen eigenen, separat live bestätigten Fix; daraus folgt nicht automatisch, dass die Saugleistungs-Synchronisierung ebenfalls behoben ist.
