@@ -59,3 +59,12 @@
 - Sicherheitsmaßnahme umgesetzt: X20+ nutzt wieder `reuseHandshake: false` und damit den zuvor verwendeten vollständigen Handshake vor jedem RPC. Commit: `0f2ec23c07b58b7766217c114037e7ee94be0e36`.
 - Der ursprüngliche Timeout bleibt separat offen. Die bisherigen Logs zeigen erfolgreiche Handshake-Antwort und erfolgreiches UDP-Senden, danach aber keine passende RPC-Antwort innerhalb des Zeitfensters. Als nächster Untersuchungsansatz bleiben Antwortverlust/UDP-Fragmentierung, Roboterlast und Fremdclient-Interaktionen. Keine Belege erlauben derzeit eine eindeutige Ursache.
 - Build/CI für das Deaktivieren des Reuse-Pfads steht noch aus. Die Wasserstufen-Korrektur wurde nicht verändert.
+
+
+## Experimentelle miIO-Handshake-Wiederverwendung repariert (11.11.2026)
+
+- Der konkrete Fehler im Reuse-Pfad wurde behoben: Wenn ein gültiger Handshake-Cache vorhanden ist, wird `handshakeHeader` vor Empfang der UDP-Pakete mit den gecachten Geräteinformationen initialisiert. Damit wird das erste eingehende Paket korrekt als RPC-Antwort behandelt und nicht fälschlich als neuer Handshake interpretiert; der RPC wird nicht doppelt gesendet.
+- Die Zeitstempel-Extrapolation aus dem Cache bleibt aktiv. Bei einem fehlgeschlagenen RPC wird der Cache weiterhin verworfen, sodass der nächste Versuch wieder mit einem frischen Handshake beginnt.
+- X20+ verwendet den reparierten Pfad wieder mit `reuseHandshake: true`. Es kommen keine zusätzlichen Polls oder RPCs hinzu; pro Aufruf entfällt im Erfolgsfall lediglich der separate Handshake-Austausch.
+- Die ursprünglichen sporadischen RPC-Timeouts bestanden bereits vor dieser Optimierung und bleiben ein separates Beobachtungsthema. Die Reparatur ist zunächst durch CI/Build zu verifizieren und anschließend am realen Gerät zu beobachten.
+- Wasserstufen-Decodierung und bestätigte Live-Funktion bleiben unverändert.

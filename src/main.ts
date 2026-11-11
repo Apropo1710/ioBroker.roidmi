@@ -710,9 +710,9 @@ class RoidmiAdapter extends Adapter {
         const client = new MiioClient({
             host: config.xiaomiHost!,
             token: config.xiaomiToken!,
-            // Keep the proven handshake-before-every-RPC flow while the experimental
-            // cached-handshake path is corrected and independently validated.
-            reuseHandshake: false,
+            // Reuse the last successful device handshake; MiioClient seeds the
+            // response state so the RPC reply is not mistaken for a new handshake.
+            reuseHandshake: true,
             debug: true,
             onDebug: (message) => {
                 xiaomiMiioTrace.push(message);

@@ -54,7 +54,13 @@ export class MiioClient {
 
         return new Promise<unknown>((resolve, reject) => {
             let finished = false;
-            let handshakeHeader: ReturnType<typeof parseMiioHeader> | undefined;
+            // A cached handshake means the first packet on this socket is already the RPC response.
+            // Seed the state before registering the message handler so that response is never
+            // mistaken for a new handshake (which would send the same RPC a second time).
+            const cachedHandshake = this.options.reuseHandshake ? this.cachedHandshake : undefined;
+            let handshakeHeader: ReturnType<typeof parseMiioHeader> | undefined = cachedHandshake
+                ? { deviceId: cachedHandshake.deviceId, stamp: cachedHandshake.stamp }
+                : undefined;
             let expectedRequestId: number | undefined;
             let expectedDeviceId: number | undefined;
             let timer: ReturnType<typeof setTimeout> | undefined;
