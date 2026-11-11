@@ -51,3 +51,11 @@
 - Die am Nachmittag gezeigten Timeout-Logs sind zeitlich nach dieser Änderung entstanden. Sie können zur Bewertung des neuen Verhaltens dienen, erklären aber nicht den ursprünglichen Fehler.
 - Untersuchung muss deshalb bei der bereits vorher bestehenden UDP/miIO-Kommunikation ansetzen. Handshake-Wiederverwendung separat als Optimierungsversuch betrachten und nicht ohne Vergleich als Ursache oder Lösung deklarieren.
 - Keine Codeänderung aufgrund dieser Korrektur; Wasserstufen-Fix bleibt unverändert.
+
+## miIO-Codeprüfung: Fehler im experimentellen Handshake-Reuse gefunden (11.11.2026)
+
+- Im aktuellen `MiioClient` wurde ein konkreter Zustandsfehler im experimentellen Reuse-Pfad gefunden: Bei einem RPC mit wiederverwendetem Handshake bleibt `handshakeHeader` zunächst `undefined`. Der erste UDP-Rücklauf (die eigentliche RPC-Antwort) wird dadurch fälschlich als frischer Handshake interpretiert und löst einen zweiten RPC-Versand aus. Das kann zu doppelten Anfragen und unzuverlässiger Antwortzuordnung führen.
+- Dieser Fehler betrifft ausschließlich den nachträglich eingeführten Handshake-Reuse-Pfad und erklärt ausdrücklich **nicht** die ursprünglichen Timeouts, die bereits vor dieser Optimierung auftraten.
+- Sicherheitsmaßnahme umgesetzt: X20+ nutzt wieder `reuseHandshake: false` und damit den zuvor verwendeten vollständigen Handshake vor jedem RPC. Commit: `0f2ec23c07b58b7766217c114037e7ee94be0e36`.
+- Der ursprüngliche Timeout bleibt separat offen. Die bisherigen Logs zeigen erfolgreiche Handshake-Antwort und erfolgreiches UDP-Senden, danach aber keine passende RPC-Antwort innerhalb des Zeitfensters. Als nächster Untersuchungsansatz bleiben Antwortverlust/UDP-Fragmentierung, Roboterlast und Fremdclient-Interaktionen. Keine Belege erlauben derzeit eine eindeutige Ursache.
+- Build/CI für das Deaktivieren des Reuse-Pfads steht noch aus. Die Wasserstufen-Korrektur wurde nicht verändert.
