@@ -1,6 +1,6 @@
 # Projektstatus – ioBroker.roidmi
 
-Zuletzt aktualisiert: 11.11.2026  
+Zuletzt aktualisiert: 11.11.2026 (12:15 MEZ)  
 Aktiver Entwicklungsbranch: `feature/xiaomi-x20plus`  
 Repository: https://github.com/Apropo1710/ioBroker.roidmi  
 Draft-PR: https://github.com/Apropo1710/ioBroker.roidmi/pull/3 (nicht mergen)
@@ -153,3 +153,14 @@ Gerät: Xiaomi Robot Vacuum X20+ (Modell C102GL). Nicht mit Roidmi Eve Plus oder
 - Raum-/Mehrraumsteuerung lokal gegenüber Cloud weiter verifizieren.
 - HomePilot-Anbindung an die finale Xiaomi-Objektstruktur anpassen, wenn Adapterstruktur stabil ist.
 - Details siehe `docs/PROJECT_PLAN.md` und `docs/PROTOCOL_NOTES.md`.
+
+## Vertiefte Untersuchung Wasserstufe X20+ (11.11.2026, ca. 12:07)
+
+- Nutzer bestätigte per Screenshot, dass in der Xiaomi-App tatsächlich **Grad 1** blau ausgewählt war (Standardmodus, „Saugen vor Wischen“); der Roboter zeigte „Laden beendet“.
+- Direkt danach lieferte die lokale MIoT-Abfrage weiterhin `SIID 4 / PIID 5 = 3`, und die manuelle Xiaomi-Cloud-Abfrage ebenfalls `code: 0, value: 3`.
+- Beide Cloud-Abfragen (11:02:20Z und 11:06:05Z) lieferten dieselbe `updateTime: 1794386936` = **2026-11-11 08:48:56 UTC (09:48:56 MEZ)**. Der Zeitstempel ist damit deutlich älter als die App-Änderung und die Diagnoseabfragen. Der Wert wurde serverseitig seit diesem Zeitpunkt offenbar nicht aktualisiert.
+- Gegenprüfung des exakten Modells anhand einer unabhängigen, hardwarevalidierten Home-Assistant-Integration `roquerodrigo/ha-xiaomi-vacuum`, Datei `custom_components/xiaomi_vacuum/spec/c102gl.py`: `Property.MOP_WATER_LEVEL` ist ausdrücklich auf **SIID 4 / PIID 5** gemappt; Werte 1/2/3 entsprechen Level 1/2/3. Die Integration schreibt diese Property über den normalen MIoT-Property-Setter. Damit ist unsere bisherige Property-Adresse und die Wertetabelle für C102GL unabhängig bestätigt.
+- Quelle: https://github.com/roquerodrigo/ha-xiaomi-vacuum/blob/main/custom_components/xiaomi_vacuum/spec/c102gl.py
+- Quelle zur Setter-Implementierung: https://github.com/roquerodrigo/ha-xiaomi-vacuum/blob/main/custom_components/xiaomi_vacuum/select/base.py
+- Schlussfolgerung: **Kein Beleg für einen falschen SIID/PIID- oder Enum-Mappingfehler.** Die App-Auswahl „Grad 1“ ist auf dem Gerät zum Messzeitpunkt offenbar noch nicht in der live MIoT-Property angekommen (oder die App hält sie zunächst als Einstellung für den nächsten Reinigungslauf). Da der Roboter im Dock und nicht beim Wischen war, ist als nächster aussagekräftiger Test ein kurzer, kontrollierter Wischlauf mit Grad 1 nötig; danach lokale MIoT-Antwort und Cloud-Readback erneut vergleichen. Nicht die Werte im Adapter umbelegen.
+- Keine Codeänderung und kein zusätzlicher Poller: Die bestehenden lokalen Polls und der bereits vorhandene manuelle Cloud-Button reichen für den nächsten Test aus. Vor dem Test keine zusätzliche Belastung für Roboter oder ioBroker erzeugen.
