@@ -71,6 +71,15 @@ Gerät: Xiaomi Robot Vacuum X20+ (Modell C102GL). Nicht mit Roidmi Eve Plus oder
 - Langsam veränderliche Verbrauchs-/Lebensdauerwerte deutlich seltener abfragen.
 - Keine unnötigen Logmeldungen im Normalbetrieb.
 
+## Branch-Wechsel und Übernahme der Statusdatei
+
+- Die `STATUS.md` gehört zum jeweiligen Projektstand und wird auf jedem aktiv bearbeiteten Branch mitgeführt.
+- Vor einem Branch-Wechsel zuerst den aktuellen Stand dieser Datei sichern und im Zielbranch übernehmen bzw. mit dessen Stand zusammenführen.
+- Wird ein Feature-/Fix-Branch in `main` gemergt, muss die aktuelle `STATUS.md` Bestandteil desselben Merge-Ergebnisses sein. Danach wird sie auf `main` weitergeführt.
+- Wird ein neuer Branch von einem älteren Stand erstellt, die aktuelle Statusdatei aus dem zuletzt maßgeblichen Branch nachziehen, bevor dort weitergearbeitet wird.
+- Nach dem Merge ist `main` die maßgebliche Statusquelle für den übernommenen Projektstand; bei neuer Arbeit auf einem Feature-Branch wird sie dort fortgeschrieben und beim nächsten Merge wieder nach `main` übertragen.
+- Keine Statusdatei durch eine ältere Kopie überschreiben: Änderungen aus beiden Branches anhand der Commit-Historie zusammenführen.
+
 ## Arbeitsregeln für weitere Chats
 
 1. Vor jeder Arbeit zuerst `STATUS.md` lesen; zusätzlich bei Bedarf `docs/PROJECT_PLAN.md`, `docs/ARCHITECTURE.md` und die betroffenen Quelldateien prüfen.
