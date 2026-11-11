@@ -579,14 +579,14 @@ class RoidmiAdapter extends Adapter {
         await this.subscribeStatesAsync(prefix + "control.suction");
         await this.setObjectNotExistsAsync(prefix + "control.cleaningMode", {
             type: "state",
-            common: { name: "Reinigungsintensität", type: "number", role: "level", min: 0, max: 3, states: { 0: "Leise", 1: "Standard", 2: "Mittel", 3: "Stark" }, read: true, write: true },
-            native: { siid: 4, piid: 4 }
+            common: { name: "Reinigungsart", type: "number", role: "level", min: 0, max: 3, states: { 0: "Saugen und Wischen", 1: "Wischen", 2: "Saugen", 3: "Saugen vor Wischen" }, read: true, write: true },
+            native: { siid: 4, piid: 23, mask: 3 }
         });
         // Correct old installations too: cleaningMode is intensity, not vacuum/mop mode.
         // Preserve the stored value while updating only common/native metadata.
         await this.extendObjectAsync(prefix + "control.cleaningMode", {
-            common: { name: "Reinigungsintensität", min: 0, max: 3, states: { 0: "Leise", 1: "Standard", 2: "Mittel", 3: "Stark" }, read: true, write: true },
-            native: { siid: 4, piid: 4 }
+            common: { name: "Reinigungsart", min: 0, max: 3, states: { 0: "Saugen und Wischen", 1: "Wischen", 2: "Saugen", 3: "Saugen vor Wischen" }, read: true, write: true },
+            native: { siid: 4, piid: 23, mask: 3 }
         });
         await this.subscribeStatesAsync(prefix + "control.cleaningMode");
         // Optional C102GL settings are read on the slow cycle only. These
@@ -689,7 +689,8 @@ class RoidmiAdapter extends Adapter {
                     const [key] = batchFields[index];
                     const item = result[index] as { code?: number; value?: unknown } | undefined;
                     if (item?.code === 0 && (typeof item.value === "number" || typeof item.value === "boolean")) {
-                        const value = typeof item.value === "boolean" ? Number(item.value) : item.value;
+                        const rawValue = typeof item.value === "boolean" ? Number(item.value) : item.value;
+                        const value = key === "cleaningMode" && typeof rawValue === "number" ? rawValue & 0x03 : rawValue;
                         // The MIoT property is named "status", but "status" is already
                         // the channel. Store the value as vacuumState to avoid status.status.
                         const stateKey = key === "status" ? "vacuumState" : key;
@@ -699,7 +700,8 @@ class RoidmiAdapter extends Adapter {
                             await this.setStateChangedAsync(prefix + "control." + key, { val: Boolean(value), ack: true });
                         }
                         if (key === "suction" || key === "cleaningMode" || key === "mopMode") {
-                            await this.setStateChangedAsync(prefix + "control." + key, { val: value, ack: true });
+                            const controlValue = key === "cleaningMode" ? Number(value) & 0x03 : value;
+                            await this.setStateChangedAsync(prefix + "control." + key, { val: controlValue, ack: true });
                         }
                         if (key === "status") {
                             await this.setStateChangedAsync(prefix + "status.statusText", {
@@ -982,9 +984,9 @@ class RoidmiAdapter extends Adapter {
                 await this.setStateAsync("x20Plus.control." + command, { val: false, ack: true });
                 return;
             }
-            const propertyMap: Record<string, { siid: number; piid: number; min: number; max: number; statusKey: string }> = {
+            const propertyMap: Record<string, { siid: number; piid: number; min: number; max: number; statusKey: string; mask?: number }> = {
                 suction: { siid: 2, piid: 3, min: 0, max: 3, statusKey: "suction" },
-                cleaningMode: { siid: 4, piid: 4, min: 0, max: 3, statusKey: "cleaningMode" },
+                cleaningMode: { siid: 4, piid: 23, min: 0, max: 3, statusKey: "cleaningMode", mask: 0x03 },
                 mopMode: { siid: 4, piid: 5, min: 1, max: 3, statusKey: "mopMode" }
             };
             const optionalSetting = XIAOMI_X20_PLUS_OPTIONAL_SETTINGS[command as keyof typeof XIAOMI_X20_PLUS_OPTIONAL_SETTINGS];
@@ -1025,11 +1027,24 @@ class RoidmiAdapter extends Adapter {
                 } else {
                     this.xiaomiCommandRunning = true;
                     try {
+                        let writeValue = state.val;
+                        if (property.mask !== undefined) {
+                            const currentResult = await this.xiaomiClient.call("get_properties", [{
+                                did: (this.config as RoidmiAdapterConfig).xiaomiDid,
+                                siid: property.siid,
+                                piid: property.piid
+                            }]);
+                            const currentItem = Array.isArray(currentResult) ? currentResult[0] as { code?: number; value?: unknown } | undefined : undefined;
+                            if (!currentItem || currentItem.code !== 0 || typeof currentItem.value !== "number") {
+                                throw new Error("Could not read current packed cleaning settings before update");
+                            }
+                            writeValue = (currentItem.value & ~property.mask) | (state.val & property.mask);
+                        }
                         const result = await this.xiaomiClient.call("set_properties", [{
                             did: (this.config as RoidmiAdapterConfig).xiaomiDid,
                             siid: property.siid,
                             piid: property.piid,
-                            value: state.val
+                            value: writeValue
                         }]);
                         // Do not acknowledge a setting as applied if MIoT returned an error.
                         // Some firmwares resolve the RPC successfully but include a non-zero
@@ -1056,12 +1071,13 @@ class RoidmiAdapter extends Adapter {
                         if (!verified || verified.code !== 0 || typeof verified.value !== "number" || !Number.isInteger(verified.value)) {
                             throw new Error("MIoT read-back did not return a valid numeric value: " + JSON.stringify(verifyResult));
                         }
-                        await this.setStateAsync("x20Plus.status." + property.statusKey, { val: verified.value, ack: true });
-                        await this.setStateAsync("x20Plus.control." + command, { val: verified.value, ack: true });
-                        if (verified.value !== state.val) {
-                            this.log.warn(`Xiaomi X20+ ${command}: requested ${state.val}, robot reports ${verified.value} after write`);
+                        const verifiedValue = property.mask !== undefined ? verified.value & property.mask : verified.value;
+                        await this.setStateAsync("x20Plus.status." + property.statusKey, { val: verifiedValue, ack: true });
+                        await this.setStateAsync("x20Plus.control." + command, { val: verifiedValue, ack: true });
+                        if (verifiedValue !== state.val) {
+                            this.log.warn(`Xiaomi X20+ ${command}: requested ${state.val}, robot reports ${verifiedValue} after write`);
                         } else {
-                            this.log.info(`Xiaomi X20+ ${command} verified at ${verified.value}; write response: ${JSON.stringify(result)}`);
+                            this.log.info(`Xiaomi X20+ ${command} verified at ${verifiedValue}; write response: ${JSON.stringify(result)}`);
                         }
                     } catch (error) {
                         const current = await this.getStateAsync("x20Plus.status." + property.statusKey);
