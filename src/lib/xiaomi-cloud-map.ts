@@ -100,6 +100,26 @@ export class XiaomiCloudMapClient {
         return response?.result ?? response;
     }
 
+    /** Read MIoT properties through Xiaomi Cloud on explicit request (never part of polling). */
+    public async getProperties(
+        country: string,
+        did: string,
+        properties: Array<{ siid: number; piid: number }>,
+        onSessionChanged?: () => Promise<void>
+    ): Promise<unknown> {
+        if (!this.hasSession()) throw new Error("Xiaomi Cloud session is unavailable; sign in and complete verification first.");
+        if (!/^\\d{1,20}$/.test(did)) throw new Error("Xiaomi X20+ DID is invalid.");
+        if (!properties.length) throw new Error("At least one MIoT property is required.");
+        const base = `https://${country === "cn" ? "" : country + "."}api.io.mi.com/app`;
+        const response = await this.api(base + "/v2/miotspec/prop/get", {
+            data: JSON.stringify({
+                datasource: 1,
+                params: properties.map(property => ({ did, siid: property.siid, piid: property.piid }))
+            })
+        }, onSessionChanged);
+        return response?.result ?? response;
+    }
+
     /** Fetch the C102GL saved room map from Xiaomi FDS. This is explicit/manual and never part of polling. */
     public async fetchXiaomiRooms(country: string, did: string, onSessionChanged?: () => Promise<void>): Promise<Array<{ segmentId: number; name: string; roomId?: string }>> {
         if (!this.hasSession()) throw new Error("Xiaomi Cloud session is unavailable; sign in via the EVE Plus cloud map first.");
