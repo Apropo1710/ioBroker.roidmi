@@ -75,3 +75,40 @@
 - Ergänzender UDP-Integrationstest deckt jetzt den zuvor fehlenden Reuse-Pfad ab: erster RPC mit Handshake, zweiter RPC mit Cache, genau ein RPC pro Aufruf und keine Fehlinterpretation der RPC-Antwort als Handshake.
 - Versionsstände in `package.json`, `package-lock.json` und `io-package.json` auf **0.1.50** angeglichen; News-Eintrag ergänzt.
 - Der reparierte Reuse-Pfad bleibt für den X20+ aktiviert. Freigabe zur Installation erst nach erfolgreichem Test-/Build-Workflow und Prüfung des erzeugten Installationsartefakts.
+
+
+## Laufende Praxistest-Übersicht (Stand 11.11.2026, 23:20 Uhr)
+
+Diese Übersicht ist die maßgebliche aktuelle Testliste. Bei jedem neuen Testbefund, Screenshot, Log oder Code-/Versionswechsel aktualisieren. Nicht bestätigte Funktionen ausdrücklich offen lassen.
+
+### Stabilität und Kommunikation – Version 0.1.50
+
+- **Handshake-Reuse im automatisierten Test: BESTANDEN.** UDP-Integrationstest prüft zwei aufeinanderfolgende RPC-Aufrufe: nur der erste benötigt einen Handshake, jeder Aufruf sendet genau ein RPC; die RPC-Antwort des zweiten Aufrufs wird nicht als Handshake fehlinterpretiert.
+- **CI / Test / Lint / Build / Paketprüfung: BESTANDEN.** Commit `d6e39c139d45b3f936d838cacd6da116380e2679`; CI Run `43038055971`, Test-/Build-Run `43038056023`; beide erfolgreich. Artefakt-ID `13863154285`.
+- **Live-Stabilitätsbeobachtung: LÄUFT.** Nutzer-Screenshot vom 11.11.2026 um 23:20 Uhr zeigt den Start von Version 0.1.50 um 15:59:11 Uhr und als neueste Logeinträge die erfolgreiche Initialisierung um 15:59:20 Uhr. Seit dem Neustart somit rund 7 Stunden 21 Minuten; laut Nutzer bis zum Screenshot keine Fehler im Log. Das ist ein positiver Zwischenstand, noch kein Langzeittest.
+- Weiter beobachten: sporadische RPC-Timeouts, Verhalten nach längeren Kommunikationspausen, Polling während laufender Reinigung und Stabilität über mehrere Tage. Keine zusätzlichen Diagnosepolls einführen und währenddessen keine Änderungen am Kommunikationscode vornehmen.
+- Historische Timeout-Einordnung bleibt bestehen: sporadische RPC-Timeouts wurden bereits vor Einführung der Handshake-Wiederverwendung beobachtet. Eine Verbesserung durch 0.1.50 ist noch nicht abschließend bewiesen.
+
+### Funktionstests Xiaomi X20+
+
+| Funktion | Status | Nachweis / nächster Schritt |
+|---|---|---|
+| Wasserstufe zwischen Xiaomi-App und ioBroker in beide Richtungen | BESTANDEN | Live-Test am 11.11.; siehe Wasserstufenabschnitt |
+| Wasserstufe im Status während laufender Reinigung | BESTANDEN | Korrigierter Status in `status.mopMode` und `control.mopMode` live bestätigt |
+| Reinigungsmodus / `cleaningMode` Status | TEILWEISE BESTÄTIGT | Statuswert 3 („Saugen vor Wischen“) im Live-Screenshot; weitere Modi noch nicht systematisch geprüft |
+| Saugleistung in beide Richtungen | OFFEN / NICHT DOKUMENTIERT | Gezielter bidirektionaler Test fehlt in dieser Testliste |
+| Globale Reinigungsart umschalten | OFFEN | Nur bei Gelegenheit im normalen Betrieb testen |
+| Globalen Reinigungsstart aus ioBroker | OFFEN | Noch kein dokumentierter Live-Test |
+| Raumkartenimport | BESTANDEN | Neustartlog meldet erfolgreich geladene Karte mit 5 Räumen |
+| Raum-ID-Zuordnung und gezielte Raumreinigung | OFFEN | Noch kein dokumentierter Live-Test |
+| Teppich-Boost | OFFEN | Noch kein dokumentierter Live-Test |
+| Pause / Fortsetzen / Stop | OFFEN | Noch kein dokumentierter Live-Test |
+| Rückkehr zur Ladestation | OFFEN | Noch kein dokumentierter Live-Test |
+
+### Testreihenfolge und Belastungsregeln
+
+1. Stabilitätsbeobachtung von 0.1.50 hat Vorrang. Keine unnötigen Steuerbefehle nur für Tests.
+2. Funktionstests möglichst in ohnehin geplante Reinigungsabläufe integrieren und jeweils nur eine Funktion gezielt prüfen.
+3. Vor einem Test prüfen, ob er zusätzliche Roboterkommunikation oder eine laufende Reinigung erfordert; keine zusätzlichen Poller oder parallelen Abfragen einführen.
+4. Nach jedem Ergebnis Status von OFFEN auf BESTANDEN, FEHLGESCHLAGEN oder TEILWEISE BESTÄTIGT setzen und Datum, Version sowie knappen Nachweis ergänzen.
+5. Bei Änderungen an Code, Paketversion, aktivem Branch oder PR-Status diese Übersicht und den Projektstatus im selben Commit aktualisieren. Beim Branchwechsel die aktuelle STATUS.md mitführen; keine abweichende veraltete Testliste stehen lassen.
