@@ -710,9 +710,9 @@ class RoidmiAdapter extends Adapter {
         const client = new MiioClient({
             host: config.xiaomiHost!,
             token: config.xiaomiToken!,
-            // Controlled A/B test: X20+ reuses the device handshake until any RPC error.
-            // The Roidmi EVE Plus keeps the original handshake-before-every-RPC behavior.
-            reuseHandshake: true,
+            // Keep the proven handshake-before-every-RPC flow while the experimental
+            // cached-handshake path is corrected and independently validated.
+            reuseHandshake: false,
             debug: true,
             onDebug: (message) => {
                 xiaomiMiioTrace.push(message);
