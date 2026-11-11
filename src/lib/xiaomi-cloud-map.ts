@@ -105,7 +105,8 @@ export class XiaomiCloudMapClient {
         country: string,
         did: string,
         properties: Array<{ siid: number; piid: number }>,
-        onSessionChanged?: () => Promise<void>
+        onSessionChanged?: () => Promise<void>,
+        datasource: 1 | 2 = 1
     ): Promise<unknown> {
         if (!this.hasSession()) throw new Error("Xiaomi Cloud session is unavailable; sign in and complete verification first.");
         if (!/^\d{1,20}$/.test(did)) throw new Error("Xiaomi X20+ DID is invalid.");
@@ -113,7 +114,7 @@ export class XiaomiCloudMapClient {
         const base = `https://${country === "cn" ? "" : country + "."}api.io.mi.com/app`;
         const response = await this.api(base + "/v2/miotspec/prop/get", {
             data: JSON.stringify({
-                datasource: 1,
+                datasource,
                 params: properties.map(property => ({ did, siid: property.siid, piid: property.piid }))
             })
         }, onSessionChanged);
