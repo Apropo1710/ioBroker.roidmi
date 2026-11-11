@@ -27,3 +27,11 @@
 - Adapter und Xiaomi-Original-App müssen dieselben Einstellungen sehen und gemeinsam nutzen.
 - Draft-PR #3 nicht ohne ausdrückliche Freigabe mergen.
 - STATUS.md bei jeder zusammenhängenden Änderung auf dem aktiven Branch fortschreiben.
+
+## X20+ Live-Befund: Wasserstatus während laufender Reinigung (11.11.2026)
+
+- Während „Saugen vor Wischen“ zeigte die Xiaomi-App Wasser Grad 3, während `status.mopMode` im ioBroker weiter „Mittel (2)“ anzeigte.
+- Der vorhandene Diagnosewert `info.cleanSettingReadback` lieferte lokal SIID 4 / PIID 23 mit `code: 0` und Rohwert `198659` (= `0x30803`). Bits 16–17 ergeben eindeutig Grad 3. Der Zeitstempel des öffentlichen `status.mopMode` blieb bei 12:52:44, obwohl der Poll um 13:13/13:16 erfolgreich weiterlief.
+- Zusätzlich waren die öffentlichen Werte `cleaningMode=1` und `mopMode=2` nicht mit dem gelesenen Rohwert synchron. Das belegt einen Fehler in der Statusübernahme, nicht in der Geräteantwort oder der bereits bestätigten Bitmaske.
+- Korrektur auf Branch `feature/xiaomi-x20plus`, Commit `d41e5813c1d36363c7b701c290908bcd5b0b2e07`: Die Wasserstufe wird jetzt direkt anhand der Antwort auf SIID 4 / PIID 23 dekodiert und in `status.mopMode` sowie `control.mopMode` übernommen. Die Dekodierung ist damit von der separaten Low-Bit-Zuordnung für `cleaningMode` entkoppelt. Es wird keine zusätzliche MIoT-Abfrage eingeführt.
+- Build/CI-Verifikation für diese Korrektur steht noch aus. Der Roboter wurde während der Diagnose nicht zusätzlich abgefragt oder gesteuert.
