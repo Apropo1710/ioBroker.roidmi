@@ -29,6 +29,18 @@ Draft-PR: https://github.com/Apropo1710/ioBroker.roidmi/pull/3 (nicht mergen)
 - Die Rohantwort wird nur im Diagnose-State sichtbar, sobald die entsprechende Wasserstufen-Property im normalen Poll verarbeitet wird. Zu prüfen bleiben deshalb nach Installation: Existenz des Objekts und anschließender Rohwert aus dem bestehenden Poll.
 - Keine zufälligen weiteren Varianten zur Objekterstellung ergänzen, bevor der Nutzer den aktuellen, geprüften Stand getestet hat.
 
+## App-/Adapter-Abgleich: Wasserstufe weicht ab (11.11.2026, ca. 11:41–11:42)
+
+- Nutzer-Screenshot der Xiaomi-App zeigt Standardmodus, Reinigungsart „Saugen vor Wischen“, Saugstärke „Stark“ und Wasserabgabe „Grad 2“ ausgewählt.
+- Nachfolgender ioBroker-Screenshot (erfolgreicher Poll um 11:42:48, Poll-Zähler 12) zeigt:
+  - `x20Plus.info.mopModeReadback`: `{"siid":4,"piid":5,"code":0,"value":3}`
+  - `x20Plus.status.mopMode`: `3`
+  - `x20Plus.control.mopMode`: `3` (Admin-Anzeige „Hoch(3)“)
+- Damit ist die MIoT-Leseantwort erfolgreich, aber die angezeigte App-Stufe „Grad 2“ und der Adapterwert 3 sind nicht deckungsgleich. Nicht als gelöste bidirektionale Synchronisierung werten.
+- Im Code ist die rohe Property SIID 4 / PIID 5 direkt als `mopMode` übernommen; keine Übersetzung findet statt. Die Admin-States beschriften aktuell 1–3 als Niedrig/Mittel/Hoch (zu prüfen, wo die Zuordnung definiert wird).
+- Hypothese: Die Firmware-/App-Enum-Zuordnung ist gegenüber der aktuellen Adapterbeschriftung verschoben oder die App-UI-Stufe entspricht nicht direkt dem MIoT-Wert. Noch nicht bestätigt.
+- Nächster gezielter Test: App-Wasserstufe auf Grad 1 setzen, nach einem erfolgreichen regulären Poll Rohwert und beide Adapter-States vergleichen. Danach ggf. Grad 3 als Gegenprobe. Keine zusätzliche Poll-Abfrage und keine Codeänderung, bis die Wertetabelle empirisch bestätigt ist.
+
 ## Erfolgreiche Diagnose-State-Prüfung nach Neustart (11.11.2026, ca. 11:39)
 
 - Nutzer-Screenshot nach bestätigtem Neustart zeigt `x20Plus.info.mopModeReadback` jetzt vorhanden.
