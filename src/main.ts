@@ -584,10 +584,25 @@ class RoidmiAdapter extends Adapter {
         });
         // Correct old installations too: cleaningMode is intensity, not vacuum/mop mode.
         // Preserve the stored value while updating only common/native metadata.
-        await this.extendObjectAsync(prefix + "control.cleaningMode", {
-            common: { name: "Reinigungsart", min: 0, max: 3, states: { 0: "Saugen und Wischen", 1: "Wischen", 2: "Saugen", 3: "Saugen vor Wischen" }, read: true, write: true },
-            native: { siid: 4, piid: 23, mask: 3 }
-        });
+        const cleaningModeId = prefix + "control.cleaningMode";
+        const cleaningModeObject = await this.getObjectAsync(cleaningModeId);
+        if (cleaningModeObject) {
+            await this.setObjectAsync(cleaningModeId, {
+                ...cleaningModeObject,
+                common: {
+                    ...cleaningModeObject.common,
+                    name: "Reinigungsart",
+                    type: "number",
+                    role: "level",
+                    min: 0,
+                    max: 3,
+                    states: { 0: "Saugen und Wischen", 1: "Wischen", 2: "Saugen", 3: "Saugen vor Wischen" },
+                    read: true,
+                    write: true
+                },
+                native: { ...cleaningModeObject.native, siid: 4, piid: 23, mask: 3 }
+            });
+        }
         await this.subscribeStatesAsync(prefix + "control.cleaningMode");
         // Optional C102GL settings are read on the slow cycle only. These
         // property ids are spec-based and remain unverified on this robot firmware.
