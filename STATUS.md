@@ -29,6 +29,16 @@ Draft-PR: https://github.com/Apropo1710/ioBroker.roidmi/pull/3 (nicht mergen)
 - Die Rohantwort wird nur im Diagnose-State sichtbar, sobald die entsprechende Wasserstufen-Property im normalen Poll verarbeitet wird. Zu prüfen bleiben deshalb nach Installation: Existenz des Objekts und anschließender Rohwert aus dem bestehenden Poll.
 - Keine zufälligen weiteren Varianten zur Objekterstellung ergänzen, bevor der Nutzer den aktuellen, geprüften Stand getestet hat.
 
+## Erfolgreiche Diagnose-State-Prüfung nach Neustart (11.11.2026, ca. 11:39)
+
+- Nutzer-Screenshot nach bestätigtem Neustart zeigt `x20Plus.info.mopModeReadback` jetzt vorhanden.
+- Der Datenpunkt enthält: `{"siid":4,"piid":5,"code":0,"value":3}`.
+- Gleichzeitig sind `connection=true`, ein erfolgreicher `lastPoll` um 11:38:46 und `pollCount=4` sichtbar.
+- Damit sind Objekterstellung, regulärer Poll und MIoT-Leseantwort für Wasserstufe SIID 4 / PIID 5 bestätigt. `code: 0` bedeutet erfolgreiche Property-Antwort; `value: 3` entspricht Wasserstufe Hoch.
+- Die frühere Annahme, dass der Wert im Poll fehlt, ist damit widerlegt. Die Rückmeldung aus der MIoT-Leseantwort funktioniert grundsätzlich.
+- Nächster gezielter Gerätetest: Wasserstufe in der Xiaomi-Original-App auf einen anderen Wert (1 oder 2) ändern und nach dem nächsten erfolgreichen Poll prüfen, ob sich `mopModeReadback.value`, `x20Plus.status.mopMode` und `x20Plus.control.mopMode` entsprechend aktualisieren. Keine zusätzliche Abfrage einbauen.
+- Der vorherige Timeout in Batch 1 trat beim Start auf; nachfolgende erfolgreiche Polls sind belegt. Timeout getrennt beobachten, nicht mit dem Readback-Mapping vermischen.
+
 ## Nutzerprüfung nach Installation des aktuellen Builds (11.11.2026, ca. 11:37)
 
 - Nutzer hat den aktuellen Branch-Build installiert und den Adapter anschließend manuell neu gestartet.
@@ -69,9 +79,9 @@ Gerät: Xiaomi Robot Vacuum X20+ (Modell C102GL). Nicht mit Roidmi Eve Plus oder
 
 1. Der aktuelle Head-Build ist erstellt und geprüft; Artefaktversion im Paket ist 0.1.48.
 2. Nutzer kann den geprüften Build installieren.
-3. Danach nur prüfen, ob `x20Plus.info.mopModeReadback` existiert und welcher Rohwert aus dem normalen Poll angezeigt wird.
-4. Falls der State weiterhin fehlt: ioBroker-Objektbaum-Lifecycle, Namespace und Adapter-Log gezielt untersuchen; keine weiteren zufälligen Erstellungsvarianten.
-5. Wenn der State erscheint: Rohantwort (SIID/PIID/code/value) auswerten, um Geräte-Property, MIoT-Fehlercode oder Mapping zu unterscheiden.
+3. Diagnose-State ist vorhanden; Rohantwort bestätigt SIID 4 / PIID 5, code 0, value 3.
+4. In der Xiaomi-App Wasserstufe auf 1 oder 2 ändern und nach einem regulären erfolgreichen Poll alle drei Readback-/Status-/Control-Werte vergleichen.
+5. Wenn sich der Rohwert ändert, aber Status/Control nicht, Mapping-/State-Synchronisierung gezielt reparieren.
 6. Keine zusätzliche MIoT-Abfrage nur für Diagnose einführen.
 
 ## Geräte- und Datenpunktstruktur
