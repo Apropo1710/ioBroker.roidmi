@@ -92,7 +92,7 @@ Diese Übersicht ist die maßgebliche aktuelle Testliste. Bei jedem neuen Testbe
 |---|---|---|
 | Wasserstufe zwischen Xiaomi-App und ioBroker in beide Richtungen | BESTANDEN | Live-Test am 11.11.; siehe Wasserstufenabschnitt |
 | Wasserstufe im Status während laufender Reinigung | BESTANDEN | Korrigierter Status in `status.mopMode` und `control.mopMode` live bestätigt |
-| Reinigungsmodus / `cleaningMode` Status | TEILWEISE BESTÄTIGT | Statuswert 3 („Saugen vor Wischen“) im Live-Screenshot; weitere Modi noch nicht systematisch geprüft |
+| Reinigungsmodus / `cleaningMode` | **BESTANDEN** | Vom Nutzer als in beide Richtungen live bestätigt korrigiert: ioBroker ↔ X20+ ↔ Xiaomi-Original-App. Nicht mit `suction` verwechseln. |
 | Saugleistung / Saugstufen (`suction`) | **BESTANDEN** | Der Nutzer bestätigt, dass `suction` vollständig getestet wurde. Die Saugleistungsfunktion gilt als komplett bestätigt; sie ist ausdrücklich vom separaten Datenpunkt `cleaningMode` zu unterscheiden. |
 | Globale Reinigungsart umschalten | OFFEN | Nur bei Gelegenheit im normalen Betrieb testen |
 | Globalen Reinigungsstart aus ioBroker | OFFEN | Noch kein dokumentierter Live-Test |
@@ -115,4 +115,4 @@ Diese Übersicht ist die maßgebliche aktuelle Testliste. Bei jedem neuen Testbe
 - Der Nutzer hat klargestellt, dass die Saugleistung über den Datenpunkt `suction` vollständig bestätigt wurde.
 - Die frühere Einstufung „teilweise bestätigt“ beruhte auf einer Verwechslung bzw. Vermischung mit dem separaten Datenpunkt `cleaningMode` und wird zurückgenommen.
 - **Saugleistung / `suction`: BESTANDEN.** Nicht erneut als offenen Test führen und keine erneute Prüfung dafür einplanen.
-- `cleaningMode` bleibt ein eigener Datenpunkt mit eigenem, weiterhin nur teilweise bestätigtem Teststatus.
+- `cleaningMode` ist ebenfalls vollständig bestätigt: Änderungen wurden in beide Richtungen zwischen ioBroker, Roboter und Xiaomi-Original-App nachvollzogen. Die frühere Einstufung „teilweise bestätigt“ war falsch. `cleaningMode` und `suction` bleiben getrennte Datenpunkte; beide gelten als BESTANDEN.
