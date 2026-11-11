@@ -473,6 +473,21 @@ class RoidmiAdapter extends Adapter {
                 common: { name, type, role, read: true, write: false }
             });
         }
+        // Ensure the diagnostic state exists even on installations where the
+        // info channel was created by an older adapter version. Use setObjectAsync
+        // here because this is a dedicated diagnostic object whose metadata must
+        // be present before the first poll writes its raw response.
+        await this.setObjectAsync(prefix + "info.mopModeReadback", {
+            type: "state",
+            common: {
+                name: "Raw MIoT read result for mop water level",
+                type: "string",
+                role: "json",
+                read: true,
+                write: false
+            },
+            native: {}
+        });
         // Older Xiaomi poller versions created flat x20Plus.* states. Move those
         // values into the single status channel and remove the obsolete duplicates.
         const legacyXiaomiFields = [
