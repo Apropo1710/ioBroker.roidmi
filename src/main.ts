@@ -946,10 +946,12 @@ class RoidmiAdapter extends Adapter {
                                 await this.setStateAsync("evePlus.map.cloudSession", {
                                     val: this.encrypt(this.cloudMapClient.exportSession()), ack: true
                                 });
-                            }
+                            },
+                            2
                         );
                         const snapshot = {
                             source: "Xiaomi Cloud MIoT /v2/miotspec/prop/get",
+                            datasource: 2,
                             requestedAt: new Date().toISOString(),
                             siid: 4,
                             piid: 5,
