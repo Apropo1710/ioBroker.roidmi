@@ -378,3 +378,5 @@ Diese Übersicht ist die maßgebliche aktuelle Testliste. Bei jedem neuen Testbe
 - Raumliste `0` wird als Marker „Alle Bereiche“ statt als Raum-ID 0 angezeigt.
 - Regressionstest mit den beobachteten X20+-Beispieldaten ergänzt. Die Zeitpläne bleiben read-only; keine Schreibzugriffe und keine zusätzlichen Geräteabfragen.
 - Adapterversion auf **0.1.54** angehoben. CI/Build für diese Parserkorrektur noch ausstehend; erst nach erfolgreicher CI installieren und anschließend denselben Vergleich erneut durchführen.
+
+- CI-Fehleranalyse: Build war erfolgreich, ein neuer Regressionstest schlug fehl, weil dessen Test-Rohstrings versehentlich ein Feld (Saugstufe) ausgelassen hatten. Das war ein fehlerhafter Test-Fixture, kein TypeScript-/Buildfehler. Testdaten korrigiert in Commit `7e1196b`; neuer CI-Lauf wird geprüft.
