@@ -598,10 +598,11 @@ class RoidmiAdapter extends Adapter {
         // Different references report local/cloud firmware behavior differently;
         // the real robot test decides whether these actions execute on this firmware.
         const x20Controls = [
-            { id: "pause", name: "Pause (MIoT Stop action)", siid: 2, aiid: 2 },
-            { id: "stop", name: "Stop cleaning", siid: 2, aiid: 2 },
-            { id: "returnToDock", name: "Return to dock / charge", siid: 3, aiid: 1 }
+            { id: "pause", name: "Pause cleaning", siid: 2, aiid: 2 },
+            { id: "returnToDock", name: "Return to dock / finish cleaning", siid: 3, aiid: 1 }
         ];
+        // Remove the obsolete stop alias from existing installations.
+        await this.delObjectAsync(prefix + "control.stop").catch(() => undefined);
         for (const control of x20Controls) {
             await this.setObjectNotExistsAsync(prefix + "control." + control.id, {
                 type: "state",
@@ -1102,8 +1103,7 @@ class RoidmiAdapter extends Adapter {
             }
             const actionMap: Record<string, { siid: number; aiid: number }> = {
                 start: { siid: 2, aiid: 1 },
-                pause: { siid: 2, aiid: 2 }, // C102GL pause is mapped to Stop in multiple cloud references
-                stop: { siid: 2, aiid: 2 },
+                pause: { siid: 2, aiid: 2 },
                 returnToDock: { siid: 3, aiid: 1 }
             };
             if (command in actionMap) {
