@@ -95,7 +95,7 @@ Diese Übersicht ist die maßgebliche aktuelle Testliste. Bei jedem neuen Testbe
 | Reinigungsmodus / `cleaningMode` | **BESTANDEN** | Vom Nutzer als in beide Richtungen live bestätigt korrigiert: ioBroker ↔ X20+ ↔ Xiaomi-Original-App. Nicht mit `suction` verwechseln. |
 | Saugleistung / Saugstufen (`suction`) | **BESTANDEN** | Der Nutzer bestätigt, dass `suction` vollständig getestet wurde. Die Saugleistungsfunktion gilt als komplett bestätigt; sie ist ausdrücklich vom separaten Datenpunkt `cleaningMode` zu unterscheiden. |
 | Globale Reinigungsart umschalten | OFFEN | Nur bei Gelegenheit im normalen Betrieb testen |
-| Globalen Reinigungsstart aus ioBroker | OFFEN | Noch kein dokumentierter Live-Test |
+| Globalen Reinigungsstart aus ioBroker | **BESTANDEN** | Live-Test am 12.11.2026: Start über `x20Plus.control.start`; Nutzer bestätigt, dass der X20+ losgefahren ist. Screenshot danach: `vacuumState=1`, `taskStatus=1`, `chargingState=2`, `cleaningArea=0`, `cleaningTime=0`, `workMode=2`. |
 | Raumkartenimport | BESTANDEN | Neustartlog meldet erfolgreich geladene Karte mit 5 Räumen |
 | Raum-ID-Zuordnung und gezielte Raumreinigung | OFFEN | Noch kein dokumentierter Live-Test |
 | Teppich-Boost | OFFEN | Noch kein dokumentierter Live-Test |
@@ -146,3 +146,14 @@ Diese Übersicht ist die maßgebliche aktuelle Testliste. Bei jedem neuen Testbe
   5. Pause, Fortsetzen und Stop.
   6. Rückkehr zur Ladestation.
 - Nach jedem tatsächlich durchgeführten Test wird nur der betreffende Matrixeintrag mit Datum, Adapterversion und konkretem Ergebnis aktualisiert. Keine Tests als bestanden markieren, bevor ein Live-Nachweis vorliegt.
+
+
+## X20+ Funktionstest: globaler Reinigungsstart aus ioBroker (12.11.2026)
+
+- Ausgangszustand vor dem Befehl laut Screenshot: Roboter an der Station, `vacuumState=13` / „Ladung abgeschlossen“, `chargingState=1`, Akku 100 %, `taskStatus=0`, `cleaningTime=65`, `cleaningArea=49`.
+- Der globale Start wurde über `x20Plus.control.start` ausgelöst.
+- Nutzer bestätigt unmittelbar danach: „Er ist losgefahren nach Start“.
+- Folgender Screenshot zeigt den geänderten Gerätezustand: `vacuumState=1`, `taskStatus=1`, `chargingState=2`, `cleaningTime=0`, `cleaningArea=0`, `workMode=2`. Das bestätigt die Annahme des Startbefehls und den Beginn des Vorgangs.
+- **Ergebnis: GLOBALER REINIGUNGSSTART AUS IOBROKER BESTANDEN** (Live-Test am realen X20+).
+- Auffälligkeit für die Statusbeobachtung: Im Screenshot steht `statusText` noch auf „Ladung abgeschlossen“, obwohl `vacuumState=1` bereits den neuen Zustand meldet. Prüfen, ob der Text-State beim nächsten regulären Poll aktualisiert wird; zunächst kein Codeeingriff und kein zusätzlicher Poll.
+- Der Start-State `x20Plus.control.start` steht nach Ausführung wieder auf `false`, wie für den Taster vorgesehen.
