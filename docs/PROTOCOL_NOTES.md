@@ -110,3 +110,14 @@ Diese Werte stammen aus Screenshots des realen Geräts. Sie sind Beobachtungen, 
 - Live-Verifikation: Änderungen mehrfach in beide Richtungen getestet – Xiaomi-Original-App → Adapter und Adapter → Xiaomi-Original-App. Beide Richtungen funktionieren auf dem getesteten Gerät.
 - Firmware-Version des Testgeräts ist derzeit nicht erfasst. Die Bitbelegung ist daher für dieses Gerät/Firmware bestätigt, aber nicht als firmwareübergreifend garantiert anzusehen. Bei Tests mit anderen Firmwareständen Rohwerte und Firmware-Version ergänzen.
 - Lastverhalten: Die Wasserstufe wird aus dem bereits vorhandenen Pollwert 4/23 abgeleitet. Keine zusätzliche periodische Abfrage hinzufügen.
+
+
+## Roidmi EVE Plus – Zeitplanformat und Schreibschutz (12.11.2026)
+
+- Live-Rohdaten vom realen EVE Plus bestätigen get_properties / set_properties auf SIID 8 / PIID 6 mit JSON-Root { time: [...], tz, tzs }.
+- Jeder beobachtete Zeitplaneintrag besitzt mindestens acht Felder: [timeSeconds, enabled, fanSpeed, cleaningMode, weekdays, waterLevel, roomIds, trailingValue]. Die beobachteten Aktivierungswerte sind 0 (deaktiviert); die Adapterinterpretation nutzt 1 als aktiviert. Feld 7 und mögliche zusätzliche Felder werden unverändert erhalten.
+- Beispielwerte aus dem Gerät: 35280 Sekunden = 09:48, 17700 Sekunden = 04:55; Wochentage verwenden 0 = Sonntag bis 6 = Samstag. Saugstufen 0–4 und Wasserwerte 0–4 entsprechen dem vorhandenen Parser-Mapping. Die numerische Bedeutung der Reinigungsart bleibt vorerst bewusst unverändert/roh.
+- Der Schreibpfad bearbeitet nur vorhandene Einträge. Keine Neuanlage oder Löschung. Die UI muss den vollständigen zuvor angezeigten raw-Snapshot zusammen mit dem Änderungsobjekt übergeben.
+- Sicherheitsablauf: aktuellen Wert frisch lesen → Snapshot strukturell vergleichen → ausschließlich explizite Felder ändern → vollständigen JSON-Wert schreiben → direkt zurücklesen → strukturell prüfen, dass nur die angeforderten Felder verändert wurden. Bei Snapshot-Konflikt wird vor dem Schreiben abgebrochen.
+- Nach MIoT-Schreibannahme und fehlgeschlagenem Readback wird der Ausgang ausdrücklich als unbestätigt gemeldet. Kein automatischer Wiederholungsversuch.
+- Alle Lese-/Schreib-/Readback-Aufrufe erfolgen ausschließlich auf explizite Benutzeraktion; keine Zeitplanabfrage im regulären Polling.

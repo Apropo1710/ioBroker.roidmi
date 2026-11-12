@@ -36,6 +36,7 @@
 - [ ] Zonenreinigung
 - [ ] Karten und Reinigungsverlauf
 - [ ] Zeitpläne / Wartungsdaten, soweit verfügbar
+  - [ ] Roidmi EVE Plus: Bearbeitung bestehender Zeitpläne (Adapter-Schreibpfad angelegt; CI und Hardwaretest offen)
 - [ ] Staubabsaugung und Wartungsreset-Funktionen, soweit sicher verifiziert
 
 ## Phase 4 – Qualität und Veröffentlichung

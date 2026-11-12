@@ -504,3 +504,14 @@ Diese Übersicht ist die maßgebliche aktuelle Testliste. Bei jedem neuen Testbe
 - X20+-Implementierung und deren getestete Aktivieren/Deaktivieren-Funktion unverändert lassen. Keine unnötigen zyklischen Abfragen; manuelle Bearbeitung soll die Roboter-/ioBroker-Last gering halten.
 - HomePilot anschließend um eine gerätespezifische Eve-Plus-Bedienung ergänzen, falls der Eve-Plus-Datenpfad dies unterstützt.
 - Noch nicht begonnen; zunächst Bestandsaufnahme und Protokoll-/Datenformatanalyse.
+
+
+## Roidmi EVE Plus – sichere Bearbeitung bestehender Zeitpläne begonnen (12.11.2026)
+
+- Die vom Nutzer gelieferten Live-Rohdaten bestätigen das dokumentierte Acht-Felder-Format in time[] für SIID 8 / PIID 6. Root-Felder tz/tzs und unbekannte Zusatzfelder müssen erhalten bleiben; das letzte Eintragsfeld sowie weitere zukünftige Felder werden beim Bearbeiten nicht angefasst.
+- Neue separate Hilfslogik src/lib/roidmi-cleaning-schedules.ts: ausschließlich explizit angeforderte Felder eines bestehenden Eintrags ändern; Wertebereiche prüfen; Root-Metadaten, andere Zeitpläne und unbekannte Felder bewahren.
+- Neuer manueller State evePlus.control.updateSchedule erwartet JSON mit index, dem angezeigten expectedRaw-Snapshot und einem update-Objekt. Der Adapter liest SIID 8 / PIID 6 frisch, bricht bei zwischenzeitlichen Änderungen ab, schreibt den vollständigen JSON-Wert und liest ihn direkt zurück.
+- Die Readback-Prüfung verlangt, dass nur die gewünschten Felder geändert wurden. Erst nach erfolgreicher Prüfung werden timing.raw, timing.parsed, timing.summary und timing.lastUpdate aktualisiert.
+- Bei unklarer Bestätigung nach erfolgreicher Schreibantwort wird ausdrücklich kein automatischer Schreib-Retry ausgelöst; zuerst manuell aktualisieren.
+- Keine zusätzlichen zyklischen Abfragen. X20+-Zeitplanlogik bleibt unangetastet.
+- Commit fdcfeeef17ca1a6926bbdf58217be17df9f68a5f enthält die erste Implementierung. CI/Build und Hardwaretest stehen noch aus; bis dahin nicht installieren und keine Zeitpläne über den neuen State verändern.
