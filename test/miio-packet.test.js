@@ -45,3 +45,18 @@ test("increments the miIO request timestamp with 32-bit wraparound", () => {
     const request = buildMiioRequest("miIO.info", [], 8, token, { deviceId: header.deviceId, stamp: 0xffffffff });
     assert.equal(request.readUInt32BE(12), 0);
 });
+
+test("serializes native MIoT action RPC with object params", () => {
+    const actionParams = {
+        did: "123456789",
+        siid: 4,
+        aiid: 1,
+        in: [{ piid: 1, value: 18 }, { piid: 10, value: JSON.stringify({ selects: [[8, 1, 1, 2, 1]] }) }]
+    };
+    const request = buildMiioRequest("action", actionParams, 9, token, header);
+    assert.deepEqual(parseMiioResponse(request, token), {
+        id: 9,
+        method: "action",
+        params: actionParams
+    });
+});
