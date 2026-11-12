@@ -8,9 +8,9 @@ test("parses C102GL schedule fields and weekday bitmap", () => {
     assert.equal(schedules[0].enabled, true);
     assert.equal(schedules[0].time, "08:30");
     assert.equal(schedules[0].weekdaysText, "Mo, Di, Mi, Do, Fr");
-    assert.equal(schedules[0].cleaningModeText, "Nur Saugen");
+    assert.equal(schedules[0].cleaningModeText, "Saugen vor Wischen");
     assert.equal(schedules[0].fanSpeedText, "Standard");
-    assert.equal(schedules[0].waterLevelText, "Mittel");
+    assert.equal(schedules[0].waterLevelText, "Niedrig");
     assert.equal(schedules[0].roomsText, "Flur, Küche");
 });
 
@@ -38,7 +38,7 @@ test("decodes observed X20+ schedule bit order, cleaning mode and all-area marke
     const schedules = parseXiaomiCleaningSchedules("1-0-09:00-0111110-1-1-1-32-0;2-0-10:00-1000001-1-1-1-32-0;3-0-12:09-0000000-0-1-1-32-0");
     assert.equal(schedules[0].weekdaysText, "Mo, Di, Mi, Do, Fr");
     assert.equal(schedules[1].weekdaysText, "Sa, So");
-    assert.equal(schedules[0].cleaningModeText, "Nur Saugen");
+    assert.equal(schedules[0].cleaningModeText, "Saugen und Wischen");
     assert.equal(schedules[0].roomsText, "Alle Bereiche");
     assert.equal(schedules[2].weekdaysText, "Einmalig");
 });
@@ -76,21 +76,21 @@ test("rejects readback that changes another schedule field", () => {
 
 
 test("decodes automatic water adjustment reported by Xiaomi Home", () => {
-    const schedules = parseXiaomiCleaningSchedules("3-0-13:11-0000000-0-3-0-0-0");
+    const schedules = parseXiaomiCleaningSchedules("3-0-13:11-0000000-0-0-0-48-0");
     assert.equal(schedules[0].waterLevel, 0);
     assert.equal(schedules[0].waterLevelText, "Automatische Anpassung");
 });
 
 test("edits supported fields of one schedule and preserves other schedules",()=>{
  const raw="1-1-08:30-0111110-1-1-1-64-3,8;2-0-19:00-1000001-0-0-0-32-8";
- const u={time:"07:45",weekdays:[0,2,4],repeat:true,cleaningMode:4,fanSpeed:3,waterLevel:0,roomIds:[8,3]};
- const expected="1-1-07:45-0101010-1-4-3-0-8,3;2-0-19:00-1000001-0-0-0-32-8";
+ const u={time:"07:45",weekdays:[0,2,4],repeat:true,cleaningMode:64,fanSpeed:3,waterLevel:0,roomIds:[8,3]};
+ const expected="1-1-07:45-0101010-1-0-3-64-8,3;2-0-19:00-1000001-0-0-0-32-8";
  assert.equal(updateXiaomiCleaningSchedule(raw,"1",u),expected);
  assert.doesNotThrow(()=>verifyXiaomiCleaningScheduleDetailsUpdate(raw,expected,"1",u));
 });
 test("supports one-time schedule edits and rejects invalid values",()=>{
  const raw="3-0-12:09-0000000-0-3-0-0-0";
- const u={time:"13:11",weekdays:[],repeat:false,cleaningMode:3,fanSpeed:0,waterLevel:0,roomIds:[0]};
+ const u={time:"13:11",weekdays:[],repeat:false,cleaningMode:48,fanSpeed:0,waterLevel:0,roomIds:[0]};
  assert.equal(updateXiaomiCleaningSchedule(raw,"3",u),"3-0-13:11-0000000-0-3-0-0-0");
  assert.throws(()=>updateXiaomiCleaningSchedule(raw,"3",{...u,time:"25:00"}),/Invalid schedule time/);
  assert.throws(()=>updateXiaomiCleaningSchedule(raw,"3",{...u,weekdays:[1]}),/one-time schedule/);
@@ -98,16 +98,22 @@ test("supports one-time schedule edits and rejects invalid values",()=>{
 });
 
 test("decodes observed Xiaomi weekday bitmap 1001011 as Sunday, Wednesday, Friday, Saturday", () => {
-    const schedules = parseXiaomiCleaningSchedules("2-0-10:00-1001011-1-4-1-96-0");
+    const schedules = parseXiaomiCleaningSchedules("2-0-10:00-1001011-1-1-1-64-0");
     assert.deepEqual(schedules[0].weekdays, [2, 4, 5, 6]);
-    assert.equal(schedules[0].weekdaysText, "Mi, Fr, Sa, So");
+    assert.equal(schedules[0].weekdaysText, "Mo, Mi, Fr, Sa");
 });
 test("encodes weekdays using Xiaomi Sunday-to-Monday bitmap order", () => {
-    const raw = "2-0-10:00-1001011-1-4-1-96-0";
-    const update = {time:"10:00",weekdays:[2,4,5,6],repeat:true,cleaningMode:4,fanSpeed:1,waterLevel:96,roomIds:[0]};
+    const raw = "2-0-10:00-1001011-1-1-1-64-0";
+    const update = {time:"10:00",weekdays:[0,2,4,5],repeat:true,cleaningMode:64,fanSpeed:1,waterLevel:1,roomIds:[0]};
     assert.equal(updateXiaomiCleaningSchedule(raw,"2",update),raw);
 });
-test("maps all five Xiaomi Home cleaning modes", () => {
-    const schedules = parseXiaomiCleaningSchedules("1-0-09:00-0000000-0-0-0-0-0;2-0-09:00-0000000-0-1-0-0-0;3-0-09:00-0000000-0-2-0-0-0;4-0-09:00-0000000-0-3-0-0-0;5-0-09:00-0000000-0-4-0-0-0");
-    assert.deepEqual(schedules.map(x => x.cleaningModeText), ["Automatische Anpassung", "Nur Saugen", "Saugen und Wischen", "Nur Wischen", "Saugen vor Wischen"]);
+test("decodes Xiaomi cleaning mode from field 7 and water level from field 5", () => {
+    const raw = "2-0-10:00-1001011-1-1-1-64-0;3-0-12:09-0000000-0-1-1-48-0;4-0-13:11-0000000-0-1-1-16-0";
+    const schedules = parseXiaomiCleaningSchedules(raw);
+    assert.deepEqual(schedules.map(x => x.cleaningModeText), ["Saugen vor Wischen", "Nur Wischen", "Nur Saugen"]);
+    assert.deepEqual(schedules.map(x => x.waterLevelText), ["Niedrig", "Niedrig", "Niedrig"]);
+});
+test("maps observed cleaning type values and rejects unknown values", () => {
+    const schedules = parseXiaomiCleaningSchedules("1-0-09:00-0000000-0-1-1-16-0;2-0-09:00-0000000-0-1-1-32-0;3-0-09:00-0000000-0-1-1-48-0;4-0-09:00-0000000-0-1-1-64-0;5-0-09:00-0000000-0-1-1-96-0");
+    assert.deepEqual(schedules.map(x => x.cleaningModeText), ["Nur Saugen", "Saugen und Wischen", "Nur Wischen", "Saugen vor Wischen", "Unbekannt (96)"]);
 });
