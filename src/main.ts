@@ -820,7 +820,7 @@ class RoidmiAdapter extends Adapter {
                             const controlValue = key === "cleaningMode" ? Number(value) & 0x03 : value;
                             await this.setStateChangedAsync(prefix + "control." + key, { val: controlValue, ack: true });
                         }
-                        if (key === "status") {
+                        if (key === "vacuumState") {
                             await this.setStateChangedAsync(prefix + "status.statusText", {
                                 val: getXiaomiX20PlusStatusText(value), ack: true
                             });
