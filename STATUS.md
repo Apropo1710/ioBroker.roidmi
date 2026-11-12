@@ -127,3 +127,22 @@ Diese Übersicht ist die maßgebliche aktuelle Testliste. Bei jedem neuen Testbe
 - Der Nutzer bewertet solche Ausfälle inzwischen als selten. Das ist gegenüber den zuvor häufiger beobachteten Timeouts ein positiver Stabilitätshinweis, aber noch keine statistisch belastbare Langzeitbewertung.
 - **Entscheidung: Die Handshake-Wiederverwendung aus 0.1.50 bleibt unverändert aktiv.** Aufgrund dieses einzelnen seltenen Ausfalls wird sie weder zurückgenommen noch verändert. Es gibt keinen Beleg, dass die Handshake-Änderung diesen Timeout verursacht; die sporadischen Timeouts wurden bereits vor ihrer Einführung beobachtet.
 - Weiter normale Nutzung und Logs beobachten. Keine zusätzlichen Polls, Diagnoseabfragen oder Änderungen am miIO-Kommunikationscode allein aufgrund dieses Ereignisses.
+
+
+## Weiteres Vorgehen nach Stabilitätsbeobachtung (12.11.2026)
+
+- Die seltenen miIO-RPC-Timeouts von Version 0.1.50 werden bei normaler Nutzung weiter beobachtet. Die Handshake-Wiederverwendung bleibt unverändert; keine vorsorgliche Rücknahme oder Kommunikationsänderung.
+- Parallel werden die noch offenen Funktionstests schrittweise bei ohnehin geplanten Reinigungsabläufen durchgeführt. Es werden dafür keine zusätzlichen Poller oder Diagnoseabfragen eingerichtet.
+- Bereits vollständig bestätigte Funktionen werden nicht erneut als Testaufgabe eingeplant:
+  - Saugleistung `suction`: bidirektional BESTANDEN.
+  - Reinigungsmodus `cleaningMode`: bidirektional BESTANDEN.
+  - Wasserstufe `mopMode`: bidirektional BESTANDEN, einschließlich Status während laufender Reinigung.
+  - Raumkartenimport: BESTANDEN.
+- Verbleibende Funktionstests in sinnvoller Reihenfolge und nur bei passender Gelegenheit:
+  1. Globale Reinigungsart umschalten.
+  2. Globalen Reinigungsstart aus ioBroker auslösen.
+  3. Raum-ID-Zuordnung und gezielte Raumreinigung.
+  4. Teppich-Boost.
+  5. Pause, Fortsetzen und Stop.
+  6. Rückkehr zur Ladestation.
+- Nach jedem tatsächlich durchgeführten Test wird nur der betreffende Matrixeintrag mit Datum, Adapterversion und konkretem Ergebnis aktualisiert. Keine Tests als bestanden markieren, bevor ein Live-Nachweis vorliegt.
