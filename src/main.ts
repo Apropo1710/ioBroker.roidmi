@@ -657,12 +657,6 @@ class RoidmiAdapter extends Adapter {
             native: { siid: 8, piid: 2 }
         });
         await this.subscribeStatesAsync(prefix + "control.updateSchedule");
-        await this.setObjectNotExistsAsync(prefix + "control.updateSchedule", {
-            type: "state",
-            common: { name: "Edit one existing Xiaomi Home schedule (JSON)", type: "string", role: "json", read: false, write: true, def: "" },
-            native: { siid: 8, piid: 2 }
-        });
-        await this.subscribeStatesAsync(prefix + "control.updateSchedule");
         await this.setObjectNotExistsAsync(prefix + "timing.raw", {
             type: "state", common: { name: "Raw Xiaomi X20+ schedules (SIID 8 / PIID 2)", type: "string", role: "json", read: true, write: false }, native: { siid: 8, piid: 2 }
         });
@@ -1139,19 +1133,33 @@ class RoidmiAdapter extends Adapter {
                         const write=await this.cloudMapClient.setProperties(country,config.xiaomiDid,[{siid:8,piid:2,value:updated}],persist);
                         const result=Array.isArray(write)?write[0] as {code?:number}:undefined;
                         if(!result||result.code!==0) throw new Error("Xiaomi rejected schedule edit (MIoT "+String(result?.code??"unknown")+").");
-                        const readback=await this.cloudMapClient.getProperties(country,config.xiaomiDid,[{siid:8,piid:2}],persist,2);
-                        const verified=Array.isArray(readback)?readback[0] as {code?:number;value?:unknown}:undefined;
-                        if(!verified||verified.code!==0||typeof verified.value!=="string") throw new Error("Direct robot readback failed after schedule edit.");
-                        verifyXiaomiCleaningScheduleDetailsUpdate(current.value,verified.value,id,request.update);
+                        // The write is accepted. Publish the requested state immediately; a slow
+                        // direct readback must not turn a successful write into a false failure.
                         const roomState=await this.getStateAsync("x20Plus.rooms.roomsJson");let roomNames=new Map<number,string>();
                         if(typeof roomState?.val==="string") try {const rooms=JSON.parse(roomState.val) as Array<{segmentId?:number;name?:string}>;roomNames=new Map(rooms.filter(x=>Number.isInteger(x.segmentId)&&typeof x.name==="string").map(x=>[x.segmentId!,x.name!]));}catch{/* keep IDs */}
-                        const parsed=parseXiaomiCleaningSchedules(verified.value,roomNames);
-                        const summary=parsed.map(e=>"#"+e.id+" | "+(e.enabled?"Aktiv":"Deaktiviert")+" | "+e.time+" | "+e.weekdaysText+" | "+e.cleaningModeText+" | "+e.fanSpeedText+" | Wasser "+e.waterLevelText+" | Räume: "+e.roomsText).join("\\n");
-                        await this.setStateChangedAsync("x20Plus.timing.raw",{val:verified.value,ack:true});
-                        await this.setStateChangedAsync("x20Plus.timing.parsed",{val:JSON.stringify(parsed,null,2),ack:true});
-                        await this.setStateChangedAsync("x20Plus.timing.summary",{val:summary,ack:true});
+                        const intended=parseXiaomiCleaningSchedules(updated,roomNames);
+                        const intendedSummary=intended.map(e=>"#"+e.id+" | "+(e.enabled?"Aktiv":"Deaktiviert")+" | "+e.time+" | "+e.weekdaysText+" | "+e.cleaningModeText+" | "+e.fanSpeedText+" | Wasser "+e.waterLevelText+" | Räume: "+e.roomsText).join("\\n");
+                        await this.setStateChangedAsync("x20Plus.timing.raw",{val:updated,ack:true});
+                        await this.setStateChangedAsync("x20Plus.timing.parsed",{val:JSON.stringify(intended,null,2),ack:true});
+                        await this.setStateChangedAsync("x20Plus.timing.summary",{val:intendedSummary,ack:true});
                         await this.setStateChangedAsync("x20Plus.timing.lastUpdate",{val:new Date().toISOString(),ack:true});
-                        await this.setStateAsync("x20Plus.timing.status",{val:"Zeitplan #"+id+" bearbeitet und direkt am Roboter bestätigt.",ack:true});
+                        await this.setStateAsync("x20Plus.timing.status",{val:"Änderung für Zeitplan #"+id+" von Xiaomi angenommen; direkte Bestätigung wird nachgeholt.",ack:true});
+                        try {
+                            const readback=await this.cloudMapClient.getProperties(country,config.xiaomiDid,[{siid:8,piid:2}],persist,2);
+                            const verified=Array.isArray(readback)?readback[0] as {code?:number;value?:unknown}:undefined;
+                            if(!verified||verified.code!==0||typeof verified.value!=="string") throw new Error("MIoT "+String(verified?.code??"unknown"));
+                            verifyXiaomiCleaningScheduleDetailsUpdate(current.value,verified.value,id,request.update);
+                            const confirmed=parseXiaomiCleaningSchedules(verified.value,roomNames);
+                            const confirmedSummary=confirmed.map(e=>"#"+e.id+" | "+(e.enabled?"Aktiv":"Deaktiviert")+" | "+e.time+" | "+e.weekdaysText+" | "+e.cleaningModeText+" | "+e.fanSpeedText+" | Wasser "+e.waterLevelText+" | Räume: "+e.roomsText).join("\\n");
+                            await this.setStateChangedAsync("x20Plus.timing.raw",{val:verified.value,ack:true});
+                            await this.setStateChangedAsync("x20Plus.timing.parsed",{val:JSON.stringify(confirmed,null,2),ack:true});
+                            await this.setStateChangedAsync("x20Plus.timing.summary",{val:confirmedSummary,ack:true});
+                            await this.setStateAsync("x20Plus.timing.status",{val:"Zeitplan #"+id+" bearbeitet und direkt am Roboter bestätigt.",ack:true});
+                        } catch(readError) {
+                            const detail=readError instanceof Error?readError.message:"Timeout";
+                            await this.setStateAsync("x20Plus.timing.status",{val:"Änderung für Zeitplan #"+id+" von Xiaomi angenommen; direkte Bestätigung steht noch aus ("+detail+"). Bitte später aktualisieren.",ack:true});
+                            this.log.info("Xiaomi X20+ schedule #"+id+" write accepted; direct readback is pending: "+detail);
+                        }
                     } catch(error) {
                         const message=error instanceof Error?error.message:"Unknown schedule edit error";
                         await this.setStateAsync("x20Plus.timing.status",{val:"Zeitplanbearbeitung fehlgeschlagen: "+message,ack:true});
