@@ -302,3 +302,14 @@ Diese Übersicht ist die maßgebliche aktuelle Testliste. Bei jedem neuen Testbe
 - Regressionstest Commit `369f1d1`: prüft den entschlüsselten MIoT-Request einschließlich `method:"action"` und Objekt-Parametern.
 - Die frühere Hypothese, `miIO.miotspecv2` mit verschachteltem `action` sei für diesen lokalen Aufruf korrekt, ist verworfen. Der zuvor implementierte frische Handshake bleibt erhalten; die allgemeine Handshake-Wiederverwendung wird nicht geändert.
 - CI/Build für diesen Stand noch ausstehend. Bis zum erfolgreichen CI nicht installieren.
+
+
+## X20+ gezielte Raumreinigung erfolgreich hardwaregetestet (12.11.2026)
+
+- Nach Umstellung des lokalen MIoT-RPC-Umschlags auf `method: "action"` mit Objekt-Parametern wurde die gezielte Raumreinigung erstmals erfolgreich ausgeführt.
+- Testdatenpunkt: `x20Plus.control.cleanRooms`; Payload `{"rooms":[{"segmentId":8}]}` für Flur unten.
+- Roboter hat den Befehl angenommen, ist nachweislich in den gewünschten Raum gefahren und hat dort mit der Reinigung begonnen.
+- MIoT-Antwort im Screenshot: `{"did":"1142042722","siid":4,"aiid":1,"out":[],"code":0}`. Zusammen mit der beobachteten tatsächlichen Fahrt bestätigt dies die Funktion hardwareseitig.
+- Damit ist gezielte Raumreinigung für den Xiaomi X20+ (C102GL) erstmals erfolgreich bestätigt. Der zuvor falsche verschachtelte `miIO.miotspecv2`-RPC-Umschlag war die Ursache des bisherigen Scheiterns.
+- Handshake-Wiederverwendung für normale RPCs blieb unverändert; für die Raumreinigung wird weiterhin ein frischer Handshake erzwungen.
+- Nächster sinnvoller Schritt: Ergebnis der laufenden Reinigung abwarten und anschließend in einer gebündelten Version die erfolgreiche Funktion sowie gegebenenfalls die Statusmeldung/Fehlerbehandlung finalisieren. Keine weiteren Testfahrten nötig, solange der laufende Durchgang normal endet.
