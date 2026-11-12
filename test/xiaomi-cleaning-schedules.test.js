@@ -100,11 +100,11 @@ test("supports one-time schedule edits and rejects invalid values",()=>{
 test("decodes observed Xiaomi weekday bitmap 1001011 as Sunday, Wednesday, Friday, Saturday", () => {
     const schedules = parseXiaomiCleaningSchedules("2-0-10:00-1001011-1-1-1-64-0");
     assert.deepEqual(schedules[0].weekdays, [2, 4, 5, 6]);
-    assert.equal(schedules[0].weekdaysText, "Mo, Mi, Fr, Sa");
+    assert.equal(schedules[0].weekdaysText, "Mi, Fr, Sa, So");
 });
 test("encodes weekdays using Xiaomi Sunday-to-Monday bitmap order", () => {
     const raw = "2-0-10:00-1001011-1-1-1-64-0";
-    const update = {time:"10:00",weekdays:[0,2,4,5],repeat:true,cleaningMode:64,fanSpeed:1,waterLevel:1,roomIds:[0]};
+    const update = {time:"10:00",weekdays:[2,4,5,6],repeat:true,cleaningMode:64,fanSpeed:1,waterLevel:1,roomIds:[0]};
     assert.equal(updateXiaomiCleaningSchedule(raw,"2",update),raw);
 });
 test("decodes Xiaomi cleaning mode from field 7 and water level from field 5", () => {
