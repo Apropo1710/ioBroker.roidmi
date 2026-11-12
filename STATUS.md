@@ -465,3 +465,11 @@ Diese Übersicht ist die maßgebliche aktuelle Testliste. Bei jedem neuen Testbe
 - Felder: Uhrzeit, Wochentage/Einmalig, Reinigungsmodus, Saugleistung, Wasserstufe und Raum-IDs.
 - Direktes Lesen vom Roboter, gezielte Änderung, Schreiben und direkter Readback. Andere Zeitpläne und Aktivierungsstatus bleiben unverändert.
 - Adapterversion 0.1.62. CI und Hardwaretest stehen noch aus; bis zur grünen CI nicht installieren.
+
+
+## Xiaomi X20+ Zeitplanbearbeitung – Nachbesserung (12.11.2026)
+- Live-Test: Wochentagsänderung wurde von Xiaomi Home übernommen. Der anschließende direkte Readback lief jedoch in einen Timeout; die vorherige Statusmeldung stellte dadurch eine bereits angenommene Änderung fälschlich als fehlgeschlagen dar.
+- Schreibpfad angepasst: Nach erfolgreicher MIoT-Schreibantwort werden die angeforderten Zeitpläne sofort in ioBroker aktualisiert und als „von Xiaomi angenommen“ gemeldet. Der direkte Readback läuft anschließend separat. Ein Readback-Timeout wird als ausstehende Bestätigung gemeldet, nicht als fehlgeschlagener Schreibvorgang.
+- Doppelte Anlage/Subscription von `x20Plus.control.updateSchedule` entfernt.
+- Reinigungsmodus-Codierung auf fünf Xiaomi-Home-Optionen erweitert: 0 automatische Anpassung, 1 nur Saugen, 2 Saugen und Wischen, 3 nur Wischen, 4 Saugen vor Wischen. Validierung und Tests entsprechend erweitert.
+- Adapterversion **0.1.62**. CI für den aktuellen Commit steht noch aus; Hardwaretest der Status-/Readback-Behandlung offen.
