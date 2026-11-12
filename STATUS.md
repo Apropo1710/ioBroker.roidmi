@@ -396,3 +396,6 @@ Diese Übersicht ist die maßgebliche aktuelle Testliste. Bei jedem neuen Testbe
 - Der Adapter aktualisiert `timing.raw`, `timing.parsed`, `timing.summary` und `timing.lastUpdate` ausschließlich nach erfolgreichem, inhaltlich identischem Readback. Keine zusätzlichen zyklischen Polls; nur drei Cloud-MIoT-Aufrufe bei einer expliziten Benutzeraktion (aktuellen Stand lesen, schreiben, Readback).
 - Das Aktivierungsfeld wird gemäß dem bereits verwendeten Parser zwischen `0` (deaktiviert) und `3` (aktiviert) umgeschaltet. Alle anderen Felder und alle übrigen Zeitpläne bleiben unverändert. Unbekannte IDs und fehlerhafte Einträge werden vor dem Schreibzugriff abgewiesen.
 - **Noch nicht hardwarevalidiert:** Die MIoT-Spezifikation belegt die Schreibberechtigung, aber der konkrete Cloud-Schreibpfad und das Aktivierungsflag müssen nach erfolgreichem CI am realen X20+ mit genau einem vorhandenen Testzeitplan verifiziert werden. Vor diesem Test keine produktive Änderung über den neuen Schalter vornehmen.
+
+
+- Nachkontrolle der 0.1.55-Implementierung: Die aktualisierte Anzeige nach dem Schreib-Readback löst Raumnamen erneut aus der bereits importierten Raumkarte auf. Der Schreib-Lock wird nur freigegeben, wenn dieser Handler ihn tatsächlich erworben hat; ein abgewiesener Parallelbefehl kann so keinen bereits laufenden Cloud-Auftrag entsperren.

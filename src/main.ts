@@ -1064,6 +1064,7 @@ class RoidmiAdapter extends Adapter {
             if (command === "setScheduleEnabled") {
                 if (typeof state.val === "string" && state.val.trim()) {
                     const config = this.config as RoidmiAdapterConfig;
+                    let commandLockAcquired = false;
                     try {
                         if (!config.xiaomiDid) throw new Error("Xiaomi X20+ DID is missing from adapter configuration.");
                         if (!this.cloudMapClient.hasSession()) throw new Error("Xiaomi Cloud session unavailable. Sign in through the existing Xiaomi Cloud login first.");
@@ -1073,6 +1074,7 @@ class RoidmiAdapter extends Adapter {
                             throw new Error("Schedule command must contain a string id and boolean enabled value.");
                         }
                         this.xiaomiCommandRunning = true;
+                        commandLockAcquired = true;
                         await this.setStateAsync("x20Plus.timing.status", { val: "Ändere Zeitplan #" + request.id + " in Xiaomi Home…", ack: true });
                         const country = config.cloudCountry || "de";
                         const onSessionChanged = async () => this.persistCloudSession();
@@ -1091,7 +1093,15 @@ class RoidmiAdapter extends Adapter {
                         const verified = verifyResult[0] as { code?: number; value?: unknown } | undefined;
                         if (!verified || verified.code !== 0 || typeof verified.value !== "string") throw new Error("Schedule write was sent, but Xiaomi readback failed (MIoT code " + String(verified?.code ?? "unknown") + ").");
                         if (verified.value !== updatedRaw) throw new Error("Xiaomi accepted the request but the saved schedule data does not match the requested value. Please refresh and check Xiaomi Home.");
-                        const parsed = parseXiaomiCleaningSchedules(verified.value);
+                        let roomNames = new Map<number, string>();
+                        const roomsState = await this.getStateAsync("x20Plus.rooms.roomsJson");
+                        if (typeof roomsState?.val === "string" && roomsState.val.trim()) {
+                            try {
+                                const rooms = JSON.parse(roomsState.val) as Array<{ segmentId?: number; name?: string }>;
+                                roomNames = new Map(rooms.filter((room) => Number.isInteger(room.segmentId) && typeof room.name === "string").map((room): [number, string] => [room.segmentId!, room.name!]));
+                            } catch { this.log.debug("Xiaomi X20+ room map unavailable while updating schedule display."); }
+                        }
+                        const parsed = parseXiaomiCleaningSchedules(verified.value, roomNames);
                         const summary = parsed.map(entry => "#" + entry.id + " | " + (entry.enabled ? "Aktiv" : "Deaktiviert") + " | " + entry.time + " | " + entry.weekdaysText + " | " + entry.cleaningModeText + " | " + entry.fanSpeedText + " | Wasser " + entry.waterLevelText + " | Räume: " + entry.roomsText).join("\\n") || "Keine Zeitpläne in Xiaomi Home gespeichert.";
                         await this.setStateChangedAsync("x20Plus.timing.raw", { val: verified.value, ack: true });
                         await this.setStateChangedAsync("x20Plus.timing.parsed", { val: JSON.stringify(parsed, null, 2), ack: true });
@@ -1104,7 +1114,7 @@ class RoidmiAdapter extends Adapter {
                         await this.setStateAsync("x20Plus.timing.status", { val: "Zeitplanänderung fehlgeschlagen: " + message, ack: true });
                         this.log.warn("Xiaomi X20+ schedule update failed: " + message);
                     } finally {
-                        this.xiaomiCommandRunning = false;
+                        if (commandLockAcquired) this.xiaomiCommandRunning = false;
                     }
                 }
                 await this.setStateAsync("x20Plus.control.setScheduleEnabled", { val: "", ack: true });
