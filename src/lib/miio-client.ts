@@ -29,19 +29,19 @@ export class MiioClient {
 
     public constructor(private readonly options: MiioClientOptions) {}
 
-    public async call(method: string, params: unknown[] = [], timeoutOverrideMs?: number): Promise<unknown> {
+    public async call(method: string, params: unknown[] = [], timeoutOverrideMs?: number, forceFreshHandshake = false): Promise<unknown> {
         const previous = MiioClient.requestQueue;
         let release!: () => void;
         MiioClient.requestQueue = new Promise<void>((resolve) => { release = resolve; });
         await previous;
         try {
-            return await this.callUnlocked(method, params, timeoutOverrideMs);
+            return await this.callUnlocked(method, params, timeoutOverrideMs, forceFreshHandshake);
         } finally {
             release();
         }
     }
 
-    private async callUnlocked(method: string, params: unknown[] = [], timeoutOverrideMs?: number): Promise<unknown> {
+    private async callUnlocked(method: string, params: unknown[] = [], timeoutOverrideMs?: number, forceFreshHandshake = false): Promise<unknown> {
         if (!method.trim()) throw new Error("miIO method must not be empty");
         const port = this.options.port ?? 54321;
         const timeoutMs = timeoutOverrideMs ?? this.options.timeoutMs ?? 4000;
@@ -57,7 +57,7 @@ export class MiioClient {
             // A cached handshake means the first packet on this socket is already the RPC response.
             // Seed the state before registering the message handler so that response is never
             // mistaken for a new handshake (which would send the same RPC a second time).
-            const cachedHandshake = this.options.reuseHandshake ? this.cachedHandshake : undefined;
+            const cachedHandshake = this.options.reuseHandshake && !forceFreshHandshake ? this.cachedHandshake : undefined;
             let handshakeHeader: ReturnType<typeof parseMiioHeader> | undefined = cachedHandshake
                 ? { deviceId: cachedHandshake.deviceId, stamp: cachedHandshake.stamp }
                 : undefined;
