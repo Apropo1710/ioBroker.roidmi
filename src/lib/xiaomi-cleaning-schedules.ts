@@ -31,6 +31,7 @@ const FAN_NAMES: Record<number, string> = {
     3: "Turbo"
 };
 const WATER_NAMES: Record<number, string> = {
+    0: "Automatische Anpassung",
     32: "Niedrig",
     64: "Mittel",
     96: "Hoch"

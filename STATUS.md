@@ -425,3 +425,12 @@ Diese Übersicht ist die maßgebliche aktuelle Testliste. Bei jedem neuen Testbe
 - Die zusätzliche direkte Geräteabfrage erfolgt ausschließlich bei bewusstem manuellem Aktualisieren, nicht zyklisch und nicht beim normalen Polling.
 - Quelle zur Bedeutung von datasource 1/2: offizielle Xiaomi IoT-Dokumentation und MIoT Plugin SDK; datasource 1 bevorzugt Cache, datasource 2 erzwingt RPC zum Gerät.
 - Noch ausstehend: CI und Hardwaretest der Aktualisierung. Zeitplan-Schreibfunktion bleibt bis zur separaten Verifikation unangetastet.
+
+
+## X20+ Zeitplananzeige: automatische Wasseranpassung (12.11.2026)
+
+- Hardware-/App-Abgleich nach Adapter 0.1.58: Zeitplananzahl, Uhrzeiten und Wochentage stimmen mit Xiaomi Home überein; Servercache und direkter Roboterabruf melden identische Werte.
+- Ein verbleibender Darstellungsunterschied: Xiaomi Home zeigt beim neuen Einmal-Zeitplan „Automatische Anpassung“, HomePilot zeigte für den Rohwert 0 „Unbekannt (0)“.
+- Parser-Mapping für Wasser-/Wischanpassungswert 0 ergänzt: „Automatische Anpassung“. Regressionstest ergänzt.
+- Keine Änderung am Schreibpfad und keine zusätzliche Roboter-/Cloud-Abfrage.
+- Adapterversion 0.1.59; CI und Build ausstehend.

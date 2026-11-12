@@ -73,3 +73,10 @@ test("rejects readback that changes another schedule field", () => {
     const changed = "1-1-09:00-0111110-1-1-2-32-0;2-1-10:00-1000001-1-1-1-32-0";
     assert.throws(() => verifyXiaomiCleaningScheduleUpdate(before, changed, "1", true), /changed fields other than/);
 });
+
+
+test("decodes automatic water adjustment reported by Xiaomi Home", () => {
+    const schedules = parseXiaomiCleaningSchedules("3-0-13:11-0000000-0-3-0-0-0");
+    assert.equal(schedules[0].waterLevel, 0);
+    assert.equal(schedules[0].waterLevelText, "Automatische Anpassung");
+});
