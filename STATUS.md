@@ -408,3 +408,11 @@ Diese Übersicht ist die maßgebliche aktuelle Testliste. Bei jedem neuen Testbe
 - Regressionstests decken harmlose Whitespace-Normalisierung, nicht gespeicherte Aktivierung und unerlaubte Änderungen an anderen Feldern ab.
 - Keine zusätzlichen Polls oder Cloud-Aufrufe: weiterhin genau ein Lesen vor dem Schreiben, ein Schreibaufruf und ein Readback pro ausdrücklicher Schalteraktion.
 - CI und Hardware-Nachtest stehen noch aus. Der tatsächliche Cloud-Schreibpfad gilt weiterhin nicht als hardwarevalidiert.
+
+## X20+ Zeitplan-Schalter: Aktivierungsflag korrigiert (12.11.2026)
+
+- Kritischer Fehler in 0.1.56 gefunden: Der Adapter behandelte `3` als Aktivierungswert. Reale X20+-MIoT-Datensätze aus Community-Logs belegen dagegen `1` = aktiviert und `0` = deaktiviert (z. B. `time:timer-clean = 1-1-09:00-0111110-1-0-3-0-0`).
+- 0.1.57 korrigiert Parser, Setter und Readback-Prüfung auf `1`/`0`. Frühere 0.1.56-Annahme `3` war falsch; das kann erklären, warum Xiaomi den Eintrag nach dem Schreibversuch als ungültig anzeigte.
+- Der Adapter darf bis zu einem erneuten kontrollierten Hardwaretest nicht zum Ändern von Zeitplänen verwendet werden. Keine weiteren Schreibversuche durchgeführt.
+- CI und Hardware-Nachtest für 0.1.57 stehen noch aus. Nutzerhinweis: den eventuell ungültigen 09:00-Eintrag zunächst in Xiaomi Home prüfen/reparieren; nicht blind erneut schreiben.
+- Recherche: offizielle MIoT-Spezifikation bestätigt `time` SIID 8 / `timer-clean` PIID 2 als R/N/W; Community-Logs liefern echte Beispielwerte mit `1` als aktivem Flag.

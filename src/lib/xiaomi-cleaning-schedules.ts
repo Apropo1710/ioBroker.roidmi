@@ -38,7 +38,7 @@ const WATER_NAMES: Record<number, string> = {
 
 /**
  * Parse the C102GL schedule string returned by MIoT SIID 8 / PIID 2.
- * Example: 1-3-08:30-1111111-1-2-1-64-3
+ * Example: 1-1-08:30-1111111-1-2-1-64-3
  *
  * The source format stores weekdays Monday..Sunday as a seven-character bit string.
  */
@@ -86,7 +86,7 @@ export function parseXiaomiCleaningSchedules(value: unknown, roomNames: Map<numb
 
         return {
             id,
-            enabled: enabledRaw === "3",
+            enabled: enabledRaw === "1",
             time,
             weekdays: days,
             weekdaysText: days.length === 7 ? "Täglich" : days.map((day) => DAY_NAMES[day]).join(", ") || "Einmalig",
@@ -128,7 +128,7 @@ export function setXiaomiCleaningScheduleEnabled(value: unknown, scheduleId: str
     if (index < 0) throw new Error("Schedule " + scheduleId + " was not found in the current Xiaomi Home data.");
     const parts = entries[index].trim().split("-", 9);
     if (parts.length !== 9) throw new Error("Schedule " + scheduleId + " has an invalid format; nothing was written.");
-    parts[1] = enabled ? "3" : "0";
+    parts[1] = enabled ? "1" : "0";
     entries[index] = parts.join("-");
     return entries.join(";");
 }
@@ -153,9 +153,9 @@ export function verifyXiaomiCleaningScheduleUpdate(before: unknown, after: unkno
             throw new Error("Schedule " + previous[index].id + " has an invalid format during readback.");
         }
         if (previous[index].id === scheduleId) {
-            const expectedFlag = enabled ? "3" : "0";
+            const expectedFlag = enabled ? "1" : "0";
             if (newParts[1] !== expectedFlag) {
-                throw new Error("Xiaomi readback shows schedule " + scheduleId + " is still " + (newParts[1] === "3" ? "active" : "inactive") + "; requested state was " + (enabled ? "active" : "inactive") + ".");
+                throw new Error("Xiaomi readback shows schedule " + scheduleId + " is still " + (newParts[1] === "1" ? "active" : "inactive") + "; requested state was " + (enabled ? "active" : "inactive") + ".");
             }
             oldParts[1] = expectedFlag;
         }

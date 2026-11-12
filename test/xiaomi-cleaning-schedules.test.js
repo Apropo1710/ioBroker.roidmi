@@ -3,7 +3,7 @@ const assert = require("node:assert/strict");
 const { parseXiaomiCleaningSchedules, setXiaomiCleaningScheduleEnabled, verifyXiaomiCleaningScheduleUpdate } = require("../build/lib/xiaomi-cleaning-schedules.js");
 
 test("parses C102GL schedule fields and weekday bitmap", () => {
-    const schedules = parseXiaomiCleaningSchedules("1-3-08:30-0111110-1-1-1-64-3,8", new Map([[3, "Flur"], [8, "Küche"]]));
+    const schedules = parseXiaomiCleaningSchedules("1-1-08:30-0111110-1-1-1-64-3,8", new Map([[3, "Flur"], [8, "Küche"]]));
     assert.equal(schedules.length, 1);
     assert.equal(schedules[0].enabled, true);
     assert.equal(schedules[0].time, "08:30");
@@ -15,7 +15,7 @@ test("parses C102GL schedule fields and weekday bitmap", () => {
 });
 
 test("parses multiple schedules separated by semicolon and disabled state", () => {
-    const schedules = parseXiaomiCleaningSchedules("1-3-08:30-1111111-1-1-1-64-3;2-0-19:00-1000001-0-0-0-32-8");
+    const schedules = parseXiaomiCleaningSchedules("1-1-08:30-1111111-1-1-1-64-3;2-0-19:00-1000001-0-0-0-32-8");
     assert.equal(schedules.length, 2);
     assert.equal(schedules[0].weekdaysText, "Täglich");
     assert.equal(schedules[1].enabled, false);
@@ -24,7 +24,7 @@ test("parses multiple schedules separated by semicolon and disabled state", () =
 });
 
 test("accepts a JSON-encoded schedule array and keeps malformed entries visible", () => {
-    const schedules = parseXiaomiCleaningSchedules(JSON.stringify(["1-3-07:00-0111110-1-0-0-32-3", "invalid"]));
+    const schedules = parseXiaomiCleaningSchedules(JSON.stringify(["1-1-07:00-0111110-1-0-0-32-3", "invalid"]));
     assert.equal(schedules.length, 2);
     assert.equal(schedules[0].time, "07:00");
     assert.ok(schedules[1].parseError);
@@ -44,8 +44,8 @@ test("decodes observed X20+ schedule bit order, cleaning mode and all-area marke
 });
 
 test("changes only the selected schedule enabled flag and preserves all other fields", () => {
-    const raw = "1-3-08:30-0111110-1-1-1-64-3;2-0-19:00-1000001-0-0-0-32-8";
-    assert.equal(setXiaomiCleaningScheduleEnabled(raw, "2", true), "1-3-08:30-0111110-1-1-1-64-3;2-3-19:00-1000001-0-0-0-32-8");
+    const raw = "1-1-08:30-0111110-1-1-1-64-3;2-0-19:00-1000001-0-0-0-32-8";
+    assert.equal(setXiaomiCleaningScheduleEnabled(raw, "2", true), "1-1-08:30-0111110-1-1-1-64-3;2-1-19:00-1000001-0-0-0-32-8");
     assert.equal(setXiaomiCleaningScheduleEnabled(raw, "1", false), "1-0-08:30-0111110-1-1-1-64-3;2-0-19:00-1000001-0-0-0-32-8");
 });
 
@@ -57,8 +57,8 @@ test("rejects unknown or malformed schedule entries without changing the source"
 
 
 test("verifies schedule activation despite harmless whitespace normalization", () => {
-    const before = "1-3-09:00-0111110-1-1-1-32-0;2-0-10:00-1000001-1-1-1-32-0";
-    const after = "1-3-09:00-0111110-1-1-1-32-0; 2-3-10:00-1000001-1-1-1-32-0 ";
+    const before = "1-1-09:00-0111110-1-1-1-32-0;2-0-10:00-1000001-1-1-1-32-0";
+    const after = "1-1-09:00-0111110-1-1-1-32-0; 2-1-10:00-1000001-1-1-1-32-0 ";
     assert.doesNotThrow(() => verifyXiaomiCleaningScheduleUpdate(before, after, "2", true));
 });
 
@@ -69,7 +69,7 @@ test("rejects readback when requested activation was not stored", () => {
 });
 
 test("rejects readback that changes another schedule field", () => {
-    const before = "1-0-09:00-0111110-1-1-1-32-0;2-3-10:00-1000001-1-1-1-32-0";
-    const changed = "1-3-09:00-0111110-1-1-2-32-0;2-3-10:00-1000001-1-1-1-32-0";
+    const before = "1-0-09:00-0111110-1-1-1-32-0;2-1-10:00-1000001-1-1-1-32-0";
+    const changed = "1-1-09:00-0111110-1-1-2-32-0;2-1-10:00-1000001-1-1-1-32-0";
     assert.throws(() => verifyXiaomiCleaningScheduleUpdate(before, changed, "1", true), /changed fields other than/);
 });
