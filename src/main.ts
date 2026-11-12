@@ -1078,15 +1078,12 @@ class RoidmiAdapter extends Adapter {
                                 // schema and rejects it; send locally like the hardware-validated
                                 // C102GL implementation. Force a fresh handshake because the
                                 // cached one timed out during the previous room-clean attempt.
-                                const result = await this.xiaomiClient.call("miIO.miotspecv2", [{
-                                    method: "action",
-                                    params: {
-                                        did: config.xiaomiDid,
-                                        siid: roomAction.siid,
-                                        aiid: roomAction.aiid,
-                                        in: roomAction.inputs
-                                    }
-                                }], undefined, true);
+                                const result = await this.xiaomiClient.call("action", {
+                                    did: String(config.xiaomiDid),
+                                    siid: roomAction.siid,
+                                    aiid: roomAction.aiid,
+                                    in: roomAction.inputs
+                                }, undefined, true);
                                 const responseError = getActionResponseError(result);
                                 if (responseError) throw new Error(responseError);
                                 this.xiaomiRoomCleanTracker = createRoomCleanObservationTracker(baselineStatus, 3);
