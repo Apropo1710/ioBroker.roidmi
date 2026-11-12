@@ -481,3 +481,10 @@ Diese Übersicht ist die maßgebliche aktuelle Testliste. Bei jedem neuen Testbe
 - Parser und Schreibfunktion auf `position -> weekday 6-position` korrigiert; Regressionstest mit dem echten Nutzer-Rohwert ergänzt.
 - Modus-Codierung bleibt ungeklärt: Rohwert enthält für den ersten Plan Moduswert 4, Xiaomi Home zeigt dafür `undefined`. Die beiden anderen Rohdatensätze tragen jeweils Moduswert 1, werden in Xiaomi Home aber mit unterschiedlichen Reinigungsarten dargestellt. Deshalb keine weitere geratenen Modus-Zuordnung; Rohdatenformat muss weiter untersucht werden.
 - Commits: `763eb92c254d034f66b5b923a80200da5b1a8326` (Parser/Encoder), `0c2266d4e209bc07503919a2e254c59505ad90ad` (Tests). CI noch ausstehend; nicht installieren, bis Tests/Build grün sind.
+
+
+## X20+ Zeitplanfeld-Zuordnung – anhand Xiaomi-Home-Rohdaten (12.11.2026)
+- Rohdatenbeispiele des Nutzers: `2-0-10:00-1001011-1-1-1-64-0;3-0-12:09-0000000-0-1-1-48-0;4-0-13:11-0000000-0-1-1-16-0`.
+- Feld 5 ist Wasserstufe (0 automatisch, 1 niedrig, 2 mittel, 3 hoch), Feld 6 Saugleistung, Feld 7 Reinigungsart. Verifizierte Werte: 16 Saugen, 32 Saugen und Wischen, 48 Wischen, 64 Saugen vor Wischen. Unbekannte Werte bleiben explizit unbekannt.
+- Wochentagsbitmap `1001011` ist laut Xiaomi Home So, Mi, Fr, Sa. Bitmap-Positionen laufen So, Mo, Di, Mi, Do, Fr, Sa; Parser und Encoder entsprechend ausgerichtet.
+- Parser, Schreibfunktion und Tests aktualisiert. Adapterversion **0.1.63**. Hardwaretest der Feldzuordnung noch offen.
