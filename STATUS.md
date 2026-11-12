@@ -289,3 +289,6 @@ Diese Übersicht ist die maßgebliche aktuelle Testliste. Bei jedem neuen Testbe
 - Korrektur Commit `d6e5ee2`: Der Versandzweig prüft jetzt die bereits korrekt gefilterte Variable `cachedHandshake`. Damit wird bei `forceFreshHandshake=true` tatsächlich ein neuer Handshake gesendet.
 - Regressionstest Commit `58b1964`: baut zwei normale RPCs (mit Handshake-Wiederverwendung) und danach einen Aufruf mit `forceFreshHandshake=true`; prüft, dass ein zweiter Handshake und genau ein RPC pro Aufruf erfolgen.
 - Vorherige Installationsversion hat den erzwungenen frischen Handshake nicht ausgeführt. Keine weitere Hardwareaktion durchführen, bis der neue CI-Lauf erfolgreich ist.
+
+- CI #221/#449 schlug beim TypeScript-Build fehl (nicht bei `npm ci`): `TS18048 cached is possibly undefined` in der Handshake-Wiederverwendungsstelle. Ursache: Der Branch prüfte `cachedHandshake`, las danach aber erneut `this.cachedHandshake`, wodurch TypeScript die sichere Eingrenzung verlor.
+- Korrektur Commit `2ab646f`: Der Versandzweig verwendet jetzt direkt das zuvor geprüfte lokale `cachedHandshake`. Das bewahrt die erzwungene Umgehung des Caches und stellt zugleich die TypeScript-Typprüfung sicher. Neuer CI-Lauf ausstehend.
