@@ -99,7 +99,8 @@ Diese Übersicht ist die maßgebliche aktuelle Testliste. Bei jedem neuen Testbe
 | Raumkartenimport | BESTANDEN | Neustartlog meldet erfolgreich geladene Karte mit 5 Räumen |
 | Raum-ID-Zuordnung und gezielte Raumreinigung | OFFEN | Noch kein dokumentierter Live-Test |
 | Teppich-Boost | OFFEN | Noch kein dokumentierter Live-Test |
-| Pause / Fortsetzen / Stop | OFFEN | Noch kein dokumentierter Live-Test |
+| Pause / Fortsetzen | **BESTANDEN** | Live-Test am 12.11.2026: `control.pause` hält den Roboter an und die Sprachausgabe meldet „Reinigung pausiert“. `control.start` setzt anschließend laut Sprachausgabe „Ich setze die Reinigung fort“ fort; `cleaningArea` stieg von 4 auf 13 und `cleaningTime` von 3 auf 12, ohne Reset. `taskStatus` und `vacuumState` blieben während Pause und Fortsetzung jeweils auf 1; sie unterscheiden den Pausenzustand somit nicht. |
+| Stop | OFFEN | Separater Stop-Test steht noch aus; `pause` und `stop` sind im aktuellen Adaptercode auf dieselbe MIoT-Aktion gemappt, tatsächliche Stop-Semantik noch prüfen |
 | Rückkehr zur Ladestation | OFFEN | Noch kein dokumentierter Live-Test |
 
 ### Testreihenfolge und Belastungsregeln
@@ -181,3 +182,14 @@ Diese Übersicht ist die maßgebliche aktuelle Testliste. Bei jedem neuen Testbe
 - Wichtig: `cleaningArea` ist der MIoT-Messwert für gereinigte Fläche (SIID 4 / PIID 3), kein Raumzähler und kein Hinweis auf einen Raumwechsel. Ein Anstieg während der Roboter innerhalb desselben Raums weiterarbeitet, ist daher plausibel.
 - Die Screenshots zeigen nur die Rohwerte 0 → 2 → 4. Die genaue Einheit/Skalierung ist anhand dieser Screenshots allein nicht verifiziert; keine Umrechnung oder m²-Angabe als gesichert ausgeben.
 - Die vorherige Formulierung „Fläche steigt“ bezieht sich auf den Flächen-Messwert, nicht auf einen Raumwechsel.
+
+
+## X20+ Funktionstest: Pause und Fortsetzen (12.11.2026, ca. 08:08–08:13 Uhr)
+
+- Während einer laufenden globalen Reinigung wurde `x20Plus.control.pause` ausgelöst. Der Roboter hielt an und meldete akustisch „Reinigung pausiert“.
+- Screenshot im Pausenzustand: `cleaningArea=4`, `cleaningTime=3`, `taskStatus=1`, `vacuumState=1`, Akku 98 %.
+- Anschließend wurde `x20Plus.control.start` ausgelöst. Der Roboter meldete akustisch „Ich setze die Reinigung fort“.
+- Screenshot nach der Fortsetzung: `cleaningArea=13`, `cleaningTime=12`, `taskStatus=1`, `vacuumState=1`, Akku 95 %. Beide laufenden Reinigungszähler wurden nicht auf null zurückgesetzt, sondern stiegen weiter.
+- **Ergebnis: PAUSE BESTANDEN, FORTSETZEN ÜBER START BESTANDEN.** Die akustischen Ansagen und die fortlaufenden Zähler belegen das Verhalten am realen Gerät.
+- `taskStatus` und `vacuumState` blieben in den gezeigten Screenshots auch im angehaltenen Zustand auf 1. Diese States bilden die Pause daher offenbar nicht eindeutig ab; keine Statussemantik daraus ableiten.
+- Im Adaptercode sind `pause` und `stop` derzeit beide auf SIID 2 / AIID 2 gemappt. Da der Roboter auf `pause` dennoch eindeutig „Reinigung pausiert“ meldet und sich mit `start` fortsetzen lässt, muss die tatsächliche Semantik des separaten `stop`-Befehls noch live geprüft werden. Bis dahin keine Codeänderung an der Aktionszuordnung.
