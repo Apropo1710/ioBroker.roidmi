@@ -1046,7 +1046,7 @@ class RoidmiAdapter extends Adapter {
                         if (typeof roomsState?.val === "string" && roomsState.val.trim()) {
                             try {
                                 const rooms = JSON.parse(roomsState.val) as Array<{ segmentId?: number; name?: string }>;
-                                roomNames = new Map(rooms.filter((room) => Number.isInteger(room.segmentId) && typeof room.name === "string").map((room) => [room.segmentId!, room.name!]));
+                                roomNames = new Map(rooms.filter((room) => Number.isInteger(room.segmentId) && typeof room.name === "string").map((room): [number, string] => [room.segmentId!, room.name!]));
                             } catch { this.log.debug("Xiaomi X20+ room map unavailable while decoding schedule room names."); }
                         }
                         const parsed = parseXiaomiCleaningSchedules(item.value, roomNames);
