@@ -230,3 +230,12 @@ Diese Übersicht ist die maßgebliche aktuelle Testliste. Bei jedem neuen Testbe
 - Die Xiaomi-App meldete „Reinigung abgeschlossen“. Der Roboter bleibt an der Station; keine automatische Fortsetzung.
 - **Ergebnis: `x20Plus.control.returnToDock` BESTANDEN.** Der vorhandene einzelne MIoT-Aufruf SIID 3 / AIID 1 bildet die manuelle Rückkehr einschließlich Beenden des aktuellen Reinigungsauftrags korrekt ab. Keine Kombination mit `pause` oder `stop` und keine Änderung an `resumeAfterCharging` erforderlich.
 - Damit sind Original-App-Verhalten und Adapterbefehl übereinstimmend live bestätigt. Keine Codeänderung nötig.
+
+
+## Version 0.1.51 – X20+ Stop-Datenpunkt entfernt
+
+- `x20Plus.control.stop` wird nicht mehr angelegt oder verarbeitet.
+- Beim Adapterstart wird der alte Datenpunkt auf bestehenden Installationen mit `delObjectAsync` entfernt.
+- `pause` bleibt SIID 2 / AIID 2; `returnToDock` bleibt SIID 3 / AIID 1. Beide Funktionen sind am realen X20+ erfolgreich getestet.
+- Der Stop-Datenpunkt des Roidmi EVE Plus bleibt unverändert.
+- Versionsstände in `package.json`, `package-lock.json` und `io-package.json` auf 0.1.51 angehoben.
