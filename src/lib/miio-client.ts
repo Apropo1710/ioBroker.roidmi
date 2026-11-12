@@ -164,7 +164,7 @@ export class MiioClient {
             };
 
             if (cachedHandshake) {
-                const cached = this.cachedHandshake;
+                const cached = cachedHandshake;
                 debug("reusing handshake for device ID " + cached.deviceId + " (" +
                     Math.floor((Date.now() - cached.receivedAt) / 1000) + "s old)");
                 sendRpc({ deviceId: cached.deviceId, stamp: cached.stamp });
