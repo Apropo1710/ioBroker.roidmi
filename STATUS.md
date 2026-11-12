@@ -101,7 +101,7 @@ Diese Übersicht ist die maßgebliche aktuelle Testliste. Bei jedem neuen Testbe
 | Teppich-Boost | OFFEN | Noch kein dokumentierter Live-Test |
 | Pause / Fortsetzen | **BESTANDEN** | Live-Test am 12.11.2026: `control.pause` hält den Roboter an und die Sprachausgabe meldet „Reinigung pausiert“. `control.start` setzt anschließend laut Sprachausgabe „Ich setze die Reinigung fort“ fort; `cleaningArea` stieg von 4 auf 13 und `cleaningTime` von 3 auf 12, ohne Reset. `taskStatus` und `vacuumState` blieben während Pause und Fortsetzung jeweils auf 1; sie unterscheiden den Pausenzustand somit nicht. |
 | Stop | **TEILWEISE BESTÄTIGT – derzeit identisch zu Pause** | Live-Test am 12.11.2026: Auch `control.stop` meldet akustisch „Reinigung pausiert“. Damit ist kein separates endgültiges Stoppen nachgewiesen; `pause` und `stop` lösen aktuell offenbar denselben Pausenzustand aus. Ein eigenständiger Stop-/Abbruchbefehl ist noch nicht belegt. |
-| Rückkehr zur Ladestation | OFFEN | Noch kein dokumentierter Live-Test |
+| Rückkehr zur Ladestation (`returnToDock`) | **BESTANDEN** | Live-Test am 12.11.2026: Nutzer startete manuell über `control.start` und löste anschließend `control.returnToDock` aus. X20+ fuhr zur Station, entleerte den Staubbehälter, lädt nun; Xiaomi meldete „Reinigung abgeschlossen“. Einzelne Aktion SIID 3 / AIID 1 genügt; keine Kombination mit Pause/Stop oder Änderung von `resumeAfterCharging` erforderlich. |
 
 ### Testreihenfolge und Belastungsregeln
 
@@ -221,3 +221,12 @@ Diese Übersicht ist die maßgebliche aktuelle Testliste. Bei jedem neuen Testbe
 - Adaptercode-Prüfung: `x20Plus.control.returnToDock` sendet bereits eine einzelne MIoT-Aktion SIID 3 / AIID 1. `pause` und `stop` senden separat SIID 2 / AIID 2. `resumeAfterCharging` ist eine eigene boolesche Einstellung (SIID 4 / PIID 11), kein notwendiger zusätzlicher Befehl für manuelle Rückkehr.
 - **Technische Schlussfolgerung:** Der vorhandene Datenpunkt `x20Plus.control.returnToDock` sollte für den manuellen Vorgang genügen; keine Kombination mit `pause`, `stop` oder einem Schreibzugriff auf `resumeAfterCharging` vornehmen. Die Xiaomi-App-Bestätigung „Reinigung beenden und ... zurückkehren“ passt zur Semantik dieser separaten Dock-Aktion.
 - **Noch nicht direkt hardwarevalidiert:** Die identische Aktion wurde bislang über die Xiaomi-Original-App ausgelöst, nicht über `x20Plus.control.returnToDock` im Adapter. Ein einmaliger Live-Test dieses Datenpunkts bei einer später ohnehin laufenden Reinigung kann die Adapterzuordnung bestätigen. Keine zusätzliche Aktion erforderlich, solange der Roboter bereits lädt.
+
+
+### X20+ Adapter-Live-Test: ReturnToDock (12.11.2026)
+
+- Der Nutzer hat eigens einen kurzen Reinigungsvorgang über `x20Plus.control.start` gestartet und danach direkt `x20Plus.control.returnToDock` ausgelöst. Es wurde keine geplante Reinigung unterbrochen.
+- Ergebnis am realen Gerät: Der X20+ fuhr ordnungsgemäß zur Ladestation, führte dort die automatische Absaugung aus und lädt jetzt.
+- Die Xiaomi-App meldete „Reinigung abgeschlossen“. Der Roboter bleibt an der Station; keine automatische Fortsetzung.
+- **Ergebnis: `x20Plus.control.returnToDock` BESTANDEN.** Der vorhandene einzelne MIoT-Aufruf SIID 3 / AIID 1 bildet die manuelle Rückkehr einschließlich Beenden des aktuellen Reinigungsauftrags korrekt ab. Keine Kombination mit `pause` oder `stop` und keine Änderung an `resumeAfterCharging` erforderlich.
+- Damit sind Original-App-Verhalten und Adapterbefehl übereinstimmend live bestätigt. Keine Codeänderung nötig.
