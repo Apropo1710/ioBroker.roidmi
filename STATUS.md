@@ -173,3 +173,11 @@ Diese Übersicht ist die maßgebliche aktuelle Testliste. Bei jedem neuen Testbe
 - Damit steigen sowohl Reinigungsfläche als auch Reinigungszeit im laufenden Vorgang; die Statuswerte werden grundsätzlich aktualisiert.
 - `statusText` zeigt weiterhin fälschlich „Ladung abgeschlossen“ trotz `vacuumState=1`. Der veraltete Text ist damit mehrfach über mehrere Polls hinweg reproduziert und als separater Status-Text-Bug zu behandeln.
 - Der globale Start bleibt BESTANDEN. Keine Änderung am laufenden Roboter oder zusätzliche Abfrage für diese Beobachtung.
+
+
+### Einordnung `cleaningArea` während laufender Reinigung (12.11.2026)
+
+- Rückfrage des Nutzers: Der Roboter blieb zwischen den Screenshots im selben Raum, obwohl `cleaningArea` von 2 auf 4 stieg.
+- Wichtig: `cleaningArea` ist der MIoT-Messwert für gereinigte Fläche (SIID 4 / PIID 3), kein Raumzähler und kein Hinweis auf einen Raumwechsel. Ein Anstieg während der Roboter innerhalb desselben Raums weiterarbeitet, ist daher plausibel.
+- Die Screenshots zeigen nur die Rohwerte 0 → 2 → 4. Die genaue Einheit/Skalierung ist anhand dieser Screenshots allein nicht verifiziert; keine Umrechnung oder m²-Angabe als gesichert ausgeben.
+- Die vorherige Formulierung „Fläche steigt“ bezieht sich auf den Flächen-Messwert, nicht auf einen Raumwechsel.
