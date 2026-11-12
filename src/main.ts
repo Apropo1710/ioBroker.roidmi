@@ -657,6 +657,12 @@ class RoidmiAdapter extends Adapter {
             native: { siid: 8, piid: 2 }
         });
         await this.subscribeStatesAsync(prefix + "control.updateSchedule");
+        await this.setObjectNotExistsAsync(prefix + "control.updateSchedule", {
+            type: "state",
+            common: { name: "Edit one existing Xiaomi Home schedule (JSON)", type: "string", role: "json", read: false, write: true, def: "" },
+            native: { siid: 8, piid: 2 }
+        });
+        await this.subscribeStatesAsync(prefix + "control.updateSchedule");
         await this.setObjectNotExistsAsync(prefix + "timing.raw", {
             type: "state", common: { name: "Raw Xiaomi X20+ schedules (SIID 8 / PIID 2)", type: "string", role: "json", read: true, write: false }, native: { siid: 8, piid: 2 }
         });
