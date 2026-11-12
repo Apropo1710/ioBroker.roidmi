@@ -11,7 +11,7 @@ import { buildVacuumAction, getActionResponseError, getActionFailureStatus } fro
 import { parseRoomMapConfig, RoomMapConfig } from "./lib/room-map";
 import { getRoidmiSetting } from "./lib/roidmi-settings";
 import { parseCleaningSchedules } from "./lib/cleaning-schedules";
-import { parseXiaomiCleaningSchedules, setXiaomiCleaningScheduleEnabled } from "./lib/xiaomi-cleaning-schedules";
+import { parseXiaomiCleaningSchedules, setXiaomiCleaningScheduleEnabled, verifyXiaomiCleaningScheduleUpdate } from "./lib/xiaomi-cleaning-schedules";
 import { XiaomiCloudMapClient } from "./lib/xiaomi-cloud-map";
 import { RoidmiMapMetadata } from "./lib/roidmi-map";
 import { getVacuumStateText, getChargingStateText, getRoidmiErrorText } from "./lib/roidmi-status";
@@ -1092,7 +1092,7 @@ class RoidmiAdapter extends Adapter {
                         if (!Array.isArray(verifyResult)) throw new Error("Unexpected Xiaomi schedule readback response.");
                         const verified = verifyResult[0] as { code?: number; value?: unknown } | undefined;
                         if (!verified || verified.code !== 0 || typeof verified.value !== "string") throw new Error("Schedule write was sent, but Xiaomi readback failed (MIoT code " + String(verified?.code ?? "unknown") + ").");
-                        if (verified.value !== updatedRaw) throw new Error("Xiaomi accepted the request but the saved schedule data does not match the requested value. Please refresh and check Xiaomi Home.");
+                        verifyXiaomiCleaningScheduleUpdate(current.value, verified.value, request.id, request.enabled);
                         let roomNames = new Map<number, string>();
                         const roomsState = await this.getStateAsync("x20Plus.rooms.roomsJson");
                         if (typeof roomsState?.val === "string" && roomsState.val.trim()) {

@@ -132,3 +132,35 @@ export function setXiaomiCleaningScheduleEnabled(value: unknown, scheduleId: str
     entries[index] = parts.join("-");
     return entries.join(";");
 }
+
+/** Verify a schedule write by its stored fields, not by the raw serialization. */
+export function verifyXiaomiCleaningScheduleUpdate(before: unknown, after: unknown, scheduleId: string, enabled: boolean): void {
+    const previous = parseXiaomiCleaningSchedules(before);
+    const stored = parseXiaomiCleaningSchedules(after);
+    if (!previous.length || previous.some(entry => entry.parseError) || stored.some(entry => entry.parseError)) {
+        throw new Error("Xiaomi returned an empty or malformed schedule list during readback.");
+    }
+    if (previous.length !== stored.length || previous.some((entry, index) => entry.id !== stored[index]?.id)) {
+        throw new Error("Xiaomi changed the schedule list or its order during the update.");
+    }
+    if (previous.filter(entry => entry.id === scheduleId).length !== 1) {
+        throw new Error("Schedule " + scheduleId + " is missing or duplicated in the original schedule list.");
+    }
+    for (let index = 0; index < previous.length; index++) {
+        const oldParts = previous[index].raw.split("-");
+        const newParts = stored[index].raw.split("-");
+        if (oldParts.length !== 9 || newParts.length !== 9) {
+            throw new Error("Schedule " + previous[index].id + " has an invalid format during readback.");
+        }
+        if (previous[index].id === scheduleId) {
+            const expectedFlag = enabled ? "3" : "0";
+            if (newParts[1] !== expectedFlag) {
+                throw new Error("Xiaomi readback shows schedule " + scheduleId + " is still " + (newParts[1] === "3" ? "active" : "inactive") + "; requested state was " + (enabled ? "active" : "inactive") + ".");
+            }
+            oldParts[1] = expectedFlag;
+        }
+        if (oldParts.some((part, partIndex) => part !== newParts[partIndex])) {
+            throw new Error("Xiaomi readback changed fields other than the requested activation flag for schedule " + previous[index].id + ".");
+        }
+    }
+}

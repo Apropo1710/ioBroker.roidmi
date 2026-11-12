@@ -399,3 +399,12 @@ Diese Übersicht ist die maßgebliche aktuelle Testliste. Bei jedem neuen Testbe
 
 
 - Nachkontrolle der 0.1.55-Implementierung: Die aktualisierte Anzeige nach dem Schreib-Readback löst Raumnamen erneut aus der bereits importierten Raumkarte auf. Der Schreib-Lock wird nur freigegeben, wenn dieser Handler ihn tatsächlich erworben hat; ein abgewiesener Parallelbefehl kann so keinen bereits laufenden Cloud-Auftrag entsperren.
+
+## X20+ Zeitplan-Schalter: Readback-Prüfung robuster gemacht (12.11.2026)
+
+- Live-Test mit Adapter 0.1.55: Xiaomi nahm die MIoT-Schreibanfrage an, aber der anschließende Readback stimmte nicht bytegenau mit dem gesendeten String überein. Der bisherige Fehlertext ließ offen, ob Xiaomi den Aktivierungswert nicht gespeichert oder nur die String-Serialisierung normalisiert hatte.
+- Ursache der bisherigen Fehlermeldung im Code bestätigt: Es wurde der komplette rohe Zeitplan-String Zeichen für Zeichen verglichen. Das ist unnötig streng und kann harmlose Format-/Whitespace-Normalisierungen als Fehler einstufen.
+- Korrektur in 0.1.56: Readback wird jetzt strukturell geprüft. Der ausgewählte Zeitplan muss den gewünschten Aktivierungswert (0/3) enthalten; alle übrigen Felder und alle anderen Zeitpläne müssen unverändert bleiben. Reihenfolge und Anzahl der Zeitpläne werden ebenfalls geprüft. Eine tatsächlich nicht gespeicherte Aktivierung bleibt ein Fehler.
+- Regressionstests decken harmlose Whitespace-Normalisierung, nicht gespeicherte Aktivierung und unerlaubte Änderungen an anderen Feldern ab.
+- Keine zusätzlichen Polls oder Cloud-Aufrufe: weiterhin genau ein Lesen vor dem Schreiben, ein Schreibaufruf und ein Readback pro ausdrücklicher Schalteraktion.
+- CI und Hardware-Nachtest stehen noch aus. Der tatsächliche Cloud-Schreibpfad gilt weiterhin nicht als hardwarevalidiert.
