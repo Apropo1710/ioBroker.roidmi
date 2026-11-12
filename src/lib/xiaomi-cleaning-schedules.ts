@@ -17,7 +17,7 @@ export interface XiaomiCleaningSchedule {
     parseError?: string;
 }
 
-const DAY_NAMES = ["So", "Sa", "Fr", "Do", "Mi", "Di", "Mo"];
+const DAY_NAMES = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
 const MODE_NAMES: Record<number, string> = {
     0: "Nur Saugen",
     1: "Saugen und Wischen",
@@ -76,7 +76,7 @@ export function parseXiaomiCleaningSchedules(value: unknown, roomNames: Map<numb
         const [id, enabledRaw, time, daysRaw, repeatRaw, modeRaw, fanRaw, waterRaw, roomsRaw] = parts;
         // C102GL bitmap: rightmost bit = Sunday, leftmost bit = Saturday.
         const days = daysRaw.length === 7
-            ? [...daysRaw].flatMap((bit, day) => bit === "1" ? [6 - day] : []).sort((a, b) => a - b)
+            ? [...daysRaw].flatMap((bit, day) => bit === "1" ? [day === 6 ? 6 : 5 - day] : []).sort((a, b) => a - b)
             : [];
         const roomIds = roomsRaw.split(",").map((entry) => Number(entry.trim())).filter((entry) => Number.isInteger(entry) && entry >= 0);
         const mode = Number(modeRaw);
