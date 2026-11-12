@@ -416,3 +416,12 @@ Diese Übersicht ist die maßgebliche aktuelle Testliste. Bei jedem neuen Testbe
 - Der Adapter darf bis zu einem erneuten kontrollierten Hardwaretest nicht zum Ändern von Zeitplänen verwendet werden. Keine weiteren Schreibversuche durchgeführt.
 - CI und Hardware-Nachtest für 0.1.57 stehen noch aus. Nutzerhinweis: den eventuell ungültigen 09:00-Eintrag zunächst in Xiaomi Home prüfen/reparieren; nicht blind erneut schreiben.
 - Recherche: offizielle MIoT-Spezifikation bestätigt `time` SIID 8 / `timer-clean` PIID 2 als R/N/W; Community-Logs liefern echte Beispielwerte mit `1` als aktivem Flag.
+
+
+## X20+ Zeitplan-Aktualisierung: Server-Cache gegen Roboter vergleichen (12.11.2026)
+
+- Ursache für veraltete Zeitpläne eingegrenzt: MIoT `datasource: 1` liest bevorzugt den Xiaomi-Servercache und garantiert keine aktuellen Werte. `datasource: 2` löst einen direkten RPC zum Gerät aus und liefert dessen aktuellen Wert.
+- Manuelle Aktualisierung liest nun beide Quellen nacheinander, vergleicht sie im Adapterlog und verwendet ausschließlich `datasource: 2` für `timing.raw`, `timing.parsed` und HomePilot. Schlägt der direkte Geräteabruf fehl, wird ausdrücklich kein Cache-Fallback angezeigt.
+- Die zusätzliche direkte Geräteabfrage erfolgt ausschließlich bei bewusstem manuellem Aktualisieren, nicht zyklisch und nicht beim normalen Polling.
+- Quelle zur Bedeutung von datasource 1/2: offizielle Xiaomi IoT-Dokumentation und MIoT Plugin SDK; datasource 1 bevorzugt Cache, datasource 2 erzwingt RPC zum Gerät.
+- Noch ausstehend: CI und Hardwaretest der Aktualisierung. Zeitplan-Schreibfunktion bleibt bis zur separaten Verifikation unangetastet.

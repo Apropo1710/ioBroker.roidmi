@@ -1129,10 +1129,35 @@ class RoidmiAdapter extends Adapter {
                         if (this.xiaomiCommandRunning) throw new Error("Another Xiaomi command is running; retry the schedule read afterwards.");
                         this.xiaomiCommandRunning = true;
                         await this.setStateAsync("x20Plus.timing.status", { val: "Lese Zeitpläne aus Xiaomi Home…", ack: true });
-                        const result = await this.cloudMapClient.getProperties(config.cloudCountry || "de", config.xiaomiDid, [{ siid: 8, piid: 2 }], async () => this.persistCloudSession());
-                        if (!Array.isArray(result)) throw new Error("Unexpected Xiaomi schedule response.");
-                        const item = result[0] as { code?: number; value?: unknown } | undefined;
-                        if (!item || item.code !== 0 || item.value === undefined) throw new Error("Xiaomi schedule read failed (MIoT code " + String(item?.code ?? "unknown") + ").");
+                        const onSessionChanged = async () => this.persistCloudSession();
+                        // Compare Xiaomi's server cache (datasource 1) with a direct device RPC
+                        // (datasource 2). This is a manual refresh only; datasource 2 is used
+                        // for the displayed schedule list because it returns the device's latest value.
+                        const cachedResult = await this.cloudMapClient.getProperties(
+                            config.cloudCountry || "de", config.xiaomiDid, [{ siid: 8, piid: 2 }], onSessionChanged, 1
+                        );
+                        if (!Array.isArray(cachedResult)) throw new Error("Unexpected Xiaomi cached schedule response.");
+                        const cachedItem = cachedResult[0] as { code?: number; value?: unknown } | undefined;
+                        if (!cachedItem || cachedItem.code !== 0 || cachedItem.value === undefined) {
+                            throw new Error("Xiaomi cached schedule read failed (MIoT code " + String(cachedItem?.code ?? "unknown") + ").");
+                        }
+                        // Datasource 2 bypasses Xiaomi's possibly stale server cache and asks the robot directly.
+                        const freshResult = await this.cloudMapClient.getProperties(
+                            config.cloudCountry || "de", config.xiaomiDid, [{ siid: 8, piid: 2 }], onSessionChanged, 2
+                        );
+                        if (!Array.isArray(freshResult)) throw new Error("Unexpected direct Xiaomi schedule response.");
+                        const item = freshResult[0] as { code?: number; value?: unknown } | undefined;
+                        if (!item || item.code !== 0 || item.value === undefined) {
+                            throw new Error("Direct robot schedule read failed (MIoT code " + String(item?.code ?? "unknown") + "); cached data was not used to avoid showing stale schedules.");
+                        }
+                        const cachedRaw = typeof cachedItem.value === "string" ? cachedItem.value : JSON.stringify(cachedItem.value);
+                        const freshRaw = typeof item.value === "string" ? item.value : JSON.stringify(item.value);
+                        const cacheDiffers = cachedRaw !== freshRaw;
+                        this.log.info(
+                            "Xiaomi X20+ schedule sources compared: datasource 1 (server cache) " +
+                            (cacheDiffers ? "DIFFERS" : "matches") +
+                            " datasource 2 (direct robot read); using datasource 2 as current source."
+                        );
                         let roomNames = new Map<number, string>();
                         const roomsState = await this.getStateAsync("x20Plus.rooms.roomsJson");
                         if (typeof roomsState?.val === "string" && roomsState.val.trim()) {
