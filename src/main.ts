@@ -1078,17 +1078,19 @@ class RoidmiAdapter extends Adapter {
                         await this.setStateAsync("x20Plus.timing.status", { val: "Ändere Zeitplan #" + request.id + " in Xiaomi Home…", ack: true });
                         const country = config.cloudCountry || "de";
                         const onSessionChanged = async () => this.persistCloudSession();
-                        const currentResult = await this.cloudMapClient.getProperties(country, config.xiaomiDid, [{ siid: 8, piid: 2 }], onSessionChanged);
+                        const currentResult = await this.cloudMapClient.getProperties(country, config.xiaomiDid, [{ siid: 8, piid: 2 }], onSessionChanged, 2);
                         if (!Array.isArray(currentResult)) throw new Error("Unexpected Xiaomi schedule response before write.");
                         const current = currentResult[0] as { code?: number; value?: unknown } | undefined;
                         if (!current || current.code !== 0 || current.value === undefined) throw new Error("Could not read the current Xiaomi schedules (MIoT code " + String(current?.code ?? "unknown") + ").");
+                        this.log.info("Xiaomi X20+ schedule #"+request.id+" write: reading current value directly from robot (datasource 2).");
                         const updatedRaw = setXiaomiCleaningScheduleEnabled(current.value, request.id, request.enabled);
                         const writeResult = await this.cloudMapClient.setProperties(country, config.xiaomiDid, [{ siid: 8, piid: 2, value: updatedRaw }], onSessionChanged);
                         const writeItems = Array.isArray(writeResult) ? writeResult : [];
                         if (!writeItems[0] || (writeItems[0] as { code?: number }).code !== 0) {
                             throw new Error("Xiaomi rejected the schedule update (MIoT code " + String((writeItems[0] as { code?: number } | undefined)?.code ?? "unknown") + ").");
                         }
-                        const verifyResult = await this.cloudMapClient.getProperties(country, config.xiaomiDid, [{ siid: 8, piid: 2 }], onSessionChanged);
+                        const verifyResult = await this.cloudMapClient.getProperties(country, config.xiaomiDid, [{ siid: 8, piid: 2 }], onSessionChanged, 2);
+                        this.log.info("Xiaomi X20+ schedule #"+request.id+" write: readback received directly from robot (datasource 2).");
                         if (!Array.isArray(verifyResult)) throw new Error("Unexpected Xiaomi schedule readback response.");
                         const verified = verifyResult[0] as { code?: number; value?: unknown } | undefined;
                         if (!verified || verified.code !== 0 || typeof verified.value !== "string") throw new Error("Schedule write was sent, but Xiaomi readback failed (MIoT code " + String(verified?.code ?? "unknown") + ").");

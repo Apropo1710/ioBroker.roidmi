@@ -434,3 +434,13 @@ Diese Übersicht ist die maßgebliche aktuelle Testliste. Bei jedem neuen Testbe
 - Parser-Mapping für Wasser-/Wischanpassungswert 0 ergänzt: „Automatische Anpassung“. Regressionstest ergänzt.
 - Keine Änderung am Schreibpfad und keine zusätzliche Roboter-/Cloud-Abfrage.
 - Adapterversion 0.1.59; CI und Build ausstehend.
+
+
+## X20+ Zeitplan-Schalter: Readback ebenfalls direkt vom Roboter (12.11.2026)
+
+- Hardwaretest mit 0.1.59 zeigt: Das Ausschalten wird in Xiaomi Home übernommen, HomePilot meldet aber weiterhin „schedule #4 is still active“.
+- Ursache im Code eingegrenzt: Der Schreibhandler las sowohl den Ausgangswert als auch den Readback weiterhin mit dem Standard `datasource: 1` (Xiaomi-Servercache). Die manuelle Aktualisierung verwendet dagegen bereits `datasource: 2` (direkter Geräteabruf). Damit konnte die Readback-Prüfung trotz erfolgreicher Änderung einen veralteten Cachewert prüfen.
+- Korrektur in 0.1.60: Vorher-Lesen und Readback des Schreibhandlers explizit auf datasource 2 umgestellt. Der Schreibaufruf selbst bleibt unverändert. Nach erfolgreichem Readback werden die bereits bestätigten aktuellen Daten in die ioBroker-States übernommen.
+- Zwei zusätzliche Info-Logmeldungen kennzeichnen Quelle von Ausgangswert und Readback.
+- Keine zusätzlichen Cloud-Aufrufe: weiterhin drei MIoT-Aufrufe pro Schaltvorgang (direkt lesen, schreiben, direkt zurücklesen). Keine zyklischen Abfragen.
+- CI und erneuter Hardwaretest ausstehend. Vor CI-Erfolg nicht installieren.
