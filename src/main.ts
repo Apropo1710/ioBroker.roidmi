@@ -1176,10 +1176,21 @@ class RoidmiAdapter extends Adapter {
                 } else {
                     this.xiaomiCommandRunning = true;
                     try {
-                        const result = await this.xiaomiClient.call("set_properties", [{ did: (this.config as RoidmiAdapterConfig).xiaomiDid, siid: optionalSetting.siid, piid: optionalSetting.piid, value: state.val }]);
+                        // MIoT 4.12 carpet-press is uint8 (0 = Close, 1 = Open),
+                        // although the public ioBroker control is exposed as boolean.
+                        const writeValue = command === "carpetBoost" ? Number(state.val) : state.val;
+                        const result = await this.xiaomiClient.call("set_properties", [{ did: (this.config as RoidmiAdapterConfig).xiaomiDid, siid: optionalSetting.siid, piid: optionalSetting.piid, value: writeValue }]);
                         if (!Array.isArray(result) || !result.length || (result[0] as { code?: number })?.code !== 0) throw new Error("MIoT rejected optional setting write: " + JSON.stringify(result));
-                        await this.setStateAsync("x20Plus.control." + command, { val: state.val, ack: true });
-                        this.log.info(`Xiaomi X20+ ${command} write accepted (provisional property mapping)`);
+                        // Confirm the actual device value instead of acknowledging the requested value.
+                        const verifyResult = await this.xiaomiClient.call("get_properties", [{ did: (this.config as RoidmiAdapterConfig).xiaomiDid, siid: optionalSetting.siid, piid: optionalSetting.piid }]);
+                        const verified = Array.isArray(verifyResult) ? verifyResult[0] as { code?: number; value?: unknown } | undefined : undefined;
+                        if (!verified || verified.code !== 0 || (command === "carpetBoost" && verified.value !== 0 && verified.value !== 1)) {
+                            throw new Error("MIoT optional setting read-back failed: " + JSON.stringify(verifyResult));
+                        }
+                        const verifiedValue = command === "carpetBoost" ? Boolean(verified.value) : state.val;
+                        await this.setStateAsync("x20Plus.status." + command, { val: verifiedValue, ack: true });
+                        await this.setStateAsync("x20Plus.control." + command, { val: verifiedValue, ack: true });
+                        this.log.info(`Xiaomi X20+ ${command} write verified at ${verifiedValue}`);
                     } catch (error) {
                         const current = await this.getStateAsync("x20Plus.status." + command);
                         if (typeof current?.val === "boolean") await this.setStateAsync("x20Plus.control." + command, { val: current.val, ack: true });
