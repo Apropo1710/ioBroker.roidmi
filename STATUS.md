@@ -459,8 +459,9 @@ Diese Übersicht ist die maßgebliche aktuelle Testliste. Bei jedem neuen Testbe
 - Dieser Abschnitt ist der maßgebliche aktuelle Hardwarestatus und ersetzt ältere „noch nicht hardwarevalidiert“-/„Hardwaretest ausstehend“-Hinweise in den vorherigen Entwicklungsabschnitten.
 
 
-## X20+ Zeitpläne bearbeiten – Adapterbasis 0.1.61 (12.11.2026)
+## X20+ Zeitpläne bearbeiten – Adapterbasis 0.1.62 (12.11.2026)
 - Neue Aktion `x20Plus.control.updateSchedule` bearbeitet ausschließlich einen bestehenden Zeitplan (keine Neuanlage/Löschung).
+- Fehlerursache des ersten Speicherversuchs: State-Objekt fehlte und war nicht abonniert; die App konnte deshalb keinen Handler auslösen. State wird jetzt angelegt und abonniert.
 - Felder: Uhrzeit, Wochentage/Einmalig, Reinigungsmodus, Saugleistung, Wasserstufe und Raum-IDs.
-- Direktes Lesen vom Roboter, vollständigen Datensatz gezielt ändern, schreiben und direkter Readback. Andere Zeitpläne und Aktivierungsstatus bleiben unverändert.
-- Strikte Validierung und Tests für reguläre und einmalige Pläne ergänzt. Hardwaretest und UI-Integration stehen noch aus; bis dahin nicht installieren.
+- Direktes Lesen vom Roboter, gezielte Änderung, Schreiben und direkter Readback. Andere Zeitpläne und Aktivierungsstatus bleiben unverändert.
+- Adapterversion 0.1.62. CI und Hardwaretest stehen noch aus; bis zur grünen CI nicht installieren.
