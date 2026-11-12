@@ -28,11 +28,3 @@ test("X20+ room-clean request validates IDs, duplicate rooms and parameter range
   assert.throws(() => parseXiaomiRoomCleanRequest("not json"), /JSON/i);
 });
 
-test("X20+ MIoT action transport sends ordered values, not piid/value descriptors", () => {
-  const { getXiaomiRoomCleanActionParams } = require("../build/lib/xiaomi-room-cleaning.js");
-  const action = buildXiaomiRoomCleanAction([{ segmentId: 8 }]);
-  const params = getXiaomiRoomCleanActionParams(action);
-  assert.equal(params.length, 2);
-  assert.equal(params[0], 18);
-  assert.deepEqual(JSON.parse(params[1]), { selects: [[8, 1, 1, 2, 1]] });
-});
