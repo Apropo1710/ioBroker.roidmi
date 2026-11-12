@@ -280,3 +280,12 @@ Diese Übersicht ist die maßgebliche aktuelle Testliste. Bei jedem neuen Testbe
 - Commits: `fb49c25` (frischer Handshake-Parameter), `ec01bb5` (lokale Zwei-Input-Raumreinigung), `d1c4f60` und `76323eb` (falsche Raw-Value-Serializer-Hilfsfunktion und Test entfernt).
 - Frühere Annahme, rohe Werte `[18, json]` seien für den X20+-Befehl korrekt, ist ausdrücklich verworfen. Der passende Hardwarebeleg verlangt `[{piid:1,value:18},{piid:10,value:json}]`.
 - CI/Build für den korrigierten Stand noch ausstehend. Bis erfolgreichem Build nicht installieren und keine weiteren Raumreinigungsversuche durchführen.
+
+
+## X20+ Raumreinigung: erzwungener Handshake tatsächlich nicht erzwungen (12.11.2026)
+
+- Live-Test nach Installation der vorherigen Version (10:28:56) zeigte erneut lokalen miIO-RPC-Timeout. Trace belegte weiterhin `reusing handshake` und `cached handshake +14s`, obwohl der Aufruf `call(..., undefined, true)` bereits `forceFreshHandshake` aktivierte.
+- Ursache im Code gefunden: Der Client berechnete `cachedHandshake` unter Berücksichtigung von `forceFreshHandshake`, prüfte beim tatsächlichen Versand aber irrtümlich erneut `this.cachedHandshake`. Dadurch wurde trotz erzwungenem frischen Handshake die alte Sitzung benutzt.
+- Korrektur Commit `d6e5ee2`: Der Versandzweig prüft jetzt die bereits korrekt gefilterte Variable `cachedHandshake`. Damit wird bei `forceFreshHandshake=true` tatsächlich ein neuer Handshake gesendet.
+- Regressionstest Commit `58b1964`: baut zwei normale RPCs (mit Handshake-Wiederverwendung) und danach einen Aufruf mit `forceFreshHandshake=true`; prüft, dass ein zweiter Handshake und genau ein RPC pro Aufruf erfolgen.
+- Vorherige Installationsversion hat den erzwungenen frischen Handshake nicht ausgeführt. Keine weitere Hardwareaktion durchführen, bis der neue CI-Lauf erfolgreich ist.
