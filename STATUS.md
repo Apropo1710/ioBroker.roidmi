@@ -253,3 +253,11 @@ Diese Übersicht ist die maßgebliche aktuelle Testliste. Bei jedem neuen Testbe
 - CI-Ergebnis nach der ersten Diagnoseänderung: Build schlug fehl, weil der Trace zunächst als lokale Variable in `onReady` deklariert war, der Zustands-Handler aber in einer anderen Methode darauf zugreifen muss (`TS2304: Cannot find name 'xiaomiMiioTrace'`). Ursache identifiziert.
 - Korrektur in Commit `0c8fcc5`: Der begrenzte X20+-miIO-Trace ist jetzt ein Adapter-Klassenfeld und wird sowohl beim Polling als auch beim Raumreinigungsbefehl verwendet. Keine Änderung am Roboterprotokoll oder am Reinigungsbefehl.
 - CI für den Korrektur-Commit muss noch vollständig durchlaufen; bis dahin keine Installation.
+
+
+## X20+ Raumreinigung: Transportursache gefunden und korrigiert (12.11.2026)
+
+- Debugtrace des Live-Versuchs (09:25:31): Der Adapter verwendete einen wiederverwendeten lokalen miIO-Handshake, sendete den RPC-Aufruf `miIO.miotspecv2` erfolgreich an `192.168.178.96:54321`, erhielt aber innerhalb von 4 Sekunden keine RPC-Antwort. Handshake wurde danach verworfen.
+- Entscheidender Codevergleich: Die normalen X20+-Steuerbefehle (Start, Pause, Rückkehr) verwenden bei vorhandener Xiaomi-Cloud-Sitzung bereits `XiaomiCloudMapClient.callAction` über `/miotspec/action`. Die Raumreinigung war dagegen fest auf den lokalen UDP-Aufruf verdrahtet. Der Log belegt außerdem eine wiederhergestellte Xiaomi-Cloud-Sitzung. Damit war der Raumreinigungsbefehl inkonsistent zum bewährten Transport der übrigen X20+-Aktionen.
+- Korrektur in Commit `cba3e2d`: Raumreinigung verwendet nun ebenfalls die vorhandene Xiaomi-Cloud-Sitzung und denselben `callAction`-Transport wie Start/Pause/ReturnToDock; die vollständigen Room-clean-Inputs (einschließlich `selects`) werden übergeben und eine erneuerte Cloud-Sitzung wie bei den anderen Befehlen gespeichert. Nur wenn keine Cloud-Sitzung vorhanden ist, bleibt der lokale miIO-Fallback bestehen.
+- Der Roboter wurde durch die Codeänderung nicht angesprochen. Der erneute Hardwaretest ist erst nach erfolgreichem CI/Build vorgesehen.
