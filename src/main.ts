@@ -11,6 +11,7 @@ import { buildVacuumAction, getActionResponseError, getActionFailureStatus } fro
 import { parseRoomMapConfig, RoomMapConfig } from "./lib/room-map";
 import { getRoidmiSetting } from "./lib/roidmi-settings";
 import { parseCleaningSchedules } from "./lib/cleaning-schedules";
+import { areRoidmiScheduleSnapshotsEqual, updateRoidmiCleaningSchedule, verifyRoidmiCleaningScheduleUpdate, RoidmiCleaningScheduleUpdate } from "./lib/roidmi-cleaning-schedules";
 import { parseXiaomiCleaningSchedules, setXiaomiCleaningScheduleEnabled, verifyXiaomiCleaningScheduleUpdate, updateXiaomiCleaningSchedule, verifyXiaomiCleaningScheduleDetailsUpdate, XiaomiCleaningScheduleUpdate } from "./lib/xiaomi-cleaning-schedules";
 import { XiaomiCloudMapClient } from "./lib/xiaomi-cloud-map";
 import { RoidmiMapMetadata } from "./lib/roidmi-map";
@@ -296,6 +297,12 @@ class RoidmiAdapter extends Adapter {
             native: {}
         });
         await this.subscribeStatesAsync("evePlus.control.refreshTiming");
+        await this.setObjectNotExistsAsync("evePlus.control.updateSchedule", {
+            type: "state",
+            common: { name: "Update an existing EVE Plus schedule (JSON: index, expectedRaw, update)", type: "string", role: "json", read: false, write: true, def: "" },
+            native: {}
+        });
+        await this.subscribeStatesAsync("evePlus.control.updateSchedule");
         await this.setObjectNotExistsAsync("evePlus.timing.raw", {
             type: "state",
             common: { name: "Raw saved Roidmi cleaning schedules (read on demand)", type: "string", role: "json", read: true, write: false },
@@ -1594,6 +1601,25 @@ class RoidmiAdapter extends Adapter {
             await this.setStateAsync("evePlus.control.refreshTiming", { val: false, ack: true });
             return;
         }
+        const updateTimingId = this.namespace + ".evePlus.control.updateSchedule";
+        if (id === updateTimingId) {
+            if (typeof state.val === "string" && state.val.trim()) {
+                try {
+                    const request = JSON.parse(state.val) as { index?: unknown; expectedRaw?: unknown; update?: unknown };
+                    if (!Number.isSafeInteger(request.index) || typeof request.expectedRaw !== "string" ||
+                        !request.update || typeof request.update !== "object" || Array.isArray(request.update)) {
+                        throw new Error("Request must contain index, expectedRaw and update");
+                    }
+                    await this.updateTimingSchedule(request.index as number, request.expectedRaw, request.update as RoidmiCleaningScheduleUpdate);
+                } catch (error) {
+                    const message = error instanceof Error ? error.message : "Invalid schedule update";
+                    await this.setStateChangedAsync("evePlus.control.lastCommandStatus", { val: "Schedule update rejected: " + message, ack: true });
+                    this.log.warn("EVE Plus schedule update rejected: " + message);
+                }
+            }
+            await this.setStateAsync("evePlus.control.updateSchedule", { val: "", ack: true });
+            return;
+        }
 
         const roomPrefix = this.namespace + ".evePlus.rooms.";
         if (id.startsWith(roomPrefix) && id.endsWith(".clean")) {
@@ -1682,6 +1708,78 @@ class RoidmiAdapter extends Adapter {
         }
         await this.setStateAsync("evePlus.control." + command, { val: false, ack: true });
     }
+    /**
+     * Updates one existing EVE Plus schedule on explicit request only.
+     * The caller must provide the snapshot shown in the UI; a fresh device read
+     * is compared before writing to avoid overwriting a concurrent app change.
+     */
+    private async updateTimingSchedule(index: number, expectedRaw: string, update: RoidmiCleaningScheduleUpdate): Promise<void> {
+        const config = this.config as RoidmiAdapterConfig;
+        if (!this.client || !config.did || this.commandRunning) {
+            throw new Error("Roidmi is unavailable or another command is running");
+        }
+        this.commandRunning = true;
+        let writeAccepted = false;
+        try {
+            const beforeResult = await this.client.call("get_properties", [{ did: config.did, siid: 8, piid: 6 }]);
+            if (!Array.isArray(beforeResult)) throw new Error("Unexpected MIoT schedule response before update");
+            const beforeItem = beforeResult[0] as { code?: number; value?: unknown } | undefined;
+            if (!beforeItem || beforeItem.code !== 0 || typeof beforeItem.value !== "string") {
+                throw new Error("Could not read the current EVE Plus schedules before update");
+            }
+            if (!areRoidmiScheduleSnapshotsEqual(expectedRaw, beforeItem.value)) {
+                throw new Error("Schedules changed since they were displayed; refresh the schedule list and retry");
+            }
+            const updatedRaw = updateRoidmiCleaningSchedule(beforeItem.value, index, update);
+            const writeResult = await this.client.call("set_properties", [{
+                did: config.did, siid: 8, piid: 6, value: updatedRaw
+            }]);
+            if (!Array.isArray(writeResult) || !writeResult.length) throw new Error("Unexpected MIoT schedule-write response");
+            const writeItem = writeResult[0] as { code?: number } | undefined;
+            if (!writeItem || writeItem.code !== 0) {
+                throw new Error("MIoT schedule write rejected (code " + (writeItem?.code ?? "missing") + ")");
+            }
+            writeAccepted = true;
+
+            const verifyResult = await this.client.call("get_properties", [{ did: config.did, siid: 8, piid: 6 }]);
+            if (!Array.isArray(verifyResult)) throw new Error("Unexpected MIoT schedule read-back response");
+            const verifyItem = verifyResult[0] as { code?: number; value?: unknown } | undefined;
+            if (!verifyItem || verifyItem.code !== 0 || typeof verifyItem.value !== "string") {
+                throw new Error("Schedule write was accepted, but the robot did not return a valid read-back");
+            }
+            if (!verifyRoidmiCleaningScheduleUpdate(beforeItem.value, verifyItem.value, index, update)) {
+                throw new Error("Schedule write was accepted, but read-back differs from the requested update or changed unrelated data");
+            }
+
+            const parsed = parseCleaningSchedules(verifyItem.value);
+            const formatted = JSON.stringify(JSON.parse(verifyItem.value), null, 2);
+            await this.setStateChangedAsync("evePlus.timing.raw", { val: formatted, ack: true });
+            await this.setStateChangedAsync("evePlus.timing.parsed", { val: JSON.stringify(parsed, null, 2), ack: true });
+            await this.setStateChangedAsync("evePlus.timing.summary", {
+                val: parsed.map((entry, entryIndex) => (entryIndex + 1) + ". " + entry.timeText + " | " +
+                    (entry.enabled ? "aktiv" : "deaktiviert") + " | Saugstufe " + entry.fanSpeedText +
+                    " | Modus " + entry.cleaningMode + " | Wasser " + entry.waterLevelText +
+                    " | Raum-IDs " + entry.roomIds.join(", ") + " | " + entry.weekdaysText).join("\\n") || "Keine Zeitpläne gespeichert",
+                ack: true
+            });
+            await this.setStateChangedAsync("evePlus.timing.lastUpdate", { val: new Date().toISOString(), ack: true });
+            await this.setStateChangedAsync("evePlus.control.lastCommand", { val: "updateSchedule", ack: true });
+            await this.setStateChangedAsync("evePlus.control.lastCommandStatus", { val: "Schedule update verified by robot read-back", ack: true });
+            await this.setStateChangedAsync("evePlus.control.lastCommandTime", { val: new Date().toISOString(), ack: true });
+            this.log.info("EVE Plus schedule " + (index + 1) + " updated and verified by robot read-back");
+        } catch (error) {
+            const message = error instanceof Error ? error.message : "Unknown schedule update error";
+            const status = writeAccepted
+                ? "Write was accepted; read-back could not confirm the result. Refresh schedules manually before another write: " + message
+                : message;
+            await this.setStateChangedAsync("evePlus.control.lastCommandStatus", { val: status, ack: true });
+            this.log.warn("EVE Plus schedule update " + (writeAccepted ? "confirmation incomplete: " : "failed: ") + message);
+            throw error;
+        } finally {
+            this.commandRunning = false;
+        }
+    }
+
     /**
      * Read the stored schedule JSON only when explicitly requested.
      * This is deliberately excluded from the fast status polling cycle.
