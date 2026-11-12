@@ -1,6 +1,6 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { parseXiaomiCleaningSchedules, setXiaomiCleaningScheduleEnabled, verifyXiaomiCleaningScheduleUpdate } = require("../build/lib/xiaomi-cleaning-schedules.js");
+const { parseXiaomiCleaningSchedules, setXiaomiCleaningScheduleEnabled, verifyXiaomiCleaningScheduleUpdate, updateXiaomiCleaningSchedule, verifyXiaomiCleaningScheduleDetailsUpdate } = require("../build/lib/xiaomi-cleaning-schedules.js");
 
 test("parses C102GL schedule fields and weekday bitmap", () => {
     const schedules = parseXiaomiCleaningSchedules("1-1-08:30-0111110-1-1-1-64-3,8", new Map([[3, "Flur"], [8, "Küche"]]));
@@ -79,4 +79,20 @@ test("decodes automatic water adjustment reported by Xiaomi Home", () => {
     const schedules = parseXiaomiCleaningSchedules("3-0-13:11-0000000-0-3-0-0-0");
     assert.equal(schedules[0].waterLevel, 0);
     assert.equal(schedules[0].waterLevelText, "Automatische Anpassung");
+});
+
+test("edits supported fields of one schedule and preserves other schedules",()=>{
+ const raw="1-1-08:30-0111110-1-1-1-64-3,8;2-0-19:00-1000001-0-0-0-32-8";
+ const u={time:"07:45",weekdays:[0,2,4],repeat:true,cleaningMode:2,fanSpeed:3,waterLevel:0,roomIds:[8,3]};
+ const expected="1-1-07:45-0101010-1-2-3-0-8,3;2-0-19:00-1000001-0-0-0-32-8";
+ assert.equal(updateXiaomiCleaningSchedule(raw,"1",u),expected);
+ assert.doesNotThrow(()=>verifyXiaomiCleaningScheduleDetailsUpdate(raw,expected,"1",u));
+});
+test("supports one-time schedule edits and rejects invalid values",()=>{
+ const raw="3-0-12:09-0000000-0-3-0-0-0";
+ const u={time:"13:11",weekdays:[],repeat:false,cleaningMode:3,fanSpeed:0,waterLevel:0,roomIds:[0]};
+ assert.equal(updateXiaomiCleaningSchedule(raw,"3",u),"3-0-13:11-0000000-0-3-0-0-0");
+ assert.throws(()=>updateXiaomiCleaningSchedule(raw,"3",{...u,time:"25:00"}),/Invalid schedule time/);
+ assert.throws(()=>updateXiaomiCleaningSchedule(raw,"3",{...u,weekdays:[1]}),/one-time schedule/);
+ assert.throws(()=>updateXiaomiCleaningSchedule(raw,"3",{...u,waterLevel:16}),/Unsupported/);
 });

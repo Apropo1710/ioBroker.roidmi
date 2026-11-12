@@ -165,3 +165,29 @@ export function verifyXiaomiCleaningScheduleUpdate(before: unknown, after: unkno
         }
     }
 }
+
+
+export interface XiaomiCleaningScheduleUpdate {
+ time:string; weekdays:number[]; repeat:boolean; cleaningMode:number; fanSpeed:number; waterLevel:number; roomIds:number[];
+}
+export function updateXiaomiCleaningSchedule(value:unknown,id:string,u:XiaomiCleaningScheduleUpdate):string {
+ if(typeof value!=="string") throw new Error("Xiaomi schedule data must be a raw string.");
+ if(!/^([01]\\d|2[0-3]):[0-5]\\d$/.test(u.time)) throw new Error("Invalid schedule time.");
+ if(!Array.isArray(u.weekdays)||u.weekdays.some(d=>!Number.isInteger(d)||d<0||d>6)||new Set(u.weekdays).size!==u.weekdays.length) throw new Error("Invalid weekdays.");
+ if(u.repeat&&u.weekdays.length===0) throw new Error("A repeating schedule needs at least one weekday.");
+ if(!u.repeat&&u.weekdays.length!==0) throw new Error("A one-time schedule must not contain weekdays.");
+ if(![0,1,2,3].includes(u.cleaningMode)||![0,1,2,3].includes(u.fanSpeed)||![0,32,64,96].includes(u.waterLevel)) throw new Error("Unsupported cleaning, fan or water setting.");
+ if(!Array.isArray(u.roomIds)||u.roomIds.length===0||u.roomIds.some(x=>!Number.isInteger(x)||x<0)||new Set(u.roomIds).size!==u.roomIds.length) throw new Error("At least one valid, unique room is required.");
+ const entries=value.split(";"), found=entries.map((e,i)=>({e,i})).filter(x=>x.e.trim().split("-",9)[0]===id);
+ if(found.length!==1) throw new Error("Schedule "+id+" is missing or duplicated; nothing was written.");
+ const i=found[0].i,p=entries[i].trim().split("-",9);
+ if(p.length!==9||p.some(x=>!x)) throw new Error("Schedule "+id+" has an invalid format.");
+ const bits=Array(7).fill("0"); for(const d of u.weekdays) bits[d===6?6:5-d]="1";
+ p[2]=u.time;p[3]=bits.join("");p[4]=u.repeat?"1":"0";p[5]=String(u.cleaningMode);p[6]=String(u.fanSpeed);p[7]=String(u.waterLevel);p[8]=u.roomIds.join(",");
+ entries[i]=p.join("-");return entries.join(";");
+}
+export function verifyXiaomiCleaningScheduleDetailsUpdate(before:unknown,after:unknown,id:string,u:XiaomiCleaningScheduleUpdate):void {
+ if(typeof before!=="string"||typeof after!=="string") throw new Error("Invalid Xiaomi schedule readback.");
+ const expected=updateXiaomiCleaningSchedule(before,id,u).split(";"),actual=after.split(";");
+ if(expected.length!==actual.length||expected.some((entry,i)=>entry.trim()!==actual[i].trim())) throw new Error("Xiaomi readback differs from the requested schedule edit.");
+}

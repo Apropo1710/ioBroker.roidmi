@@ -457,3 +457,10 @@ Diese Übersicht ist die maßgebliche aktuelle Testliste. Bei jedem neuen Testbe
 - Einschätzung für spätere Bearbeitung: Das MIoT-Property `time:timer-clean` (SIID 8 / PIID 2) ist als Ganzes les-/schreibbar und der Adapter kennt ein neun-teiliges Datensatzformat. Daraus lässt sich die grundsätzliche Struktur der Felder ableiten. Das beweist aber noch nicht alle Wertebereiche, Sonderfälle (Einmal-/Wiederholungspläne, Räume/Segmente, automatische Wasseranpassung) oder Xiaomis Validierungsregeln. Eine komplette Bearbeitungsoberfläche wäre daher derzeit verfrüht.
 - Empfehlung: Aktivieren/Deaktivieren stabil belassen. Falls später Bearbeitung gewünscht ist, zuerst eine eng begrenzte Änderung (z. B. nur Uhrzeit eines bestehenden Plans) mit strikter Validierung, direktem Readback und kontrolliertem Einzeltest entwickeln. Keine Änderung an bestehenden Zeitplänen ohne Sicherung des vollständigen Originalstrings.
 - Dieser Abschnitt ist der maßgebliche aktuelle Hardwarestatus und ersetzt ältere „noch nicht hardwarevalidiert“-/„Hardwaretest ausstehend“-Hinweise in den vorherigen Entwicklungsabschnitten.
+
+
+## X20+ Zeitpläne bearbeiten – Adapterbasis 0.1.61 (12.11.2026)
+- Neue Aktion `x20Plus.control.updateSchedule` bearbeitet ausschließlich einen bestehenden Zeitplan (keine Neuanlage/Löschung).
+- Felder: Uhrzeit, Wochentage/Einmalig, Reinigungsmodus, Saugleistung, Wasserstufe und Raum-IDs.
+- Direktes Lesen vom Roboter, vollständigen Datensatz gezielt ändern, schreiben und direkter Readback. Andere Zeitpläne und Aktivierungsstatus bleiben unverändert.
+- Strikte Validierung und Tests für reguläre und einmalige Pläne ergänzt. Hardwaretest und UI-Integration stehen noch aus; bis dahin nicht installieren.

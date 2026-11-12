@@ -11,7 +11,7 @@ import { buildVacuumAction, getActionResponseError, getActionFailureStatus } fro
 import { parseRoomMapConfig, RoomMapConfig } from "./lib/room-map";
 import { getRoidmiSetting } from "./lib/roidmi-settings";
 import { parseCleaningSchedules } from "./lib/cleaning-schedules";
-import { parseXiaomiCleaningSchedules, setXiaomiCleaningScheduleEnabled, verifyXiaomiCleaningScheduleUpdate } from "./lib/xiaomi-cleaning-schedules";
+import { parseXiaomiCleaningSchedules, setXiaomiCleaningScheduleEnabled, verifyXiaomiCleaningScheduleUpdate, updateXiaomiCleaningSchedule, verifyXiaomiCleaningScheduleDetailsUpdate, XiaomiCleaningScheduleUpdate } from "./lib/xiaomi-cleaning-schedules";
 import { XiaomiCloudMapClient } from "./lib/xiaomi-cloud-map";
 import { RoidmiMapMetadata } from "./lib/roidmi-map";
 import { getVacuumStateText, getChargingStateText, getRoidmiErrorText } from "./lib/roidmi-status";
@@ -1107,6 +1107,46 @@ class RoidmiAdapter extends Adapter {
                 }
                 await this.setStateAsync("x20Plus.control.readMopModeCloud", { val: false, ack: true });
                 return;
+            }
+            if (command === "updateSchedule") {
+                if (typeof state.val === "string" && state.val.trim()) {
+                    const config = this.config as RoidmiAdapterConfig;
+                    let acquired = false; let id = "unknown";
+                    try {
+                        if (!config.xiaomiDid || !this.cloudMapClient.hasSession()) throw new Error("Xiaomi Cloud session unavailable.");
+                        if (this.xiaomiCommandRunning) throw new Error("Another Xiaomi command is running.");
+                        const request=JSON.parse(state.val) as {id?:unknown;update?:XiaomiCleaningScheduleUpdate};
+                        if(typeof request.id!=="string"||!request.update) throw new Error("Invalid schedule edit request.");
+                        id=request.id;this.xiaomiCommandRunning=true;acquired=true;
+                        await this.setStateAsync("x20Plus.timing.status",{val:"Bearbeite Zeitplan #"+id+" in Xiaomi Home…",ack:true});
+                        const country=config.cloudCountry||"de",persist=async()=>this.persistCloudSession();
+                        const read=await this.cloudMapClient.getProperties(country,config.xiaomiDid,[{siid:8,piid:2}],persist,2);
+                        const current=Array.isArray(read)?read[0] as {code?:number;value?:unknown}:undefined;
+                        if(!current||current.code!==0||typeof current.value!=="string") throw new Error("Direct robot schedule read failed.");
+                        const updated=updateXiaomiCleaningSchedule(current.value,id,request.update);
+                        const write=await this.cloudMapClient.setProperties(country,config.xiaomiDid,[{siid:8,piid:2,value:updated}],persist);
+                        const result=Array.isArray(write)?write[0] as {code?:number}:undefined;
+                        if(!result||result.code!==0) throw new Error("Xiaomi rejected schedule edit (MIoT "+String(result?.code??"unknown")+").");
+                        const readback=await this.cloudMapClient.getProperties(country,config.xiaomiDid,[{siid:8,piid:2}],persist,2);
+                        const verified=Array.isArray(readback)?readback[0] as {code?:number;value?:unknown}:undefined;
+                        if(!verified||verified.code!==0||typeof verified.value!=="string") throw new Error("Direct robot readback failed after schedule edit.");
+                        verifyXiaomiCleaningScheduleDetailsUpdate(current.value,verified.value,id,request.update);
+                        const roomState=await this.getStateAsync("x20Plus.rooms.roomsJson");let roomNames=new Map<number,string>();
+                        if(typeof roomState?.val==="string") try {const rooms=JSON.parse(roomState.val) as Array<{segmentId?:number;name?:string}>;roomNames=new Map(rooms.filter(x=>Number.isInteger(x.segmentId)&&typeof x.name==="string").map(x=>[x.segmentId!,x.name!]));}catch{/* keep IDs */}
+                        const parsed=parseXiaomiCleaningSchedules(verified.value,roomNames);
+                        const summary=parsed.map(e=>"#"+e.id+" | "+(e.enabled?"Aktiv":"Deaktiviert")+" | "+e.time+" | "+e.weekdaysText+" | "+e.cleaningModeText+" | "+e.fanSpeedText+" | Wasser "+e.waterLevelText+" | Räume: "+e.roomsText).join("\\n");
+                        await this.setStateChangedAsync("x20Plus.timing.raw",{val:verified.value,ack:true});
+                        await this.setStateChangedAsync("x20Plus.timing.parsed",{val:JSON.stringify(parsed,null,2),ack:true});
+                        await this.setStateChangedAsync("x20Plus.timing.summary",{val:summary,ack:true});
+                        await this.setStateChangedAsync("x20Plus.timing.lastUpdate",{val:new Date().toISOString(),ack:true});
+                        await this.setStateAsync("x20Plus.timing.status",{val:"Zeitplan #"+id+" bearbeitet und direkt am Roboter bestätigt.",ack:true});
+                    } catch(error) {
+                        const message=error instanceof Error?error.message:"Unknown schedule edit error";
+                        await this.setStateAsync("x20Plus.timing.status",{val:"Zeitplanbearbeitung fehlgeschlagen: "+message,ack:true});
+                        this.log.warn("Xiaomi X20+ schedule edit failed: "+message);
+                    } finally {if(acquired)this.xiaomiCommandRunning=false;}
+                }
+                await this.setStateAsync("x20Plus.control.updateSchedule",{val:"",ack:true});return;
             }
             if (command === "setScheduleEnabled") {
                 if (typeof state.val === "string" && state.val.trim()) {
