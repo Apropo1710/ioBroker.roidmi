@@ -515,3 +515,5 @@ Diese Übersicht ist die maßgebliche aktuelle Testliste. Bei jedem neuen Testbe
 - Bei unklarer Bestätigung nach erfolgreicher Schreibantwort wird ausdrücklich kein automatischer Schreib-Retry ausgelöst; zuerst manuell aktualisieren.
 - Keine zusätzlichen zyklischen Abfragen. X20+-Zeitplanlogik bleibt unangetastet.
 - Commit fdcfeeef17ca1a6926bbdf58217be17df9f68a5f enthält die erste Implementierung. CI/Build und Hardwaretest stehen noch aus; bis dahin nicht installieren und keine Zeitpläne über den neuen State verändern.
+
+- Nachkontrolle des Fehlerpfads: Eine angenommene Schreiboperation mit fehlgeschlagenem Readback behält jetzt ihre ausdrückliche Meldung „Bestätigung ausstehend“; der äußere State-Handler überschreibt sie nicht mehr mit einer generischen Ablehnung.

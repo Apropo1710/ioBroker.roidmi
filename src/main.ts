@@ -1774,7 +1774,8 @@ class RoidmiAdapter extends Adapter {
                 : message;
             await this.setStateChangedAsync("evePlus.control.lastCommandStatus", { val: status, ack: true });
             this.log.warn("EVE Plus schedule update " + (writeAccepted ? "confirmation incomplete: " : "failed: ") + message);
-            throw error;
+            // The detailed status above distinguishes a rejected write from an
+            // accepted write whose read-back is still unconfirmed. Do not overwrite it.
         } finally {
             this.commandRunning = false;
         }
