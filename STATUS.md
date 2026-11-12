@@ -368,3 +368,13 @@ Diese Übersicht ist die maßgebliche aktuelle Testliste. Bei jedem neuen Testbe
 - Läuft gerade ein anderer Xiaomi-Cloud-Befehl, wird die automatische Synchronisierung um eine Minute verschoben, statt parallel zu starten. Fehlt die Cloud-Sitzung, wird der Abruf übersprungen und der Status entsprechend gesetzt.
 - Timer wird beim Adapter-Unload beendet. Adapterversion auf **0.1.53** angehoben.
 - CI/Build und Hardware-Readback für den automatischen Ablauf stehen noch aus. Die manuelle Lesefunktion aus 0.1.52 ist weiterhin die Grundlage und muss am Gerät zuerst verifiziert werden.
+
+
+## X20+ Zeitplan-Parser korrigiert nach Live-Vergleich mit Xiaomi Home (12.11.2026)
+
+- Der erste Hardware-Readback aus Version 0.1.53 lieferte drei echte Zeitpläne. Der direkte Vergleich mit der Xiaomi-Original-App zeigte fehlerhafte Anzeigen für Wochentage, Reinigungsart und Bereich.
+- Parserkorrektur für die C102GL-Bitmap: Das Feld wird als Bitmaske mit umgekehrter Textreihenfolge dekodiert (linkes Bit = Samstag, rechtes Bit = Sonntag). Der beobachtete Wert `0111110` ergibt damit Montag bis Freitag; `1000001` ergibt Samstag und Sonntag.
+- Reinigungsmodus `1` wird als „Saugen und Wischen“ interpretiert; Modus `2` als „Nur Wischen“. Das entspricht dem Live-Vergleich der Einträge mit der Xiaomi-App und weicht von der bisher verwendeten Drittanbieter-Zuordnung ab.
+- Raumliste `0` wird als Marker „Alle Bereiche“ statt als Raum-ID 0 angezeigt.
+- Regressionstest mit den beobachteten X20+-Beispieldaten ergänzt. Die Zeitpläne bleiben read-only; keine Schreibzugriffe und keine zusätzlichen Geräteabfragen.
+- Adapterversion auf **0.1.54** angehoben. CI/Build für diese Parserkorrektur noch ausstehend; erst nach erfolgreicher CI installieren und anschließend denselben Vergleich erneut durchführen.
