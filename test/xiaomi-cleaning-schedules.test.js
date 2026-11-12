@@ -34,4 +34,11 @@ test("empty schedule property produces an empty list", () => {
     assert.deepEqual(parseXiaomiCleaningSchedules(""), []);
 });
 
-test("decodes observed X20+ schedule bit order, cleaning mode and all-area marker", () => {\n    const schedules = parseXiaomiCleaningSchedules("1-0-09:00-0111110-1-1-32-0;2-0-10:00-1000001-1-1-32-0;3-0-12:09-0000000-0-1-32-0");\n    assert.equal(schedules[0].weekdaysText, "Mo, Di, Mi, Do, Fr");\n    assert.equal(schedules[1].weekdaysText, "Sa, So");\n    assert.equal(schedules[0].cleaningModeText, "Saugen und Wischen");\n    assert.equal(schedules[0].roomsText, "Alle Bereiche");\n    assert.equal(schedules[2].weekdaysText, "Einmalig");\n});\n
+test("decodes observed X20+ schedule bit order, cleaning mode and all-area marker", () => {
+    const schedules = parseXiaomiCleaningSchedules("1-0-09:00-0111110-1-1-32-0;2-0-10:00-1000001-1-1-32-0;3-0-12:09-0000000-0-1-32-0");
+    assert.equal(schedules[0].weekdaysText, "Mo, Di, Mi, Do, Fr");
+    assert.equal(schedules[1].weekdaysText, "Sa, So");
+    assert.equal(schedules[0].cleaningModeText, "Saugen und Wischen");
+    assert.equal(schedules[0].roomsText, "Alle Bereiche");
+    assert.equal(schedules[2].weekdaysText, "Einmalig");
+});
