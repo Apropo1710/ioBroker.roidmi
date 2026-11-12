@@ -488,3 +488,10 @@ Diese Übersicht ist die maßgebliche aktuelle Testliste. Bei jedem neuen Testbe
 - Feld 5 ist Wasserstufe (0 automatisch, 1 niedrig, 2 mittel, 3 hoch), Feld 6 Saugleistung, Feld 7 Reinigungsart. Verifizierte Werte: 16 Saugen, 32 Saugen und Wischen, 48 Wischen, 64 Saugen vor Wischen. Unbekannte Werte bleiben explizit unbekannt.
 - Wochentagsbitmap `1001011` ist laut Xiaomi Home So, Mi, Fr, Sa. Bitmap-Positionen laufen So, Mo, Di, Mi, Do, Fr, Sa; Parser und Encoder entsprechend ausgerichtet.
 - Parser, Schreibfunktion und Tests aktualisiert. Adapterversion **0.1.63**. Hardwaretest der Feldzuordnung noch offen.
+
+
+## X20+ Zeitplanbearbeitung – Hardwaretest bestätigt (12.11.2026)
+- Nutzer bestätigt nach Installation von Adapter 0.1.63 und HomePilot 1.29.120: Die Synchronisation der Zeitpläne funktioniert jetzt in beide Richtungen.
+- Die korrigierte Feldzuordnung für Reinigungsart, Wasserstufe und Wochentage ist damit nicht nur durch CI-Tests, sondern auch im Zusammenspiel mit dem echten Xiaomi X20+ bestätigt.
+- Aktivieren/Deaktivieren bestehender Zeitpläne bleibt unverändert. Keine Neuanlage oder Löschung Bestandteil dieser Funktion.
+- Nächster sinnvoller Schritt: weitere Beobachtung im Alltag; keine zusätzliche Abfragefrequenz oder zyklische Roboterbelastung hinzufügen.
