@@ -444,3 +444,16 @@ Diese Übersicht ist die maßgebliche aktuelle Testliste. Bei jedem neuen Testbe
 - Zwei zusätzliche Info-Logmeldungen kennzeichnen Quelle von Ausgangswert und Readback.
 - Keine zusätzlichen Cloud-Aufrufe: weiterhin drei MIoT-Aufrufe pro Schaltvorgang (direkt lesen, schreiben, direkt zurücklesen). Keine zyklischen Abfragen.
 - CI und erneuter Hardwaretest ausstehend. Vor CI-Erfolg nicht installieren.
+
+
+## Aktueller Hardware-Status: X20+ Zeitplan-Schalter erfolgreich bestätigt (12.11.2026)
+
+- Nutzerbestätigung am realen Xiaomi Robot Vacuum X20+: In HomePilot lassen sich gespeicherte Zeitpläne jetzt sowohl **aktivieren als auch deaktivieren**; beide Richtungen werden korrekt in Xiaomi Home übernommen und HomePilot zeigt den bestätigten Zustand ohne den vorherigen Readback-Fehler.
+- Verifizierte Basis: Adapter **0.1.60**, Commit `679d6fad6fd4d1f3ffe78f9120299933f8ec9286`. CI (build-and-test und test-build) war erfolgreich; der anschließende Hardwaretest ist ebenfalls erfolgreich.
+- Der entscheidende Fix: Ausgangswert und Readback beim Schalten werden explizit mit MIoT `datasource: 2` direkt vom Roboter gelesen. Der Servercache (`datasource: 1`) wird nicht mehr für die Schreib-Rückkontrolle verwendet. Pro ausdrücklichem Schaltvorgang bleiben es drei MIoT-Aufrufe: direkt lesen, schreiben, direkt zurücklesen. Keine zusätzlichen Hintergrundabfragen.
+- Manuelle Aktualisierung liest Cache und Gerät zum Vergleich und verwendet für die Anzeige den direkten Gerätewert. Der Nutzer hat bestätigt, dass die Zeitplanliste danach mit Xiaomi Home übereinstimmt.
+- Parser-Anzeige für Wasserwert `0` als „Automatische Anpassung“ ergänzt (0.1.59); Zeitplananzahl, Uhrzeiten und Wochentage wurden im Hardwarevergleich abgeglichen.
+- **Schreibfunktion Aktivieren/Deaktivieren: hardwarevalidiert.** Sonstige Zeitplanfelder (Uhrzeit, Wochentage, Reinigungsmodus, Saugstufe, Wasserstufe, Räume) sind weiterhin nicht als editierbare Schreiboperationen implementiert oder hardwarevalidiert.
+- Einschätzung für spätere Bearbeitung: Das MIoT-Property `time:timer-clean` (SIID 8 / PIID 2) ist als Ganzes les-/schreibbar und der Adapter kennt ein neun-teiliges Datensatzformat. Daraus lässt sich die grundsätzliche Struktur der Felder ableiten. Das beweist aber noch nicht alle Wertebereiche, Sonderfälle (Einmal-/Wiederholungspläne, Räume/Segmente, automatische Wasseranpassung) oder Xiaomis Validierungsregeln. Eine komplette Bearbeitungsoberfläche wäre daher derzeit verfrüht.
+- Empfehlung: Aktivieren/Deaktivieren stabil belassen. Falls später Bearbeitung gewünscht ist, zuerst eine eng begrenzte Änderung (z. B. nur Uhrzeit eines bestehenden Plans) mit strikter Validierung, direktem Readback und kontrolliertem Einzeltest entwickeln. Keine Änderung an bestehenden Zeitplänen ohne Sicherung des vollständigen Originalstrings.
+- Dieser Abschnitt ist der maßgebliche aktuelle Hardwarestatus und ersetzt ältere „noch nicht hardwarevalidiert“-/„Hardwaretest ausstehend“-Hinweise in den vorherigen Entwicklungsabschnitten.
