@@ -1,7 +1,7 @@
 {
   "common": {
     "name": "roidmi",
-    "version": "0.1.63",
+    "version": "0.1.64",
     "title": "Roidmi",
     "titleLang": {
       "en": "Roidmi",
@@ -27,6 +27,10 @@
       "xiaomiToken"
     ],
     "news": {
+      "0.1.64": {
+        "en": "Added guarded editing of existing Roidmi EVE Plus cleaning schedules with conflict detection and robot read-back",
+        "de": "Bestehende Reinigungszeitpläne des Roidmi EVE Plus können mit Konfliktprüfung und direkter Rückkontrolle bearbeitet werden"
+      },
       "0.1.54": {
         "en": "Added on-demand synchronization of Xiaomi X20+ cleaning schedules",
         "de": "Zeitpläne des Xiaomi X20+ können auf Abruf mit Xiaomi Home synchronisiert werden"

@@ -514,6 +514,8 @@ Diese Übersicht ist die maßgebliche aktuelle Testliste. Bei jedem neuen Testbe
 - Die Readback-Prüfung verlangt, dass nur die gewünschten Felder geändert wurden. Erst nach erfolgreicher Prüfung werden timing.raw, timing.parsed, timing.summary und timing.lastUpdate aktualisiert.
 - Bei unklarer Bestätigung nach erfolgreicher Schreibantwort wird ausdrücklich kein automatischer Schreib-Retry ausgelöst; zuerst manuell aktualisieren.
 - Keine zusätzlichen zyklischen Abfragen. X20+-Zeitplanlogik bleibt unangetastet.
-- Commit fdcfeeef17ca1a6926bbdf58217be17df9f68a5f enthält die erste Implementierung. CI/Build und Hardwaretest stehen noch aus; bis dahin nicht installieren und keine Zeitpläne über den neuen State verändern.
+- Die Implementierung ist in den Commits fdcfeeef, 3e948110, 6c0efab und 34c4efd5 enthalten. Für Commit 34c4efd5 waren beide Adapter-Workflows (Tests, Lint, Build und Paketprüfung) erfolgreich. Die Version wird für den gebündelten Stand auf 0.1.64 angehoben. Hardwaretest steht noch aus; bis dahin nicht installieren und keine Zeitpläne über den neuen State verändern.
 
 - Nachkontrolle des Fehlerpfads: Eine angenommene Schreiboperation mit fehlgeschlagenem Readback behält jetzt ihre ausdrückliche Meldung „Bestätigung ausstehend“; der äußere State-Handler überschreibt sie nicht mehr mit einer generischen Ablehnung.
+
+- HomePilot erhält parallel eine eigene EVE-Plus-Zeitplanansicht und Bearbeitungsmaske; die App übergibt den vollständigen angezeigten Rohdaten-Snapshot und nur tatsächlich geänderte Felder. Der Android-Build läuft noch.
