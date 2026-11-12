@@ -313,3 +313,17 @@ Diese Übersicht ist die maßgebliche aktuelle Testliste. Bei jedem neuen Testbe
 - Damit ist gezielte Raumreinigung für den Xiaomi X20+ (C102GL) erstmals erfolgreich bestätigt. Der zuvor falsche verschachtelte `miIO.miotspecv2`-RPC-Umschlag war die Ursache des bisherigen Scheiterns.
 - Handshake-Wiederverwendung für normale RPCs blieb unverändert; für die Raumreinigung wird weiterhin ein frischer Handshake erzwungen.
 - Nächster sinnvoller Schritt: Ergebnis der laufenden Reinigung abwarten und anschließend in einer gebündelten Version die erfolgreiche Funktion sowie gegebenenfalls die Statusmeldung/Fehlerbehandlung finalisieren. Keine weiteren Testfahrten nötig, solange der laufende Durchgang normal endet.
+
+
+## X20+ Status-Text: Ursache gefunden und korrigiert (12.11.2026)
+
+- Bei der Codeanalyse nach dem erfolgreichen Raumreinigungstest wurde der bekannte veraltete `statusText`-Wert untersucht.
+- Ursache belegt: Das MIoT-Profil nennt das Statusfeld bereits `vacuumState` (SIID 2 / PIID 1). Die Polling-Verarbeitung aktualisierte den lesbaren Text jedoch nur innerhalb einer Bedingung `key === "status"`. Diese Bedingung konnte mit dem aktuellen Profil nie zutreffen; daher blieb der Text z. B. auf „Ladung abgeschlossen“ stehen, obwohl `vacuumState` längst „Saugen“ meldete.
+- Korrektur Commit `8058e08`: Die Textaktualisierung wird jetzt bei `key === "vacuumState"` ausgeführt. Es wird kein zusätzlicher Poll ausgelöst; der Text wird aus derselben ohnehin empfangenen Statusantwort aktualisiert.
+- Build/CI für diese Änderung ausstehend.
+
+## X20+ Carpet Boost: weiterhin vor Hardwaretest
+
+- `carpetBoost` ist im Profil derzeit als optional und vorläufig markiert (SIID 4 / PIID 12). Der Code legt Status- und Control-Datenpunkt an und liest den Wert im langsamen optionalen Einstellungs-Poll; Schreibzugriffe laufen über die generische Property-Schreiblogik.
+- Es liegt noch kein bestätigter Hardwaretest vor, dass PIID 12 auf der installierten X20+-Firmware tatsächlich Carpet Boost steuert. Nicht blind umschalten, bevor die Reinigungsfahrt beendet ist und die Semantik anhand eines Readbacks bzw. einer belastbaren C102GL-Referenz bestätigt wurde.
+- Die Raumreinigung ist jetzt hardwareseitig bestanden; dieser Punkt bleibt separat offen.
