@@ -95,7 +95,7 @@ export function parseXiaomiCleaningSchedules(value: unknown, roomNames: Map<numb
             weekdaysText: days.length === 7 ? "Täglich" : days.map((day) => DAY_NAMES[day]).join(", ") || "Einmalig",
             repeat: repeatRaw === "1",
             cleaningMode: Number.isFinite(mode) ? mode : -1,
-            cleaningModeText: MODE_NAMES[mode] ?? "Unbekannt (" + modeRaw + ")",
+            cleaningModeText: MODE_NAMES[mode] ?? "Unbekannt (" + waterRaw + ")",
             fanSpeed: Number.isFinite(fan) ? fan : -1,
             fanSpeedText: FAN_NAMES[fan] ?? "Unbekannt (" + fanRaw + ")",
             waterLevel: Number.isFinite(water) ? water : -1,
