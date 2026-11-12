@@ -100,7 +100,7 @@ Diese Übersicht ist die maßgebliche aktuelle Testliste. Bei jedem neuen Testbe
 | Raum-ID-Zuordnung und gezielte Raumreinigung | OFFEN | Noch kein dokumentierter Live-Test |
 | Teppich-Boost | OFFEN | Noch kein dokumentierter Live-Test |
 | Pause / Fortsetzen | **BESTANDEN** | Live-Test am 12.11.2026: `control.pause` hält den Roboter an und die Sprachausgabe meldet „Reinigung pausiert“. `control.start` setzt anschließend laut Sprachausgabe „Ich setze die Reinigung fort“ fort; `cleaningArea` stieg von 4 auf 13 und `cleaningTime` von 3 auf 12, ohne Reset. `taskStatus` und `vacuumState` blieben während Pause und Fortsetzung jeweils auf 1; sie unterscheiden den Pausenzustand somit nicht. |
-| Stop | OFFEN | Separater Stop-Test steht noch aus; `pause` und `stop` sind im aktuellen Adaptercode auf dieselbe MIoT-Aktion gemappt, tatsächliche Stop-Semantik noch prüfen |
+| Stop | **TEILWEISE BESTÄTIGT – derzeit identisch zu Pause** | Live-Test am 12.11.2026: Auch `control.stop` meldet akustisch „Reinigung pausiert“. Damit ist kein separates endgültiges Stoppen nachgewiesen; `pause` und `stop` lösen aktuell offenbar denselben Pausenzustand aus. Ein eigenständiger Stop-/Abbruchbefehl ist noch nicht belegt. |
 | Rückkehr zur Ladestation | OFFEN | Noch kein dokumentierter Live-Test |
 
 ### Testreihenfolge und Belastungsregeln
@@ -193,3 +193,11 @@ Diese Übersicht ist die maßgebliche aktuelle Testliste. Bei jedem neuen Testbe
 - **Ergebnis: PAUSE BESTANDEN, FORTSETZEN ÜBER START BESTANDEN.** Die akustischen Ansagen und die fortlaufenden Zähler belegen das Verhalten am realen Gerät.
 - `taskStatus` und `vacuumState` blieben in den gezeigten Screenshots auch im angehaltenen Zustand auf 1. Diese States bilden die Pause daher offenbar nicht eindeutig ab; keine Statussemantik daraus ableiten.
 - Im Adaptercode sind `pause` und `stop` derzeit beide auf SIID 2 / AIID 2 gemappt. Da der Roboter auf `pause` dennoch eindeutig „Reinigung pausiert“ meldet und sich mit `start` fortsetzen lässt, muss die tatsächliche Semantik des separaten `stop`-Befehls noch live geprüft werden. Bis dahin keine Codeänderung an der Aktionszuordnung.
+
+
+### X20+ Funktionstest: Stop-Befehl zeigt Pausenverhalten (12.11.2026)
+
+- Der Nutzer hat zusätzlich `x20Plus.control.stop` ausgelöst.
+- Der Roboter meldete auch dabei akustisch „Reinigung pausiert“.
+- Damit bestätigt sich das im Code sichtbare Mapping: `pause` und `stop` verwenden beide SIID 2 / AIID 2 und lösen nach dem Live-Befund dasselbe Pausenverhalten aus.
+- **Bewertung:** Der Datenpunkt `stop` führt derzeit nicht nachweisbar zu einem endgültigen Abbruch, sondern verhält sich wie `pause`. Als separate Stop-Funktion ist er daher noch nicht bestanden. Nicht vorschnell ummappen: Erst Protokoll-/Original-App-Semantik prüfen, bevor ein anderer MIoT-Befehl implementiert wird.
