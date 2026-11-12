@@ -1066,6 +1066,9 @@ class RoidmiAdapter extends Adapter {
                             await this.setStateAsync("x20Plus.control.cleanRoomsStatus", { val: message, ack: true });
                         } else {
                             this.xiaomiCommandRunning = true;
+                            // Keep command diagnostics separate from the preceding status poll.
+                            // Emit the bounded UDP trace only if this command fails.
+                            xiaomiMiioTrace.length = 0;
                             try {
                                 const baselineState = await this.getStateAsync("x20Plus.status.vacuumState");
                                 const baselineStatus = typeof baselineState?.val === "number" ? baselineState.val : null;
@@ -1095,6 +1098,7 @@ class RoidmiAdapter extends Adapter {
                     } catch (error) {
                         const message = "Room-clean request rejected/failed: " + (error instanceof Error ? error.message : "unknown error");
                         this.log.warn("Xiaomi X20+ " + message);
+                        for (const traceLine of xiaomiMiioTrace) this.log.debug("Xiaomi X20+ room-clean miIO trace: " + traceLine);
                         await this.setStateAsync("x20Plus.control.cleanRoomsStatus", { val: message, ack: true });
                     }
                 }
