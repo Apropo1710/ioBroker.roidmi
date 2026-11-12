@@ -473,3 +473,11 @@ Diese Übersicht ist die maßgebliche aktuelle Testliste. Bei jedem neuen Testbe
 - Doppelte Anlage/Subscription von `x20Plus.control.updateSchedule` entfernt.
 - Reinigungsmodus-Codierung auf fünf Xiaomi-Home-Optionen erweitert: 0 automatische Anpassung, 1 nur Saugen, 2 Saugen und Wischen, 3 nur Wischen, 4 Saugen vor Wischen. Validierung und Tests entsprechend erweitert.
 - Adapterversion **0.1.62**. CI für den aktuellen Commit steht noch aus; Hardwaretest der Status-/Readback-Behandlung offen.
+
+
+## X20+ Zeitplan-Rohdaten vom Nutzer – Bitmap-Korrektur (12.11.2026)
+- Nutzer lieferte den aktuellen Rohwert: `2-0-10:00-1001011-1-4-1-96-0;3-0-12:09-0000000-0-1-1-32-0;4-0-13:11-0000000-0-1-1-64-0`.
+- Xiaomi Home zeigt für den ersten Datensatz So, Mi, Fr, Sa. Daraus folgt eindeutig: Bitmap `1001011` ist von links nach rechts Sonntag bis Montag codiert. Parser und Encoder waren spiegelverkehrt/inkonsistent.
+- Parser und Schreibfunktion auf `position -> weekday 6-position` korrigiert; Regressionstest mit dem echten Nutzer-Rohwert ergänzt.
+- Modus-Codierung bleibt ungeklärt: Rohwert enthält für den ersten Plan Moduswert 4, Xiaomi Home zeigt dafür `undefined`. Die beiden anderen Rohdatensätze tragen jeweils Moduswert 1, werden in Xiaomi Home aber mit unterschiedlichen Reinigungsarten dargestellt. Deshalb keine weitere geratenen Modus-Zuordnung; Rohdatenformat muss weiter untersucht werden.
+- Commits: `763eb92c254d034f66b5b923a80200da5b1a8326` (Parser/Encoder), `0c2266d4e209bc07503919a2e254c59505ad90ad` (Tests). CI noch ausstehend; nicht installieren, bis Tests/Build grün sind.
