@@ -327,3 +327,10 @@ Diese Übersicht ist die maßgebliche aktuelle Testliste. Bei jedem neuen Testbe
 - `carpetBoost` ist im Profil derzeit als optional und vorläufig markiert (SIID 4 / PIID 12). Der Code legt Status- und Control-Datenpunkt an und liest den Wert im langsamen optionalen Einstellungs-Poll; Schreibzugriffe laufen über die generische Property-Schreiblogik.
 - Es liegt noch kein bestätigter Hardwaretest vor, dass PIID 12 auf der installierten X20+-Firmware tatsächlich Carpet Boost steuert. Nicht blind umschalten, bevor die Reinigungsfahrt beendet ist und die Semantik anhand eines Readbacks bzw. einer belastbaren C102GL-Referenz bestätigt wurde.
 - Die Raumreinigung ist jetzt hardwareseitig bestanden; dieser Punkt bleibt separat offen.
+
+
+## X20+ Carpet Boost – Funktion präzisiert (12.11.2026)
+
+- Nutzer bestätigt: Carpet Boost ist die automatische stärkere Saugleistung auf Teppichen. Die Teppichflächen werden weiterhin ausschließlich in der Xiaomi-Original-App angelegt; der Adapter soll keine Teppichkarten oder Teppichzonen verwalten.
+- Die C102GL-Referenzimplementierung führt `carpetBoost` ebenfalls als MIoT-Eigenschaft SIID 4 / PIID 12. Die Zuordnung im Adapter ist damit durch eine zweite modellbezogene Referenz gestützt; der Hardware-Readback bzw. das Umschalten über den Adapter ist noch nicht live bestätigt.
+- Sinnvoller nächster Test nach Ende der laufenden Reinigung: aktuellen Wert in `status.carpetBoost` mit der Original-App vergleichen und – falls die Funktion dort aktiviert/deaktiviert werden kann – eine einzelne kontrollierte Umschaltung über `control.carpetBoost` mit Readback prüfen. Keine Teppichkonfiguration im Adapter nachbauen.
