@@ -165,3 +165,11 @@ Diese Übersicht ist die maßgebliche aktuelle Testliste. Bei jedem neuen Testbe
 - Der Roboter ist damit weiterhin im aktiven Reinigungszustand; die Reinigungsfläche ist gegenüber dem Start-Screenshot von 0 auf 2 gestiegen.
 - **Status-Text-Auffälligkeit bestätigt:** `statusText` zeigt weiterhin „Ladung abgeschlossen“, obwohl `vacuumState=1` und `taskStatus=1` sind. Das ist nicht nur ein kurzer Aktualisierungsversatz direkt nach dem Start. Als separaten Statusanzeige-Befund für spätere Codeanalyse vormerken; während des laufenden Funktionstests keine Änderung vornehmen.
 - `cleaningTime=0` bleibt in diesem frühen Screenshot unverändert; weiter beobachten, ob der Wert später ansteigt bzw. ob die Einheit/Granularität Minuten sind.
+
+
+### Weitere Laufzeitbeobachtung globaler Start (12.11.2026, ca. 08:01 Uhr)
+
+- Neuer Screenshot während derselben Reinigung: `vacuumState=1`, `taskStatus=1`, `chargingState=2`; `cleaningArea=4` (zuvor 2), `cleaningTime=3` (zuvor 0), Akku 98 %.
+- Damit steigen sowohl Reinigungsfläche als auch Reinigungszeit im laufenden Vorgang; die Statuswerte werden grundsätzlich aktualisiert.
+- `statusText` zeigt weiterhin fälschlich „Ladung abgeschlossen“ trotz `vacuumState=1`. Der veraltete Text ist damit mehrfach über mehrere Polls hinweg reproduziert und als separater Status-Text-Bug zu behandeln.
+- Der globale Start bleibt BESTANDEN. Keine Änderung am laufenden Roboter oder zusätzliche Abfrage für diese Beobachtung.
