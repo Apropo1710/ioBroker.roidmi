@@ -3,7 +3,7 @@ import { MiioClient } from "./lib/miio-client";
 import { mapLegacyStateId, LEGACY_EMPTY_FOLDERS } from "./lib/object-tree-migration";
 import { XIAOMI_X20_PLUS_PROPERTIES, XIAOMI_X20_PLUS_CONSUMABLE_PROPERTIES, XIAOMI_X20_PLUS_OPTIONAL_SETTINGS, XIAOMI_X20_PLUS_LIFETIME_PROPERTIES, XIAOMI_X20_PLUS_CONSUMABLE_POLL_INTERVAL_MS, getXiaomiX20PlusStatusText } from "./lib/xiaomi-x20plus-profile";
 import { parseRoomCleaningRequest } from "./lib/room-cleaning";
-import { parseXiaomiRoomCleanRequest } from "./lib/xiaomi-room-cleaning";
+import { parseXiaomiRoomCleanRequest, getXiaomiRoomCleanActionParams } from "./lib/xiaomi-room-cleaning";
 import { createRoomCleanObservationTracker, observeRoomCleanStatus, RoomCleanObservationTracker } from "./lib/xiaomi-room-clean-status";
 import { filterXiaomiHomeRooms } from "./lib/xiaomi-dreame-map";
 import { validateConfig, validateRoidmiConfig, validateXiaomiConfig, isRoidmiEnabled, isXiaomiEnabled } from "./lib/config";
@@ -1083,7 +1083,7 @@ class RoidmiAdapter extends Adapter {
                                         did: config.xiaomiDid!,
                                         siid: roomAction.siid,
                                         aiid: roomAction.aiid,
-                                        in: roomAction.inputs
+                                        in: getXiaomiRoomCleanActionParams(roomAction)
                                     }, async () => {
                                         await this.setStateAsync("evePlus.map.cloudSession", {
                                             val: this.encrypt(this.cloudMapClient.exportSession()), ack: true
@@ -1097,7 +1097,7 @@ class RoidmiAdapter extends Adapter {
                                             did: config.xiaomiDid,
                                             siid: roomAction.siid,
                                             aiid: roomAction.aiid,
-                                            in: roomAction.inputs
+                                            in: getXiaomiRoomCleanActionParams(roomAction)
                                         }
                                     }]);
                                     commandSource = "local MIoT";
