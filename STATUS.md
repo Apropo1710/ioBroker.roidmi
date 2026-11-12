@@ -292,3 +292,13 @@ Diese Übersicht ist die maßgebliche aktuelle Testliste. Bei jedem neuen Testbe
 
 - CI #221/#449 schlug beim TypeScript-Build fehl (nicht bei `npm ci`): `TS18048 cached is possibly undefined` in der Handshake-Wiederverwendungsstelle. Ursache: Der Branch prüfte `cachedHandshake`, las danach aber erneut `this.cachedHandshake`, wodurch TypeScript die sichere Eingrenzung verlor.
 - Korrektur Commit `2ab646f`: Der Versandzweig verwendet jetzt direkt das zuvor geprüfte lokale `cachedHandshake`. Das bewahrt die erzwungene Umgehung des Caches und stellt zugleich die TypeScript-Typprüfung sicher. Neuer CI-Lauf ausstehend.
+
+
+## X20+ Raumreinigung: RPC-Umschlag an Referenz angepasst (12.11.2026)
+
+- Unabhängige Analyse durch Claude hat einen weiteren konkreten Protokollunterschied gefunden. Der aktuelle Adapter sendete lokal `miIO.miotspecv2` mit `params: [{method:"action", params:{...}}` (verschachtelte Liste). Die hardwaregetestete C102GL-Referenz sendet dagegen direkt `method: "action"` mit einem einzelnen `params`-Objekt. Die inneren Eingaben `[{piid:1,value:18},{piid:10,value:JSON.stringify({selects:[[8,1,1,2,1]]})}]` stimmen überein.
+- Der Unterschied erklärt plausibel das Schweigen des Roboters. Die Ursache ist durch Quellcodevergleich belegt; dass genau dies den Hardware-Timeout behebt, muss noch am Gerät bestätigt werden.
+- Änderungen in Commits `1f64cd1`, `4c9fd70`, `29def6e`: MiioClient und Paketbuilder akzeptieren jetzt sowohl Array- als auch Objektparameter; Raumreinigung sendet direkt `call("action", {did,siid,aiid,in}, undefined, true)`, also den gleichen äußeren RPC-Aufbau wie die Referenz. Frischer Handshake bleibt nur für diesen Befehl aktiv.
+- Regressionstest Commit `369f1d1`: prüft den entschlüsselten MIoT-Request einschließlich `method:"action"` und Objekt-Parametern.
+- Die frühere Hypothese, `miIO.miotspecv2` mit verschachteltem `action` sei für diesen lokalen Aufruf korrekt, ist verworfen. Der zuvor implementierte frische Handshake bleibt erhalten; die allgemeine Handshake-Wiederverwendung wird nicht geändert.
+- CI/Build für diesen Stand noch ausstehend. Bis zum erfolgreichen CI nicht installieren.
