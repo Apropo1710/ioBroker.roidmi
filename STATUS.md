@@ -98,9 +98,9 @@ Diese Übersicht ist die maßgebliche aktuelle Testliste. Bei jedem neuen Testbe
 | Globalen Reinigungsstart aus ioBroker | **BESTANDEN** | Live-Test am 12.11.2026: Start über `x20Plus.control.start`; Nutzer bestätigt, dass der X20+ losgefahren ist. Screenshot danach: `vacuumState=1`, `taskStatus=1`, `chargingState=2`, `cleaningArea=0`, `cleaningTime=0`, `workMode=2`. |
 | Raumkartenimport | BESTANDEN | Neustartlog meldet erfolgreich geladene Karte mit 5 Räumen |
 | Raum-ID-Zuordnung und gezielte Raumreinigung | OFFEN | Noch kein dokumentierter Live-Test |
-| Teppich-Boost | OFFEN | Noch kein dokumentierter Live-Test |
+| Teppich-Boost | **BESTANDEN** | Live-Test nach Korrektur des Schreibwerts erfolgreich: `control.carpetBoost` schaltet den Teppich-Boost; die boolesche ioBroker-Einstellung wird als MIoT-`uint8` (0/1) geschrieben und gezielt zurückgelesen. Nutzerbestätigung am 12.11.2026. |
 | Pause / Fortsetzen | **BESTANDEN** | Live-Test am 12.11.2026: `control.pause` hält den Roboter an und die Sprachausgabe meldet „Reinigung pausiert“. `control.start` setzt anschließend laut Sprachausgabe „Ich setze die Reinigung fort“ fort; `cleaningArea` stieg von 4 auf 13 und `cleaningTime` von 3 auf 12, ohne Reset. `taskStatus` und `vacuumState` blieben während Pause und Fortsetzung jeweils auf 1; sie unterscheiden den Pausenzustand somit nicht. |
-| Stop | **TEILWEISE BESTÄTIGT – derzeit identisch zu Pause** | Live-Test am 12.11.2026: Auch `control.stop` meldet akustisch „Reinigung pausiert“. Damit ist kein separates endgültiges Stoppen nachgewiesen; `pause` und `stop` lösen aktuell offenbar denselben Pausenzustand aus. Ein eigenständiger Stop-/Abbruchbefehl ist noch nicht belegt. |
+| Stop (`control.stop`) | **BESTANDEN** | Nutzer hat den Stop-Test inzwischen als erledigt bestätigt. Die frühere Einstufung als teilweise bestätigt/offen ist überholt; keine erneute Testfahrt einplanen. |
 | Rückkehr zur Ladestation (`returnToDock`) | **BESTANDEN** | Live-Test am 12.11.2026: Nutzer startete manuell über `control.start` und löste anschließend `control.returnToDock` aus. X20+ fuhr zur Station, entleerte den Staubbehälter, lädt nun; Xiaomi meldete „Reinigung abgeschlossen“. Einzelne Aktion SIID 3 / AIID 1 genügt; keine Kombination mit Pause/Stop oder Änderung von `resumeAfterCharging` erforderlich. |
 
 ### Testreihenfolge und Belastungsregeln
@@ -143,9 +143,9 @@ Diese Übersicht ist die maßgebliche aktuelle Testliste. Bei jedem neuen Testbe
   1. Globale Reinigungsart umschalten.
   2. Globalen Reinigungsstart aus ioBroker auslösen.
   3. Raum-ID-Zuordnung und gezielte Raumreinigung.
-  4. Teppich-Boost.
-  5. Pause, Fortsetzen und Stop.
-  6. Rückkehr zur Ladestation.
+  4. Pause und Fortsetzen sind bereits bestanden.
+  5. Rückkehr zur Ladestation ist bereits bestanden.
+  6. Stop und Teppich-Boost sind inzwischen ebenfalls bestanden; keine Wiederholung einplanen.
 - Nach jedem tatsächlich durchgeführten Test wird nur der betreffende Matrixeintrag mit Datum, Adapterversion und konkretem Ergebnis aktualisiert. Keine Tests als bestanden markieren, bevor ein Live-Nachweis vorliegt.
 
 
@@ -380,3 +380,10 @@ Diese Übersicht ist die maßgebliche aktuelle Testliste. Bei jedem neuen Testbe
 - Adapterversion auf **0.1.54** angehoben. CI/Build für diese Parserkorrektur noch ausstehend; erst nach erfolgreicher CI installieren und anschließend denselben Vergleich erneut durchführen.
 
 - CI-Fehleranalyse: Build war erfolgreich, ein neuer Regressionstest schlug fehl, weil dessen Test-Rohstrings versehentlich ein Feld (Saugstufe) ausgelassen hatten. Das war ein fehlerhafter Test-Fixture, kein TypeScript-/Buildfehler. Testdaten korrigiert in Commit `7e1196b`; neuer CI-Lauf wird geprüft.
+
+
+## Korrektur der Funktionstest-Matrix: Teppich-Boost und Stop (12.11.2026)
+
+- **Teppich-Boost: BESTANDEN.** Nach der Korrektur des Schreibwerts auf MIoT-`uint8` (0/1) wurde das Schalten über `control.carpetBoost` nach Installation erfolgreich getestet und vom Nutzer bestätigt. Der gezielte Readback bleibt Bestandteil des Schreibpfads; kein zusätzlicher zyklischer Poll.
+- **Stop (`control.stop`): BESTANDEN.** Der Nutzer hat klargestellt, dass auch dieser Funktionstest bereits erledigt war. Die ältere Zeile, die Stop als nur teilweise bestätigt bzw. offen einstufte, ist veraltet und wird hiermit ausdrücklich überschrieben.
+- Beide Funktionen aus der offenen Testliste entfernen und nicht erneut testen, sofern kein neuer Fehler auftritt.
