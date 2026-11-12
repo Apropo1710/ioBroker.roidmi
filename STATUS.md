@@ -338,3 +338,12 @@ Diese Übersicht ist die maßgebliche aktuelle Testliste. Bei jedem neuen Testbe
 
 - Nachtrag nach Screenshot der Xiaomi-Original-App: Die Einstellung ist vorhanden und heißt dort „Teppich-Boost“. Sie befindet sich unter „Einstellungen für die Teppichreinigung“ und ist als eigener Ein/Aus-Schalter sichtbar. Darunter gibt es separat die Teppichreinigungsmethode („Saugen nur auf Teppichen“ / „Teppiche vermeiden“). Damit ist Carpet Boost eindeutig eine eigene Funktion; die vorherige Annahme, es gebe keinen separaten App-Schalter, war falsch.
 - Für den Adapter ist `carpetBoost` SIID 4 / PIID 12 damit fachlich plausibel. Nach Abschluss der laufenden Reinigung kann der Datenpunkt `status.carpetBoost` mit dem App-Schalter verglichen und danach `control.carpetBoost` kontrolliert getestet werden. Die Teppichreinigungsmethode ist eine getrennte Einstellung und darf nicht mit Carpet Boost gleichgesetzt werden.
+
+
+## X20+ Carpet Boost write correction (12.11.2026)
+
+- Hardwarebeobachtung: Änderungen des Teppich-Boost-Schalters in der Original-App werden nach dem langsamen Einstellungs-Poll im Adapterstatus sichtbar. Damit ist der Leseweg grundsätzlich bestätigt.
+- Schreibversuch über `control.carpetBoost` wurde vom Roboter mit MIoT `code: -1` abgelehnt. Der Log zeigt SIID 4 / PIID 12.
+- Offizielle C102GL-MIoT-Spezifikation beschreibt SIID 4 / PIID 12 als `uint8`, Zugriff `read, notify, write`, Werte `0 = Close`, `1 = Open`. Das ioBroker-Control bleibt benutzerfreundlich boolean, aber der MIoT-Schreibwert muss numerisch 0/1 sein.
+- Korrektur Commit `c49a0e9`: Carpet Boost wird beim Schreiben in 0/1 umgewandelt und anschließend einmal gezielt zurückgelesen. Status und Control werden erst anhand des bestätigten Readbacks aktualisiert. Keine zusätzlichen zyklischen Abfragen.
+- Hardwaretest und CI für diese Korrektur stehen noch aus. Vor erfolgreichem Build nicht installieren.
