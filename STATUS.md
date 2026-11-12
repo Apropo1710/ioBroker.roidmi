@@ -347,3 +347,15 @@ Diese Übersicht ist die maßgebliche aktuelle Testliste. Bei jedem neuen Testbe
 - Offizielle C102GL-MIoT-Spezifikation beschreibt SIID 4 / PIID 12 als `uint8`, Zugriff `read, notify, write`, Werte `0 = Close`, `1 = Open`. Das ioBroker-Control bleibt benutzerfreundlich boolean, aber der MIoT-Schreibwert muss numerisch 0/1 sein.
 - Korrektur Commit `c49a0e9`: Carpet Boost wird beim Schreiben in 0/1 umgewandelt und anschließend einmal gezielt zurückgelesen. Status und Control werden erst anhand des bestätigten Readbacks aktualisiert. Keine zusätzlichen zyklischen Abfragen.
 - Hardwaretest und CI für diese Korrektur stehen noch aus. Vor erfolgreichem Build nicht installieren.
+
+
+## X20+ Zeitpläne – Xiaomi-Home-Synchronisierung (Version 0.1.52, 12.11.2026)
+
+- Nutzerpriorität: Zeitpläne sollen mit der Xiaomi-Original-App synchron bleiben. Zunächst sind Auslesen und Kontrolle wichtig; Bearbeiten ist optional.
+- Modellbezogene Referenz für den Xiaomi X20+ / C102GL bestätigt das MIoT-Feld **SIID 8 / PIID 2** als gespeicherte Zeitpläne. Die Rohdaten enthalten mehrere durch Semikolon getrennte Einträge mit ID, Aktivierungsstatus, Uhrzeit, Wochentags-Bitmap (Montag bis Sonntag), Wiederholung, Reinigungsmodus, Saugstufe, Wasserstufe und Raum-IDs.
+- Neu in 0.1.52: `x20Plus.control.refreshSchedules` liest diesen Wert auf ausdrücklichen Abruf über die bereits angemeldete Xiaomi-Cloud-Sitzung. Die Sitzung wird bei Bedarf wie bei den bestehenden Cloud-Funktionen gespeichert.
+- Neue read-only Datenpunkte: `x20Plus.timing.raw`, `parsed`, `summary`, `status` und `lastUpdate`. Raum-IDs werden, sofern eine importierte Raumkarte vorhanden ist, in Raumnamen aufgelöst.
+- Bewusste Lastbegrenzung: keine zusätzliche zyklische Abfrage und keine Schreibzugriffe auf Zeitpläne. Ein Abruf erfolgt nur, wenn der Nutzer `refreshSchedules` auslöst. Damit bleibt die Xiaomi-App die führende Stelle; Änderungen in der App werden beim nächsten Abruf sichtbar.
+- Bearbeiten/Aktivieren/Löschen über ioBroker bleibt offen. Die untersuchte C102GL-Referenz kann Zeitpläne lesen, dokumentiert aber keine unterstützte Schreibschnittstelle. Keine undokumentierten Schreibversuche, die App-Zeitpläne beschädigen oder auseinanderlaufen lassen könnten.
+- Parser-Regressionstests ergänzt für Wochentage, Aktivierung, mehrere Einträge, Raumauflösung und fehlerhafte Einträge.
+- **Build/CI und Hardware-Readback noch ausstehend. Version 0.1.52 daher noch nicht installieren.** Erst CI prüfen; anschließend einmal über den Datenpunkt auslesen und mit der Xiaomi-App vergleichen.
