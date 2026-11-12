@@ -495,3 +495,12 @@ Diese Übersicht ist die maßgebliche aktuelle Testliste. Bei jedem neuen Testbe
 - Die korrigierte Feldzuordnung für Reinigungsart, Wasserstufe und Wochentage ist damit nicht nur durch CI-Tests, sondern auch im Zusammenspiel mit dem echten Xiaomi X20+ bestätigt.
 - Aktivieren/Deaktivieren bestehender Zeitpläne bleibt unverändert. Keine Neuanlage oder Löschung Bestandteil dieser Funktion.
 - Nächster sinnvoller Schritt: weitere Beobachtung im Alltag; keine zusätzliche Abfragefrequenz oder zyklische Roboterbelastung hinzufügen.
+
+
+## Nächster Entwicklungsschritt: Zeitplanbearbeitung für Roidmi Eve Plus (12.11.2026)
+- Als nächstes soll die am echten Xiaomi X20+ erfolgreich getestete bidirektionale Zeitplanbearbeitung auf den **Roidmi Eve Plus** übertragen werden.
+- Vor Implementierung zuerst das Eve-Plus-Zeitplanformat, vorhandene MIoT-Properties/Actions und den bestehenden Adapter-Schreib-/Readback-Pfad untersuchen. Keine X20+-Codierungen oder Feldpositionen ungeprüft übernehmen: Eve Plus ist ein separates Gerät.
+- Ziel: bestehende Zeitpläne bearbeiten und Änderungen zuverlässig zurücklesen/verifizieren; zunächst keine Neuanlage oder Löschung, sofern nicht später ausdrücklich gewünscht.
+- X20+-Implementierung und deren getestete Aktivieren/Deaktivieren-Funktion unverändert lassen. Keine unnötigen zyklischen Abfragen; manuelle Bearbeitung soll die Roboter-/ioBroker-Last gering halten.
+- HomePilot anschließend um eine gerätespezifische Eve-Plus-Bedienung ergänzen, falls der Eve-Plus-Datenpfad dies unterstützt.
+- Noch nicht begonnen; zunächst Bestandsaufnahme und Protokoll-/Datenformatanalyse.
