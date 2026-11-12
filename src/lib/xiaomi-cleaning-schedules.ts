@@ -19,10 +19,11 @@ export interface XiaomiCleaningSchedule {
 
 const DAY_NAMES = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
 const MODE_NAMES: Record<number, string> = {
-    0: "Nur Saugen",
-    1: "Saugen und Wischen",
-    2: "Nur Wischen",
-    3: "Individuell"
+    0: "Automatische Anpassung",
+    1: "Nur Saugen",
+    2: "Saugen und Wischen",
+    3: "Nur Wischen",
+    4: "Saugen vor Wischen"
 };
 const FAN_NAMES: Record<number, string> = {
     0: "Leise",
@@ -176,7 +177,7 @@ export function updateXiaomiCleaningSchedule(value:unknown,id:string,u:XiaomiCle
  if(!Array.isArray(u.weekdays)||u.weekdays.some(d=>!Number.isInteger(d)||d<0||d>6)||new Set(u.weekdays).size!==u.weekdays.length) throw new Error("Invalid weekdays.");
  if(u.repeat&&u.weekdays.length===0) throw new Error("A repeating schedule needs at least one weekday.");
  if(!u.repeat&&u.weekdays.length!==0) throw new Error("A one-time schedule must not contain weekdays.");
- if(![0,1,2,3].includes(u.cleaningMode)||![0,1,2,3].includes(u.fanSpeed)||![0,32,64,96].includes(u.waterLevel)) throw new Error("Unsupported cleaning, fan or water setting.");
+ if(![0,1,2,3,4].includes(u.cleaningMode)||![0,1,2,3].includes(u.fanSpeed)||![0,32,64,96].includes(u.waterLevel)) throw new Error("Unsupported cleaning, fan or water setting.");
  if(!Array.isArray(u.roomIds)||u.roomIds.length===0||u.roomIds.some(x=>!Number.isInteger(x)||x<0)||new Set(u.roomIds).size!==u.roomIds.length) throw new Error("At least one valid, unique room is required.");
  const entries=value.split(";"), found=entries.map((e,i)=>({e,i})).filter(x=>x.e.trim().split("-",9)[0]===id);
  if(found.length!==1) throw new Error("Schedule "+id+" is missing or duplicated; nothing was written.");
