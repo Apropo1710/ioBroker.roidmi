@@ -79,7 +79,7 @@ export function parseXiaomiCleaningSchedules(value: unknown, roomNames: Map<numb
         const [id, enabledRaw, time, daysRaw, repeatRaw, modeRaw, fanRaw, waterRaw, roomsRaw] = parts;
         // C102GL bitmap is stored Sunday..Monday: leftmost bit = Sunday, rightmost bit = Monday.
         const days = daysRaw.length === 7
-            ? [...daysRaw].flatMap((bit, position) => bit === "1" ? [6 - position] : []).sort((a, b) => a - b)
+            ? [...daysRaw].flatMap((bit, position) => bit === "1" ? [(position + 6) % 7] : []).sort((a, b) => a - b)
             : [];
         const roomIds = roomsRaw.split(",").map((entry) => Number(entry.trim())).filter((entry) => Number.isInteger(entry) && entry >= 0);
         const water = Number(modeRaw);
@@ -184,7 +184,7 @@ export function updateXiaomiCleaningSchedule(value:unknown,id:string,u:XiaomiCle
  if(found.length!==1) throw new Error("Schedule "+id+" is missing or duplicated; nothing was written.");
  const i=found[0].i,p=entries[i].trim().split("-",9);
  if(p.length!==9||p.some(x=>!x)) throw new Error("Schedule "+id+" has an invalid format.");
- const bits=Array(7).fill("0"); for(const d of u.weekdays) bits[6-d]="1";
+ const bits=Array(7).fill("0"); for(const d of u.weekdays) bits[(d + 1) % 7]="1";
  p[2]=u.time;p[3]=bits.join("");p[4]=u.repeat?"1":"0";p[5]=String(u.waterLevel);p[6]=String(u.fanSpeed);p[7]=String(u.cleaningMode);p[8]=u.roomIds.join(",");
  entries[i]=p.join("-");return entries.join(";");
 }
