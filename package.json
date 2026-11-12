@@ -1,6 +1,6 @@
 {
   "name": "iobroker.roidmi",
-  "version": "0.1.53",
+  "version": "0.1.54",
   "description": "ioBroker adapter for Roidmi robot vacuums",
   "main": "build/main.js",
   "types": "build/main.d.ts",
