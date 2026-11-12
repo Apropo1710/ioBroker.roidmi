@@ -3,7 +3,7 @@ const assert = require("node:assert/strict");
 const { parseXiaomiCleaningSchedules } = require("../build/lib/xiaomi-cleaning-schedules.js");
 
 test("parses C102GL schedule fields and weekday bitmap", () => {
-    const schedules = parseXiaomiCleaningSchedules("1-3-08:30-0001111-1-1-1-64-3,8", new Map([[3, "Flur"], [8, "Küche"]]));
+    const schedules = parseXiaomiCleaningSchedules("1-3-08:30-0111110-1-1-1-64-3,8", new Map([[3, "Flur"], [8, "Küche"]]));
     assert.equal(schedules.length, 1);
     assert.equal(schedules[0].enabled, true);
     assert.equal(schedules[0].time, "08:30");
@@ -24,7 +24,7 @@ test("parses multiple schedules separated by semicolon and disabled state", () =
 });
 
 test("accepts a JSON-encoded schedule array and keeps malformed entries visible", () => {
-    const schedules = parseXiaomiCleaningSchedules(JSON.stringify(["1-3-07:00-1111100-1-0-0-32-3", "invalid"]));
+    const schedules = parseXiaomiCleaningSchedules(JSON.stringify(["1-3-07:00-0111110-1-0-0-32-3", "invalid"]));
     assert.equal(schedules.length, 2);
     assert.equal(schedules[0].time, "07:00");
     assert.ok(schedules[1].parseError);
