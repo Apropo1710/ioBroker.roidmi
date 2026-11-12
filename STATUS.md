@@ -270,3 +270,13 @@ Diese Übersicht ist die maßgebliche aktuelle Testliste. Bei jedem neuen Testbe
 - Korrektur in Commits `a55e364` und `1329843`: neue Funktion `getXiaomiRoomCleanActionParams` serialisiert die Inputs als `[18, JSON-String]`; sowohl Cloud- als auch lokaler MIoT-Transport verwenden nun dieses korrekte Format.
 - Regressionstest in Commit `f56d8a0`: prüft für Segment 8 genau zwei Aktionsparameter und den erwarteten JSON-Inhalt `selects: [[8,1,1,2,1]]`.
 - CI/Build für diese Änderung noch ausstehend. Keine weitere Reinigung starten, bis CI erfolgreich ist.
+
+
+## X20+ Raumreinigung: Cloud-Validierung verwirft firmware-spezifische Eingaben (12.11.2026)
+
+- Nach dem Cloud-Transportwechsel und dem Test mit Segment 8 antwortete Xiaomi weiterhin mit `-704220025` (Action-Parameteranzahl stimmt nicht). Die Logs zeigen Warnungen bei 10:17:28, 10:17:40 und 10:18:49. `cleanRooms` wird nach Verarbeitung absichtlich geleert; die sichtbare Fehlermeldung steht in `cleanRoomsStatus`. Das erklärt, warum der Eingabewert nicht rot stehen bleibt.
+- Die hardwarevalidierte unabhängige C102GL-Implementierung `ilirdokle43/HA-Xiaomi-Vacuum-Local` bestätigt: SIID 4 / AIID 1 benötigt firmwarebedingt zwei Eingaben: PIID 1 = 18 und PIID 10 = JSON-String. Der lokale miIO-Transport sendet diese als `in: [{piid,value}, ...]`. Die veröffentlichte MIoT-Spezifikation beschreibt dagegen nur eine Eingabe; daher lehnt der Cloud-Endpunkt die firmware-spezifische Zwei-Input-Erweiterung ab.
+- Korrektur: Raumreinigung wird wieder ausschließlich lokal über `miIO.miotspecv2` gesendet, mit beiden PIID/Value-Deskriptoren. Zusätzlich kann `MiioClient.call(..., forceFreshHandshake=true)` einen frischen Handshake erzwingen. Das adressiert den vorherigen lokalen Timeout mit einem ca. 1900 Sekunden alten gecachten Handshake, ohne den allgemeinen Polling-/Befehlsverkehr zu verändern.
+- Commits: `fb49c25` (frischer Handshake-Parameter), `ec01bb5` (lokale Zwei-Input-Raumreinigung), `d1c4f60` und `76323eb` (falsche Raw-Value-Serializer-Hilfsfunktion und Test entfernt).
+- Frühere Annahme, rohe Werte `[18, json]` seien für den X20+-Befehl korrekt, ist ausdrücklich verworfen. Der passende Hardwarebeleg verlangt `[{piid:1,value:18},{piid:10,value:json}]`.
+- CI/Build für den korrigierten Stand noch ausstehend. Bis erfolgreichem Build nicht installieren und keine weiteren Raumreinigungsversuche durchführen.
