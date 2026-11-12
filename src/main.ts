@@ -210,6 +210,17 @@ class RoidmiAdapter extends Adapter {
                 if (miioTrace.length > 20) miioTrace.shift();
             }
         });
+        const maintenanceProperties = [
+            { id: "filterLife", siid: 10, piid: 1, name: "Filter life", kind: "percent" },
+            { id: "filterLeftMinutes", siid: 10, piid: 2, name: "Filter remaining time", kind: "minutes" },
+            { id: "mainBrushLife", siid: 11, piid: 2, name: "Main brush life", kind: "percent" },
+            { id: "mainBrushLeftMinutes", siid: 11, piid: 1, name: "Main brush remaining time", kind: "minutes" },
+            { id: "sideBrushLife", siid: 12, piid: 2, name: "Side brush life", kind: "percent" },
+            { id: "sideBrushLeftMinutes", siid: 12, piid: 1, name: "Side brush remaining time", kind: "minutes" },
+            { id: "sensorDirtyLife", siid: 15, piid: 2, name: "Sensor cleaning life", kind: "percent" },
+            { id: "sensorDirtyLeftMinutes", siid: 15, piid: 1, name: "Sensor cleaning remaining time", kind: "minutes" }
+        ] as const;
+
         const properties = [
             { id: "battery", siid: 3, piid: 1, name: "Battery level", unit: "%" },
             { id: "charging", siid: 3, piid: 2, name: "Charging state" },
@@ -241,7 +252,19 @@ class RoidmiAdapter extends Adapter {
             if ("min" in property) await this.subscribeStatesAsync("evePlus.status." + property.id);
         }
 
+        for (const property of maintenanceProperties) {
+            await this.setObjectNotExistsAsync("evePlus.status." + property.id, {
+                type: "state",
+                common: { name: property.name, type: "number", role: "value", read: true, write: false },
+                native: { siid: property.siid, piid: property.piid }
+            });
+        }
+
         const controls = [
+            { id: "resetFilter", name: "Reset filter life" },
+            { id: "resetMainBrush", name: "Reset main brush life" },
+            { id: "resetSideBrush", name: "Reset side brush life" },
+            { id: "resetSensors", name: "Reset sensor cleaning life" },
             { id: "start", name: "Start full cleaning" },
             { id: "pause", name: "Pause cleaning" },
             { id: "resume", name: "Resume cleaning" },
@@ -323,6 +346,7 @@ class RoidmiAdapter extends Adapter {
             }
         }
 
+        let lastMaintenancePoll = 0;
         const poll = async (): Promise<void> => {
             if (!this.client || this.stopping || this.commandRunning) return;
             this.commandRunning = true;
@@ -373,6 +397,25 @@ class RoidmiAdapter extends Adapter {
                         throw new Error(`MIoT property read failed (SIID ${property.siid}, PIID ${property.piid}, code ${item.code})`);
                     }
                     }
+                }
+                if (Date.now() - lastMaintenancePoll >= 300_000) {
+                    for (let offset = 0; offset < maintenanceProperties.length; offset += maxPropertiesPerRequest) {
+                        const batch = maintenanceProperties.slice(offset, offset + maxPropertiesPerRequest);
+                        const result = await this.client.call("get_properties", batch.map(property => ({
+                            did: config.did, siid: property.siid, piid: property.piid
+                        })));
+                        if (!Array.isArray(result)) throw new Error("Unexpected EVE Plus maintenance response");
+                        for (let index = 0; index < batch.length; index++) {
+                            const property = batch[index];
+                            const item = result[index] as { code?: number; value?: unknown } | undefined;
+                            if (item?.code === 0 && typeof item.value === "number") {
+                                await this.setStateChangedAsync("evePlus.status." + property.id, { val: item.value, ack: true });
+                            } else if (item && typeof item.code === "number" && item.code !== 0) {
+                                throw new Error(`EVE Plus maintenance read failed (SIID ${property.siid}, PIID ${property.piid}, code ${item.code})`);
+                            }
+                        }
+                    }
+                    lastMaintenancePoll = Date.now();
                 }
                 successfulPollCount++;
                 await this.setStateChangedAsync("evePlus.info.lastPoll", { val: new Date().toISOString(), ack: true });
@@ -627,6 +670,10 @@ class RoidmiAdapter extends Adapter {
         // Different references report local/cloud firmware behavior differently;
         // the real robot test decides whether these actions execute on this firmware.
         const x20Controls = [
+            { id: "resetMainBrush", name: "Reset main brush life", siid: 9, aiid: 1 },
+            { id: "resetSideBrush", name: "Reset side brush life", siid: 10, aiid: 1 },
+            { id: "resetFilter", name: "Reset filter life", siid: 11, aiid: 1 },
+            { id: "resetMop", name: "Reset mop life", siid: 18, aiid: 1 },
             { id: "pause", name: "Pause cleaning", siid: 2, aiid: 2 },
             { id: "returnToDock", name: "Return to dock / finish cleaning", siid: 3, aiid: 1 }
         ];
@@ -1289,6 +1336,10 @@ class RoidmiAdapter extends Adapter {
                 return;
             }
             const actionMap: Record<string, { siid: number; aiid: number }> = {
+                resetMainBrush: { siid: 9, aiid: 1 },
+                resetSideBrush: { siid: 10, aiid: 1 },
+                resetFilter: { siid: 11, aiid: 1 },
+                resetMop: { siid: 18, aiid: 1 },
                 start: { siid: 2, aiid: 1 },
                 pause: { siid: 2, aiid: 2 },
                 returnToDock: { siid: 3, aiid: 1 }
@@ -1537,6 +1588,34 @@ class RoidmiAdapter extends Adapter {
         }
 
         if (state.val !== true) return;
+        const maintenanceActions: Record<string, { siid: number; aiid: number; label: string }> = {
+            resetFilter: { siid: 10, aiid: 1, label: "filter" },
+            resetMainBrush: { siid: 11, aiid: 1, label: "main brush" },
+            resetSideBrush: { siid: 12, aiid: 1, label: "side brush" },
+            resetSensors: { siid: 15, aiid: 1, label: "sensor cleaning" }
+        };
+        if (command in maintenanceActions) {
+            const action = maintenanceActions[command];
+            try {
+                if (!this.client || this.commandRunning) throw new Error("Roidmi is unavailable or another command is running");
+                this.commandRunning = true;
+                const result = await this.client.call("action", [{ did: config.did, siid: action.siid, aiid: action.aiid, in: [] }]);
+                const responseError = getActionResponseError(result);
+                if (responseError) throw new Error(responseError);
+                await this.setStateChangedAsync("evePlus.control.lastCommand", { val: command, ack: true });
+                await this.setStateChangedAsync("evePlus.control.lastCommandStatus", { val: "Reset action accepted; check the next maintenance readback", ack: true });
+                await this.setStateChangedAsync("evePlus.control.lastCommandTime", { val: new Date().toISOString(), ack: true });
+                this.log.info(`Roidmi ${action.label} maintenance reset accepted; response: ${JSON.stringify(result)}`);
+            } catch (error) {
+                const message = error instanceof Error ? error.message : "Unknown maintenance reset error";
+                await this.setStateChangedAsync("evePlus.control.lastCommandStatus", { val: message, ack: true });
+                this.log.warn(`Roidmi ${action.label} reset failed: ${message}`);
+            } finally {
+                this.commandRunning = false;
+                await this.setStateAsync("evePlus.control." + command, { val: false, ack: true });
+            }
+            return;
+        }
         if (command === "start" || command === "pause" || command === "resume" || command === "dock" || command === "stop") {
             await this.sendAction(command, buildVacuumAction(command), "evePlus.control." + command, false);
             return;
