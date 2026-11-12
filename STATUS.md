@@ -201,3 +201,14 @@ Diese Übersicht ist die maßgebliche aktuelle Testliste. Bei jedem neuen Testbe
 - Der Roboter meldete auch dabei akustisch „Reinigung pausiert“.
 - Damit bestätigt sich das im Code sichtbare Mapping: `pause` und `stop` verwenden beide SIID 2 / AIID 2 und lösen nach dem Live-Befund dasselbe Pausenverhalten aus.
 - **Bewertung:** Der Datenpunkt `stop` führt derzeit nicht nachweisbar zu einem endgültigen Abbruch, sondern verhält sich wie `pause`. Als separate Stop-Funktion ist er daher noch nicht bestanden. Nicht vorschnell ummappen: Erst Protokoll-/Original-App-Semantik prüfen, bevor ein anderer MIoT-Befehl implementiert wird.
+
+
+## X20+ Original-App-Test: manuelle Rückkehr zur Station (12.11.2026, ca. 08:20–08:21 Uhr)
+
+- Der Nutzer hat während einer laufenden Reinigung in der Xiaomi-Original-App „Zurück zur Station“ ausgelöst.
+- Die Original-App zeigte vor der Bestätigung den Dialog: „Die aktuelle Reinigung beenden und zum Aufladen zur Ladestation zurückkehren?“ Das ist ein eindeutiger Hinweis, dass dieser manuelle Vorgang die aktuelle Reinigung beendet und nicht lediglich pausiert.
+- Nach Bestätigung zeigte die App „Rückkehr läuft“. Die App-Anzeige der bisherigen Reinigung lag bei 15 m² und 14 Minuten.
+- Zeitgleicher ioBroker-Screenshot: `battery=93`, `cleaningArea=13`, `cleaningTime=14`, `chargingState=5`, `taskStatus=1`, `vacuumState=1`. Die beiden Reinigungszähler blieben auf dem bisherigen Vorgang; der Status-Screenshot allein belegt noch nicht, dass der Roboter bereits angedockt oder das Laden begonnen hat.
+- Anschließend erschien auf dem Android-Gerät die Xiaomi-Benachrichtigung „Reinigung abgeschlossen“.
+- **Zwischenergebnis:** Die Original-App bezeichnet die manuelle Rückkehr ausdrücklich als Beenden der aktuellen Reinigung. Das ist klar von der zuvor getesteten Pause mit Fortsetzung über `control.start` zu unterscheiden. Der Adapter-Datenpunkt `returnToDock` verwendet bereits eine separate Aktion (SIID 3 / AIID 1); die Übereinstimmung mit dem Original-App-Verhalten muss noch durch einen eigenen Adapter-Live-Test bestätigt werden.
+- **Noch offen:** tatsächliches Andocken/Ladebeginn nach dieser Sequenz und ob nach dem Laden eine automatische Fortsetzung erfolgt. Der Screenshot mit der Benachrichtigung „Reinigung abgeschlossen“ spricht für einen beendeten Auftrag; ein späterer Neustart wurde bislang nicht beobachtet/bestätigt.
