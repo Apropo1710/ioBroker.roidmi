@@ -261,3 +261,12 @@ Diese Übersicht ist die maßgebliche aktuelle Testliste. Bei jedem neuen Testbe
 - Entscheidender Codevergleich: Die normalen X20+-Steuerbefehle (Start, Pause, Rückkehr) verwenden bei vorhandener Xiaomi-Cloud-Sitzung bereits `XiaomiCloudMapClient.callAction` über `/miotspec/action`. Die Raumreinigung war dagegen fest auf den lokalen UDP-Aufruf verdrahtet. Der Log belegt außerdem eine wiederhergestellte Xiaomi-Cloud-Sitzung. Damit war der Raumreinigungsbefehl inkonsistent zum bewährten Transport der übrigen X20+-Aktionen.
 - Korrektur in Commit `cba3e2d`: Raumreinigung verwendet nun ebenfalls die vorhandene Xiaomi-Cloud-Sitzung und denselben `callAction`-Transport wie Start/Pause/ReturnToDock; die vollständigen Room-clean-Inputs (einschließlich `selects`) werden übergeben und eine erneuerte Cloud-Sitzung wie bei den anderen Befehlen gespeichert. Nur wenn keine Cloud-Sitzung vorhanden ist, bleibt der lokale miIO-Fallback bestehen.
 - Der Roboter wurde durch die Codeänderung nicht angesprochen. Der erneute Hardwaretest ist erst nach erfolgreichem CI/Build vorgesehen.
+
+
+## X20+ Raumreinigung: MIoT-Parameterformat korrigiert (12.11.2026)
+
+- Nach dem Wechsel auf Xiaomi Cloud MIoT antwortet die Cloud nun mit `code: -704220025`. Das ist laut Xiaomi MIoT-Fehlercode-Tabelle `action arguments count mismatch` (Anzahl der Aktionsparameter stimmt nicht). Damit ist die Cloud-Verbindung funktionsfähig; der Request-Aufbau war falsch.
+- Codevergleich mit offizieller Xiaomi MIoT-Implementierung: Die Aktionsparameter `in` müssen als geordnete Liste der reinen Werte übermittelt werden. Der Adapter übergab bislang stattdessen die internen `{piid, value}`-Deskriptoren.
+- Korrektur in Commits `a55e364` und `1329843`: neue Funktion `getXiaomiRoomCleanActionParams` serialisiert die Inputs als `[18, JSON-String]`; sowohl Cloud- als auch lokaler MIoT-Transport verwenden nun dieses korrekte Format.
+- Regressionstest in Commit `f56d8a0`: prüft für Segment 8 genau zwei Aktionsparameter und den erwarteten JSON-Inhalt `selects: [[8,1,1,2,1]]`.
+- CI/Build für diese Änderung noch ausstehend. Keine weitere Reinigung starten, bis CI erfolgreich ist.
