@@ -29,7 +29,7 @@ export class MiioClient {
 
     public constructor(private readonly options: MiioClientOptions) {}
 
-    public async call(method: string, params: unknown[] = [], timeoutOverrideMs?: number, forceFreshHandshake = false): Promise<unknown> {
+    public async call(method: string, params: unknown = [], timeoutOverrideMs?: number, forceFreshHandshake = false): Promise<unknown> {
         const previous = MiioClient.requestQueue;
         let release!: () => void;
         MiioClient.requestQueue = new Promise<void>((resolve) => { release = resolve; });
@@ -41,7 +41,7 @@ export class MiioClient {
         }
     }
 
-    private async callUnlocked(method: string, params: unknown[] = [], timeoutOverrideMs?: number, forceFreshHandshake = false): Promise<unknown> {
+    private async callUnlocked(method: string, params: unknown = [], timeoutOverrideMs?: number, forceFreshHandshake = false): Promise<unknown> {
         if (!method.trim()) throw new Error("miIO method must not be empty");
         const port = this.options.port ?? 54321;
         const timeoutMs = timeoutOverrideMs ?? this.options.timeoutMs ?? 4000;
