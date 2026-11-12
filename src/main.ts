@@ -1072,15 +1072,36 @@ class RoidmiAdapter extends Adapter {
                             try {
                                 const baselineState = await this.getStateAsync("x20Plus.status.vacuumState");
                                 const baselineStatus = typeof baselineState?.val === "number" ? baselineState.val : null;
-                                const result = await this.xiaomiClient.call("miIO.miotspecv2", [{
-                                    method: "action",
-                                    params: {
-                                        did: (this.config as RoidmiAdapterConfig).xiaomiDid,
+                                const config = this.config as RoidmiAdapterConfig;
+                                let result: unknown;
+                                let commandSource: "Xiaomi Cloud MIoT" | "local MIoT";
+                                if (this.cloudMapClient.hasSession()) {
+                                    // Match the transport used by the other X20+ actions.
+                                    // Room cleaning is a state-changing command and should use
+                                    // the authenticated Xiaomi Cloud session when available.
+                                    result = await this.cloudMapClient.callAction(config.cloudCountry || "de", {
+                                        did: config.xiaomiDid!,
                                         siid: roomAction.siid,
                                         aiid: roomAction.aiid,
                                         in: roomAction.inputs
-                                    }
-                                }]);
+                                    }, async () => {
+                                        await this.setStateAsync("evePlus.map.cloudSession", {
+                                            val: this.encrypt(this.cloudMapClient.exportSession()), ack: true
+                                        });
+                                    });
+                                    commandSource = "Xiaomi Cloud MIoT";
+                                } else {
+                                    result = await this.xiaomiClient.call("miIO.miotspecv2", [{
+                                        method: "action",
+                                        params: {
+                                            did: config.xiaomiDid,
+                                            siid: roomAction.siid,
+                                            aiid: roomAction.aiid,
+                                            in: roomAction.inputs
+                                        }
+                                    }]);
+                                    commandSource = "local MIoT";
+                                }
                                 const responseError = getActionResponseError(result);
                                 if (responseError) throw new Error(responseError);
                                 this.xiaomiRoomCleanTracker = createRoomCleanObservationTracker(baselineStatus, 3);
@@ -1088,7 +1109,7 @@ class RoidmiAdapter extends Adapter {
                                     ? observeRoomCleanStatus(this.xiaomiRoomCleanTracker, baselineStatus)
                                     : { state: "pending", message: "MIoT accepted the room-clean action; waiting for normal status polling (execution not yet verified)." };
                                 if (initialObservation.state !== "pending") this.xiaomiRoomCleanTracker = undefined;
-                                const message = initialObservation.message + " MIoT response: " + JSON.stringify(result);
+                                const message = initialObservation.message + " via " + commandSource + ". MIoT response: " + JSON.stringify(result);
                                 this.log.info("Xiaomi X20+ " + message);
                                 await this.setStateAsync("x20Plus.control.cleanRoomsStatus", { val: message, ack: true });
                             } finally {
