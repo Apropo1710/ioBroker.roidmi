@@ -157,3 +157,11 @@ Diese Übersicht ist die maßgebliche aktuelle Testliste. Bei jedem neuen Testbe
 - **Ergebnis: GLOBALER REINIGUNGSSTART AUS IOBROKER BESTANDEN** (Live-Test am realen X20+).
 - Auffälligkeit für die Statusbeobachtung: Im Screenshot steht `statusText` noch auf „Ladung abgeschlossen“, obwohl `vacuumState=1` bereits den neuen Zustand meldet. Prüfen, ob der Text-State beim nächsten regulären Poll aktualisiert wird; zunächst kein Codeeingriff und kein zusätzlicher Poll.
 - Der Start-State `x20Plus.control.start` steht nach Ausführung wieder auf `false`, wie für den Taster vorgesehen.
+
+
+### Nachbeobachtung globaler Start (12.11.2026, ca. 07:59 Uhr)
+
+- Weiterer Screenshot während der laufenden Reinigung: `vacuumState=1`, `taskStatus=1`, `chargingState=2`, `cleaningArea=2`, `cleaningTime=0`, Akku 99 %.
+- Der Roboter ist damit weiterhin im aktiven Reinigungszustand; die Reinigungsfläche ist gegenüber dem Start-Screenshot von 0 auf 2 gestiegen.
+- **Status-Text-Auffälligkeit bestätigt:** `statusText` zeigt weiterhin „Ladung abgeschlossen“, obwohl `vacuumState=1` und `taskStatus=1` sind. Das ist nicht nur ein kurzer Aktualisierungsversatz direkt nach dem Start. Als separaten Statusanzeige-Befund für spätere Codeanalyse vormerken; während des laufenden Funktionstests keine Änderung vornehmen.
+- `cleaningTime=0` bleibt in diesem frühen Screenshot unverändert; weiter beobachten, ob der Wert später ansteigt bzw. ob die Einheit/Granularität Minuten sind.
