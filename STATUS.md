@@ -359,3 +359,12 @@ Diese Übersicht ist die maßgebliche aktuelle Testliste. Bei jedem neuen Testbe
 - Bearbeiten/Aktivieren/Löschen über ioBroker bleibt offen. Die untersuchte C102GL-Referenz kann Zeitpläne lesen, dokumentiert aber keine unterstützte Schreibschnittstelle. Keine undokumentierten Schreibversuche, die App-Zeitpläne beschädigen oder auseinanderlaufen lassen könnten.
 - Parser-Regressionstests ergänzt für Wochentage, Aktivierung, mehrere Einträge, Raumauflösung und fehlerhafte Einträge.
 - **Build/CI erfolgreich:** beide GitHub-Actions-Läufe für Commit `479b923` liefen erfolgreich durch. `npm ci`, `npm run build`, `npm test`, `npm run lint` und Paketprüfung waren erfolgreich. Die Änderung ist damit buildbar; Hardware-Readback über den X20+ steht noch aus. Vor breiter Nutzung zuerst einmal `refreshSchedules` auslösen und die Ausgabe mit der Xiaomi-App vergleichen.
+
+## X20+ Zeitpläne – automatische 30-Minuten-Synchronisierung (Version 0.1.53)
+
+- Nutzer hat die automatische Aktualisierung im Abstand von 30 Minuten ausdrücklich bestätigt.
+- `x20Plus.control.refreshSchedules` bleibt zusätzlich als manueller Abruf erhalten. Damit kann nach Änderungen in Xiaomi Home jederzeit sofort synchronisiert werden.
+- Automatische Aktualisierung liest ausschließlich SIID 8 / PIID 2 über die vorhandene Xiaomi-Cloud-Sitzung. Keine MIoT-Abfrage an den Roboter, kein zusätzlicher lokaler Poll und keine Schreibzugriffe auf Zeitpläne.
+- Läuft gerade ein anderer Xiaomi-Cloud-Befehl, wird die automatische Synchronisierung um eine Minute verschoben, statt parallel zu starten. Fehlt die Cloud-Sitzung, wird der Abruf übersprungen und der Status entsprechend gesetzt.
+- Timer wird beim Adapter-Unload beendet. Adapterversion auf **0.1.53** angehoben.
+- CI/Build und Hardware-Readback für den automatischen Ablauf stehen noch aus. Die manuelle Lesefunktion aus 0.1.52 ist weiterhin die Grundlage und muss am Gerät zuerst verifiziert werden.
