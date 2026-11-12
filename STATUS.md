@@ -249,3 +249,7 @@ Diese Übersicht ist die maßgebliche aktuelle Testliste. Bei jedem neuen Testbe
 - Diagnoseänderung in Commit `377f92a`: Trace vor dem Raumreinigungsaufruf zurücksetzen und bei einem fehlgeschlagenen Raumreinigungsbefehl als Debugmeldungen ausgeben. Keine Wiederholung des nicht-idempotenten Reinigungsbefehls, keine Änderung an Payload oder Timeout und keine zusätzliche Roboterabfrage.
 - **Noch nicht gebaut/getestet/installiert.** GitHub Actions CI für Commit `377f92a` wurde durch PR #3 ausgelöst und war bei der letzten Abfrage noch in der Warteschlange.
 - Nächster Schritt: CI-Ergebnis abwarten. Falls erfolgreich, Diagnoseversion installieren und den Logtrace nach einem kontrollierten Test auswerten. Bis dahin keine weiteren Raumreinigungsversuche.
+
+- CI-Ergebnis nach der ersten Diagnoseänderung: Build schlug fehl, weil der Trace zunächst als lokale Variable in `onReady` deklariert war, der Zustands-Handler aber in einer anderen Methode darauf zugreifen muss (`TS2304: Cannot find name 'xiaomiMiioTrace'`). Ursache identifiziert.
+- Korrektur in Commit `0c8fcc5`: Der begrenzte X20+-miIO-Trace ist jetzt ein Adapter-Klassenfeld und wird sowohl beim Polling als auch beim Raumreinigungsbefehl verwendet. Keine Änderung am Roboterprotokoll oder am Reinigungsbefehl.
+- CI für den Korrektur-Commit muss noch vollständig durchlaufen; bis dahin keine Installation.
