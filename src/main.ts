@@ -50,6 +50,7 @@ interface MiotAction {
 class RoidmiAdapter extends Adapter {
     private pollTimer?: NodeJS.Timeout;
     private xiaomiPollTimer?: NodeJS.Timeout;
+    private xiaomiScheduleTimer?: NodeJS.Timeout;
     private xiaomiPollRunning = false;
     private xiaomiCommandRunning = false;
     private xiaomiClient?: MiioClient;
@@ -886,6 +887,32 @@ class RoidmiAdapter extends Adapter {
         };
         await poll();
         schedule(lastError ? Math.min(interval * 2, 300000) : interval);
+
+        // Read-only Xiaomi Home schedule sync: one cloud property read every 30 minutes.
+        // If another Xiaomi command is active, defer by one minute instead of overlapping it.
+        const scheduleSyncInterval = 30 * 60 * 1000;
+        const scheduleSync = (): void => {
+            if (this.stopping) return;
+            this.xiaomiScheduleTimer = setTimeout(async () => {
+                if (this.stopping) return;
+                if (this.xiaomiCommandRunning) {
+                    this.log.debug("Xiaomi X20+ schedule sync deferred because another command is running");
+                    this.xiaomiScheduleTimer = setTimeout(scheduleSync, 60 * 1000);
+                    return;
+                }
+                if (!this.cloudMapClient.hasSession()) {
+                    await this.setStateChangedAsync(prefix + "timing.status", {
+                        val: "Automatische Synchronisierung übersprungen: Xiaomi-Cloud-Sitzung nicht verfügbar.",
+                        ack: true
+                    });
+                    scheduleSync();
+                    return;
+                }
+                await this.setStateAsync(prefix + "control.refreshSchedules", { val: true, ack: false });
+                scheduleSync();
+            }, scheduleSyncInterval);
+        };
+        scheduleSync();
     }
 
     private async applyRoomMapConfig(config: RoomMapConfig): Promise<void> {
@@ -1686,6 +1713,7 @@ class RoidmiAdapter extends Adapter {
         this.stopping = true;
         if (this.pollTimer) clearTimeout(this.pollTimer);
         if (this.xiaomiPollTimer) clearTimeout(this.xiaomiPollTimer);
+        if (this.xiaomiScheduleTimer) clearTimeout(this.xiaomiScheduleTimer);
         this.setState("evePlus.info.connection", false, true);
         this.setState("x20Plus.info.connection", false, true);
         callback();
