@@ -78,7 +78,7 @@ test("rejects readback that changes another schedule field", () => {
 test("decodes automatic water adjustment reported by Xiaomi Home", () => {
     const schedules = parseXiaomiCleaningSchedules("3-0-13:11-0000000-0-0-0-48-0");
     assert.equal(schedules[0].waterLevel, 0);
-    assert.equal(schedules[0].waterLevelText, "Automatische Anpassung");
+    assert.equal(schedules[0].waterLevelText, "Automatisch");
 });
 
 test("edits supported fields of one schedule and preserves other schedules",()=>{
@@ -91,7 +91,7 @@ test("edits supported fields of one schedule and preserves other schedules",()=>
 test("supports one-time schedule edits and rejects invalid values",()=>{
  const raw="3-0-12:09-0000000-0-3-0-0-0";
  const u={time:"13:11",weekdays:[],repeat:false,cleaningMode:48,fanSpeed:0,waterLevel:0,roomIds:[0]};
- assert.equal(updateXiaomiCleaningSchedule(raw,"3",u),"3-0-13:11-0000000-0-3-0-0-0");
+ assert.equal(updateXiaomiCleaningSchedule(raw,"3",u),"3-0-13:11-0000000-0-0-0-48-0");
  assert.throws(()=>updateXiaomiCleaningSchedule(raw,"3",{...u,time:"25:00"}),/Invalid schedule time/);
  assert.throws(()=>updateXiaomiCleaningSchedule(raw,"3",{...u,weekdays:[1]}),/one-time schedule/);
  assert.throws(()=>updateXiaomiCleaningSchedule(raw,"3",{...u,waterLevel:16}),/Unsupported/);
