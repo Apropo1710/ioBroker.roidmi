@@ -163,7 +163,7 @@ export class MiioClient {
                 });
             };
 
-            if (this.options.reuseHandshake && this.cachedHandshake) {
+            if (cachedHandshake) {
                 const cached = this.cachedHandshake;
                 debug("reusing handshake for device ID " + cached.deviceId + " (" +
                     Math.floor((Date.now() - cached.receivedAt) / 1000) + "s old)");
