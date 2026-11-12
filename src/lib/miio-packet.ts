@@ -23,7 +23,7 @@ export function parseMiioHeader(packet: Buffer): MiioHeader {
     };
 }
 
-export function buildMiioRequest(method: string, params: unknown[], id: number, tokenHex: string, header: MiioHeader): Buffer {
+export function buildMiioRequest(method: string, params: unknown, id: number, tokenHex: string, header: MiioHeader): Buffer {
     const token = Buffer.from(tokenHex, "hex");
     if (token.length !== 16) throw new Error("miIO token must contain exactly 32 hexadecimal characters");
     if (!/^[0-9a-f]+$/i.test(tokenHex)) throw new Error("miIO token must be hexadecimal");
