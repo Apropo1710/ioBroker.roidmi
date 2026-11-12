@@ -212,3 +212,12 @@ Diese Übersicht ist die maßgebliche aktuelle Testliste. Bei jedem neuen Testbe
 - Anschließend erschien auf dem Android-Gerät die Xiaomi-Benachrichtigung „Reinigung abgeschlossen“.
 - **Zwischenergebnis:** Die Original-App bezeichnet die manuelle Rückkehr ausdrücklich als Beenden der aktuellen Reinigung. Das ist klar von der zuvor getesteten Pause mit Fortsetzung über `control.start` zu unterscheiden. Der Adapter-Datenpunkt `returnToDock` verwendet bereits eine separate Aktion (SIID 3 / AIID 1); die Übereinstimmung mit dem Original-App-Verhalten muss noch durch einen eigenen Adapter-Live-Test bestätigt werden.
 - **Noch offen:** tatsächliches Andocken/Ladebeginn nach dieser Sequenz und ob nach dem Laden eine automatische Fortsetzung erfolgt. Der Screenshot mit der Benachrichtigung „Reinigung abgeschlossen“ spricht für einen beendeten Auftrag; ein späterer Neustart wurde bislang nicht beobachtet/bestätigt.
+
+
+### Abschlussbeobachtung manuelle Rückkehr: Roboter bleibt an der Station (12.11.2026)
+
+- Nutzer bestätigt: Der X20+ hat nach dem manuellen Zurückkehren angedockt, lädt und bleibt an der Station. Dieses Verhalten ist aus früherer Nutzung bekannt; zusätzlich zeigte die Xiaomi-App „Reinigung abgeschlossen“.
+- Damit ist für den getesteten Ablauf belegt: Manuelle Rückkehr aus der laufenden Reinigung beendet den Auftrag und führt nicht zur automatischen Fortsetzung nach dem Laden.
+- Adaptercode-Prüfung: `x20Plus.control.returnToDock` sendet bereits eine einzelne MIoT-Aktion SIID 3 / AIID 1. `pause` und `stop` senden separat SIID 2 / AIID 2. `resumeAfterCharging` ist eine eigene boolesche Einstellung (SIID 4 / PIID 11), kein notwendiger zusätzlicher Befehl für manuelle Rückkehr.
+- **Technische Schlussfolgerung:** Der vorhandene Datenpunkt `x20Plus.control.returnToDock` sollte für den manuellen Vorgang genügen; keine Kombination mit `pause`, `stop` oder einem Schreibzugriff auf `resumeAfterCharging` vornehmen. Die Xiaomi-App-Bestätigung „Reinigung beenden und ... zurückkehren“ passt zur Semantik dieser separaten Dock-Aktion.
+- **Noch nicht direkt hardwarevalidiert:** Die identische Aktion wurde bislang über die Xiaomi-Original-App ausgelöst, nicht über `x20Plus.control.returnToDock` im Adapter. Ein einmaliger Live-Test dieses Datenpunkts bei einer später ohnehin laufenden Reinigung kann die Adapterzuordnung bestätigen. Keine zusätzliche Aktion erforderlich, solange der Roboter bereits lädt.
