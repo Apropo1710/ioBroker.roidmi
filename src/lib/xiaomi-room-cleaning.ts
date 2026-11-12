@@ -50,7 +50,3 @@ export function parseXiaomiRoomCleanRequest(json: string): XiaomiRoomCleanAction
     return buildXiaomiRoomCleanAction((value as {rooms: XiaomiRoomSelection[]}).rooms);
 }
 
-/** MIoT action transport expects only ordered input values, not {piid,value} descriptors. */
-export function getXiaomiRoomCleanActionParams(action: XiaomiRoomCleanAction): unknown[] {
-    return action.inputs.map((input) => input.value);
-}
