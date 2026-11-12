@@ -11,6 +11,7 @@ import { buildVacuumAction, getActionResponseError, getActionFailureStatus } fro
 import { parseRoomMapConfig, RoomMapConfig } from "./lib/room-map";
 import { getRoidmiSetting } from "./lib/roidmi-settings";
 import { parseCleaningSchedules } from "./lib/cleaning-schedules";
+import { parseXiaomiCleaningSchedules } from "./lib/xiaomi-cleaning-schedules";
 import { XiaomiCloudMapClient } from "./lib/xiaomi-cloud-map";
 import { RoidmiMapMetadata } from "./lib/roidmi-map";
 import { getVacuumStateText, getChargingStateText, getRoidmiErrorText } from "./lib/roidmi-status";
@@ -595,6 +596,26 @@ class RoidmiAdapter extends Adapter {
         });
         await this.subscribeStatesAsync(prefix + "control.cleanRooms");
         await this.setObjectNotExistsAsync(prefix + "control.cleanRoomsStatus", { type: "state", common: { name: "X20+ room-clean command status", type: "string", role: "text", read: true, write: false }, native: {} });
+        // Xiaomi Home remains the source of truth. Schedules are read only on demand.
+        await this.setObjectNotExistsAsync(prefix + "control.refreshSchedules", {
+            type: "state", common: { name: "Read cleaning schedules from Xiaomi Home", type: "boolean", role: "button", read: false, write: true, def: false }, native: {}
+        });
+        await this.subscribeStatesAsync(prefix + "control.refreshSchedules");
+        await this.setObjectNotExistsAsync(prefix + "timing.raw", {
+            type: "state", common: { name: "Raw Xiaomi X20+ schedules (SIID 8 / PIID 2)", type: "string", role: "json", read: true, write: false }, native: { siid: 8, piid: 2 }
+        });
+        await this.setObjectNotExistsAsync(prefix + "timing.parsed", {
+            type: "state", common: { name: "Decoded Xiaomi X20+ schedules", type: "string", role: "json", read: true, write: false }, native: {}
+        });
+        await this.setObjectNotExistsAsync(prefix + "timing.summary", {
+            type: "state", common: { name: "Xiaomi X20+ schedule overview", type: "string", role: "text", read: true, write: false }, native: {}
+        });
+        await this.setObjectNotExistsAsync(prefix + "timing.status", {
+            type: "state", common: { name: "Xiaomi X20+ schedule read status", type: "string", role: "text", read: true, write: false }, native: {}
+        });
+        await this.setObjectNotExistsAsync(prefix + "timing.lastUpdate", {
+            type: "state", common: { name: "Last schedule synchronization with Xiaomi Home", type: "string", role: "date", read: true, write: false }, native: {}
+        });
         // Expose the standard C102GL MIoT actions for hardware testing.
         // Different references report local/cloud firmware behavior differently;
         // the real robot test decides whether these actions execute on this firmware.
@@ -1005,6 +1026,46 @@ class RoidmiAdapter extends Adapter {
                     }
                 }
                 await this.setStateAsync("x20Plus.control.readMopModeCloud", { val: false, ack: true });
+                return;
+            }
+            if (command === "refreshSchedules") {
+                if (state.val === true) {
+                    const config = this.config as RoidmiAdapterConfig;
+                    try {
+                        if (!config.xiaomiDid) throw new Error("Xiaomi X20+ DID is missing from adapter configuration.");
+                        if (!this.cloudMapClient.hasSession()) throw new Error("Xiaomi Cloud session unavailable. Sign in through the existing Xiaomi Cloud login first.");
+                        if (this.xiaomiCommandRunning) throw new Error("Another Xiaomi command is running; retry the schedule read afterwards.");
+                        this.xiaomiCommandRunning = true;
+                        await this.setStateAsync("x20Plus.timing.status", { val: "Lese Zeitpläne aus Xiaomi Home…", ack: true });
+                        const result = await this.cloudMapClient.getProperties(config.cloudCountry || "de", config.xiaomiDid, [{ siid: 8, piid: 2 }], async () => this.persistCloudSession());
+                        if (!Array.isArray(result)) throw new Error("Unexpected Xiaomi schedule response.");
+                        const item = result[0] as { code?: number; value?: unknown } | undefined;
+                        if (!item || item.code !== 0 || item.value === undefined) throw new Error("Xiaomi schedule read failed (MIoT code " + String(item?.code ?? "unknown") + ").");
+                        let roomNames = new Map<number, string>();
+                        const roomsState = await this.getStateAsync("x20Plus.rooms.roomsJson");
+                        if (typeof roomsState?.val === "string" && roomsState.val.trim()) {
+                            try {
+                                const rooms = JSON.parse(roomsState.val) as Array<{ segmentId?: number; name?: string }>;
+                                roomNames = new Map(rooms.filter((room) => Number.isInteger(room.segmentId) && typeof room.name === "string").map((room) => [room.segmentId!, room.name!]));
+                            } catch { this.log.debug("Xiaomi X20+ room map unavailable while decoding schedule room names."); }
+                        }
+                        const parsed = parseXiaomiCleaningSchedules(item.value, roomNames);
+                        const raw = typeof item.value === "string" ? item.value : JSON.stringify(item.value);
+                        const summary = parsed.map((entry) => "#" + entry.id + " | " + (entry.enabled ? "Aktiv" : "Deaktiviert") + " | " + entry.time + " | " + entry.weekdaysText + " | " + entry.cleaningModeText + " | " + entry.fanSpeedText + " | Wasser " + entry.waterLevelText + " | Räume: " + entry.roomsText).join("\\n") || "Keine Zeitpläne in Xiaomi Home gespeichert.";
+                        await this.setStateChangedAsync("x20Plus.timing.raw", { val: raw, ack: true });
+                        await this.setStateChangedAsync("x20Plus.timing.parsed", { val: JSON.stringify(parsed, null, 2), ack: true });
+                        await this.setStateChangedAsync("x20Plus.timing.summary", { val: summary, ack: true });
+                        await this.setStateChangedAsync("x20Plus.timing.lastUpdate", { val: new Date().toISOString(), ack: true });
+                        const status = parsed.some((entry) => entry.parseError) ? "Zeitpläne gelesen; mindestens ein Eintrag konnte nicht vollständig dekodiert werden." : parsed.length + " Zeitplan(e) aus Xiaomi Home gelesen.";
+                        await this.setStateAsync("x20Plus.timing.status", { val: status, ack: true });
+                        this.log.info("Xiaomi X20+ schedules synchronized from Xiaomi Home (SIID 8 / PIID 2): " + parsed.length + " entries.");
+                    } catch (error) {
+                        const message = error instanceof Error ? error.message : "Unknown Xiaomi schedule read error";
+                        await this.setStateAsync("x20Plus.timing.status", { val: "Zeitplan-Synchronisierung fehlgeschlagen: " + message, ack: true });
+                        this.log.warn("Xiaomi X20+ schedule synchronization failed: " + message);
+                    } finally { this.xiaomiCommandRunning = false; }
+                }
+                await this.setStateAsync("x20Plus.control.refreshSchedules", { val: false, ack: true });
                 return;
             }
             if (command === "refreshRooms") {
