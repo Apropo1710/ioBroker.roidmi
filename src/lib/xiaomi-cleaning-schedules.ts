@@ -172,7 +172,7 @@ export interface XiaomiCleaningScheduleUpdate {
 }
 export function updateXiaomiCleaningSchedule(value:unknown,id:string,u:XiaomiCleaningScheduleUpdate):string {
  if(typeof value!=="string") throw new Error("Xiaomi schedule data must be a raw string.");
- if(!/^([01]\\d|2[0-3]):[0-5]\\d$/.test(u.time)) throw new Error("Invalid schedule time.");
+ if(!/^([01]\d|2[0-3]):[0-5]\d$/.test(u.time)) throw new Error("Invalid schedule time.");
  if(!Array.isArray(u.weekdays)||u.weekdays.some(d=>!Number.isInteger(d)||d<0||d>6)||new Set(u.weekdays).size!==u.weekdays.length) throw new Error("Invalid weekdays.");
  if(u.repeat&&u.weekdays.length===0) throw new Error("A repeating schedule needs at least one weekday.");
  if(!u.repeat&&u.weekdays.length!==0) throw new Error("A one-time schedule must not contain weekdays.");
