@@ -116,3 +116,14 @@ Diese Übersicht ist die maßgebliche aktuelle Testliste. Bei jedem neuen Testbe
 - Die frühere Einstufung „teilweise bestätigt“ beruhte auf einer Verwechslung bzw. Vermischung mit dem separaten Datenpunkt `cleaningMode` und wird zurückgenommen.
 - **Saugleistung / `suction`: BESTANDEN.** Nicht erneut als offenen Test führen und keine erneute Prüfung dafür einplanen.
 - `cleaningMode` ist ebenfalls vollständig bestätigt: Änderungen wurden in beide Richtungen zwischen ioBroker, Roboter und Xiaomi-Original-App nachvollzogen. Die frühere Einstufung „teilweise bestätigt“ war falsch. `cleaningMode` und `suction` bleiben getrennte Datenpunkte; beide gelten als BESTANDEN.
+
+
+## Stabilitätsbeobachtung 0.1.50 – einzelner seltener RPC-Ausfall (12.11.2026, 04:45 Uhr)
+
+- Nutzer-Screenshot vom 12.11.2026 zeigt einen seltenen fehlgeschlagenen X20+-Poll:
+  - 04:45:45.399: Batch 1/2 mit den Statusfeldern `vacuumState`, `battery`, `chargingState`, `cleaningTime` und `cleaningMode` läuft in den miIO-Timeout; ein einmaliger Retry wird gestartet.
+  - 04:45:49.738: Auch der Retry schlägt fehl (`retry failed: miIO request timed out`).
+  - 04:45:49.762: Der übergeordnete X20+-Poll meldet entsprechend `poll failed: miIO request timed out`.
+- Der Nutzer bewertet solche Ausfälle inzwischen als selten. Das ist gegenüber den zuvor häufiger beobachteten Timeouts ein positiver Stabilitätshinweis, aber noch keine statistisch belastbare Langzeitbewertung.
+- **Entscheidung: Die Handshake-Wiederverwendung aus 0.1.50 bleibt unverändert aktiv.** Aufgrund dieses einzelnen seltenen Ausfalls wird sie weder zurückgenommen noch verändert. Es gibt keinen Beleg, dass die Handshake-Änderung diesen Timeout verursacht; die sporadischen Timeouts wurden bereits vor ihrer Einführung beobachtet.
+- Weiter normale Nutzung und Logs beobachten. Keine zusätzlichen Polls, Diagnoseabfragen oder Änderungen am miIO-Kommunikationscode allein aufgrund dieses Ereignisses.
