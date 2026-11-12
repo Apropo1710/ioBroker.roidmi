@@ -53,6 +53,7 @@ class RoidmiAdapter extends Adapter {
     private xiaomiCommandRunning = false;
     private xiaomiClient?: MiioClient;
     private xiaomiRoomCleanTracker?: RoomCleanObservationTracker;
+    private readonly xiaomiMiioTrace: string[] = [];
     private stopping = false;
     private lastPollError = "";
     private commandRunning = false;
@@ -707,7 +708,6 @@ class RoidmiAdapter extends Adapter {
         }
         // Keep a bounded trace of the Xiaomi UDP handshake/RPC so a timeout can
         // be diagnosed (handshake vs. MIoT response) without logging tokens.
-        const xiaomiMiioTrace: string[] = [];
         const client = new MiioClient({
             host: config.xiaomiHost!,
             token: config.xiaomiToken!,
@@ -716,8 +716,8 @@ class RoidmiAdapter extends Adapter {
             reuseHandshake: true,
             debug: true,
             onDebug: (message) => {
-                xiaomiMiioTrace.push(message);
-                if (xiaomiMiioTrace.length > 20) xiaomiMiioTrace.shift();
+                this.xiaomiMiioTrace.push(message);
+                if (this.xiaomiMiioTrace.length > 20) this.xiaomiMiioTrace.shift();
             }
         });
         this.xiaomiClient = client;
@@ -739,7 +739,7 @@ class RoidmiAdapter extends Adapter {
                 for (let offset = 0; offset < requestedFields.length; offset += maxPropertiesPerRequest) {
                     const batchFields = requestedFields.slice(offset, offset + maxPropertiesPerRequest);
                     const batchLabel = `Xiaomi X20+ batch ${Math.floor(offset / maxPropertiesPerRequest) + 1}/${Math.ceil(requestedFields.length / maxPropertiesPerRequest)} [${batchFields.map(([key, p]) => `${key}:s${p.siid}p${p.piid}`).join(", ")}]`;
-                    xiaomiMiioTrace.length = 0;
+                    this.xiaomiMiioTrace.length = 0;
                     let result: unknown;
                     try {
                         result = await client.call("get_properties", batchFields.map(([, property]) => ({
@@ -749,8 +749,8 @@ class RoidmiAdapter extends Adapter {
                         const firstMessage = firstError instanceof Error ? firstError.message : String(firstError);
                         if (!firstMessage.includes("timed out")) throw firstError;
                         this.log.warn(`[miIO] ${batchLabel} timed out; retrying this batch once`);
-                        for (const line of xiaomiMiioTrace) this.log.debug(`[miIO] ${batchLabel} first attempt: ${line}`);
-                        xiaomiMiioTrace.length = 0;
+                        for (const line of this.xiaomiMiioTrace) this.log.debug(`[miIO] ${batchLabel} first attempt: ${line}`);
+                        this.xiaomiMiioTrace.length = 0;
                         try {
                             result = await client.call("get_properties", batchFields.map(([, property]) => ({
                                 did: config.xiaomiDid!, siid: property.siid, piid: property.piid
@@ -758,7 +758,7 @@ class RoidmiAdapter extends Adapter {
                         } catch (retryError) {
                             const retryMessage = retryError instanceof Error ? retryError.message : String(retryError);
                             this.log.warn(`[miIO] ${batchLabel} retry failed: ${retryMessage}`);
-                            for (const line of xiaomiMiioTrace) this.log.debug(`[miIO] ${batchLabel} retry trace: ${line}`);
+                            for (const line of this.xiaomiMiioTrace) this.log.debug(`[miIO] ${batchLabel} retry trace: ${line}`);
                             throw retryError;
                         }
                     }
@@ -849,7 +849,7 @@ class RoidmiAdapter extends Adapter {
                 if (message !== lastError) {
                     this.log.warn("Xiaomi X20+ poll failed: " + message);
                     // Emit trace only on failure; normal successful polls remain quiet.
-                    for (const traceLine of xiaomiMiioTrace) this.log.debug("Xiaomi miIO trace: " + traceLine);
+                    for (const traceLine of this.xiaomiMiioTrace) this.log.debug("Xiaomi miIO trace: " + traceLine);
                 }
                 lastError = message;
             } finally {
@@ -1068,7 +1068,7 @@ class RoidmiAdapter extends Adapter {
                             this.xiaomiCommandRunning = true;
                             // Keep command diagnostics separate from the preceding status poll.
                             // Emit the bounded UDP trace only if this command fails.
-                            xiaomiMiioTrace.length = 0;
+                            this.xiaomiMiioTrace.length = 0;
                             try {
                                 const baselineState = await this.getStateAsync("x20Plus.status.vacuumState");
                                 const baselineStatus = typeof baselineState?.val === "number" ? baselineState.val : null;
@@ -1098,7 +1098,7 @@ class RoidmiAdapter extends Adapter {
                     } catch (error) {
                         const message = "Room-clean request rejected/failed: " + (error instanceof Error ? error.message : "unknown error");
                         this.log.warn("Xiaomi X20+ " + message);
-                        for (const traceLine of xiaomiMiioTrace) this.log.debug("Xiaomi X20+ room-clean miIO trace: " + traceLine);
+                        for (const traceLine of this.xiaomiMiioTrace) this.log.debug("Xiaomi X20+ room-clean miIO trace: " + traceLine);
                         await this.setStateAsync("x20Plus.control.cleanRoomsStatus", { val: message, ack: true });
                     }
                 }
