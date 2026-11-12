@@ -1,7 +1,7 @@
 {
   "common": {
     "name": "roidmi",
-    "version": "0.1.52",
+    "version": "0.1.53",
     "title": "Roidmi",
     "titleLang": {
       "en": "Roidmi",
@@ -27,7 +27,7 @@
       "xiaomiToken"
     ],
     "news": {
-      "0.1.52": {
+      "0.1.53": {
         "en": "Added on-demand synchronization of Xiaomi X20+ cleaning schedules",
         "de": "Zeitpläne des Xiaomi X20+ können auf Abruf mit Xiaomi Home synchronisiert werden"
       },
