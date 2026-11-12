@@ -239,3 +239,13 @@ Diese Übersicht ist die maßgebliche aktuelle Testliste. Bei jedem neuen Testbe
 - `pause` bleibt SIID 2 / AIID 2; `returnToDock` bleibt SIID 3 / AIID 1. Beide Funktionen sind am realen X20+ erfolgreich getestet.
 - Der Stop-Datenpunkt des Roidmi EVE Plus bleibt unverändert.
 - Versionsstände in `package.json`, `package-lock.json` und `io-package.json` auf 0.1.51 angehoben.
+
+
+## X20+ Raumreinigung: MIoT-Timeout diagnostizieren (12.11.2026)
+
+- Beim ersten gezielten Test für Segment 8 (Flur unten) wurde der Schreibwert `{"rooms":[{"segmentId":8}]}` korrekt angenommen und vom Adapter verarbeitet. Der Eingabedatenpunkt `x20Plus.control.cleanRooms` wird danach absichtlich geleert.
+- Ergebnis in `x20Plus.control.cleanRoomsStatus`: `Room-clean request rejected/failed: miIO request timed out`. Damit ist die lokale MIoT-RPC-Antwort ausgeblieben; es ist **nicht** bewiesen, ob der Roboter den Auftrag empfangen oder ausgeführt hat.
+- Codeprüfung: Der X20+-miIO-Client speichert bereits einen begrenzten UDP-Diagnosetrace im Speicher. Bisher wurde dieser Trace bei Status-Pollfehlern ausgegeben, aber nicht bei Fehlern des Raumreinigungsbefehls.
+- Diagnoseänderung in Commit `377f92a`: Trace vor dem Raumreinigungsaufruf zurücksetzen und bei einem fehlgeschlagenen Raumreinigungsbefehl als Debugmeldungen ausgeben. Keine Wiederholung des nicht-idempotenten Reinigungsbefehls, keine Änderung an Payload oder Timeout und keine zusätzliche Roboterabfrage.
+- **Noch nicht gebaut/getestet/installiert.** GitHub Actions CI für Commit `377f92a` wurde durch PR #3 ausgelöst und war bei der letzten Abfrage noch in der Warteschlange.
+- Nächster Schritt: CI-Ergebnis abwarten. Falls erfolgreich, Diagnoseversion installieren und den Logtrace nach einem kontrollierten Test auswerten. Bis dahin keine weiteren Raumreinigungsversuche.
