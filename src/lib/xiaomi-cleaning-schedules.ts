@@ -103,3 +103,32 @@ export function parseXiaomiCleaningSchedules(value: unknown, roomNames: Map<numb
         };
     });
 }
+
+/** Return the same Xiaomi Home schedule list with only one entry's enable flag changed. */
+export function setXiaomiCleaningScheduleEnabled(value: unknown, scheduleId: string, enabled: boolean): string {
+    if (typeof scheduleId !== "string" || !scheduleId.trim()) throw new Error("A schedule ID is required.");
+    if (typeof enabled !== "boolean") throw new Error("Schedule enabled value must be boolean.");
+    let source: string;
+    if (typeof value === "string") {
+        source = value.trim();
+        if (source.startsWith("[") || source.startsWith('"')) {
+            try {
+                const decoded: unknown = JSON.parse(source);
+                if (Array.isArray(decoded) && decoded.every(item => typeof item === "string")) source = decoded.join(";");
+                else if (typeof decoded === "string") source = decoded;
+            } catch { /* Keep the original raw MIoT value for validation below. */ }
+        }
+    } else if (Array.isArray(value) && value.every(item => typeof item === "string")) {
+        source = value.join(";");
+    } else {
+        throw new Error("Xiaomi schedule data is not a supported string list.");
+    }
+    const entries = source.split(";");
+    const index = entries.findIndex(entry => entry.trim().split("-", 9)[0] === scheduleId);
+    if (index < 0) throw new Error("Schedule " + scheduleId + " was not found in the current Xiaomi Home data.");
+    const parts = entries[index].trim().split("-", 9);
+    if (parts.length !== 9) throw new Error("Schedule " + scheduleId + " has an invalid format; nothing was written.");
+    parts[1] = enabled ? "3" : "0";
+    entries[index] = parts.join("-");
+    return entries.join(";");
+}

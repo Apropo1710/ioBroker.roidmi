@@ -4,6 +4,7 @@ import { parseRoidmiMapArchive, RoidmiMapMetadata } from "./roidmi-map";
 export interface XiaomiCloudMapOptions { username: string; password: string; country: string; token: string; mapName: string; }
 export interface XiaomiCloudMapResult { metadata: RoidmiMapMetadata; mapName: string; deviceId: string; userId: string; }
 export interface XiaomiCloudAction { did: string; siid: number; aiid: number; in?: unknown[]; }
+export interface XiaomiCloudPropertyWrite { siid: number; piid: number; value: unknown; }
 
 class CookieStore {
     private readonly values = new Map<string, string>();
@@ -116,6 +117,25 @@ export class XiaomiCloudMapClient {
             data: JSON.stringify({
                 datasource,
                 params: properties.map(property => ({ did, siid: property.siid, piid: property.piid }))
+            })
+        }, onSessionChanged);
+        return response?.result ?? response;
+    }
+
+    /** Write MIoT properties through Xiaomi Cloud on explicit user request (never part of polling). */
+    public async setProperties(
+        country: string,
+        did: string,
+        properties: XiaomiCloudPropertyWrite[],
+        onSessionChanged?: () => Promise<void>
+    ): Promise<unknown> {
+        if (!this.hasSession()) throw new Error("Xiaomi Cloud session is unavailable; sign in and complete verification first.");
+        if (!/^\d{1,20}$/.test(did)) throw new Error("Xiaomi X20+ DID is invalid.");
+        if (!properties.length) throw new Error("At least one MIoT property is required.");
+        const base = `https://${country === "cn" ? "" : country + "."}api.io.mi.com/app`;
+        const response = await this.api(base + "/v2/miotspec/prop/set", {
+            data: JSON.stringify({
+                params: properties.map(property => ({ did, siid: property.siid, piid: property.piid, value: property.value }))
             })
         }, onSessionChanged);
         return response?.result ?? response;

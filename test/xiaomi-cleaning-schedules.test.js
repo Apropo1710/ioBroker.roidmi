@@ -1,6 +1,6 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { parseXiaomiCleaningSchedules } = require("../build/lib/xiaomi-cleaning-schedules.js");
+const { parseXiaomiCleaningSchedules, setXiaomiCleaningScheduleEnabled } = require("../build/lib/xiaomi-cleaning-schedules.js");
 
 test("parses C102GL schedule fields and weekday bitmap", () => {
     const schedules = parseXiaomiCleaningSchedules("1-3-08:30-0111110-1-1-1-64-3,8", new Map([[3, "Flur"], [8, "Küche"]]));
@@ -41,4 +41,16 @@ test("decodes observed X20+ schedule bit order, cleaning mode and all-area marke
     assert.equal(schedules[0].cleaningModeText, "Saugen und Wischen");
     assert.equal(schedules[0].roomsText, "Alle Bereiche");
     assert.equal(schedules[2].weekdaysText, "Einmalig");
+});
+
+test("changes only the selected schedule enabled flag and preserves all other fields", () => {
+    const raw = "1-3-08:30-0111110-1-1-1-64-3;2-0-19:00-1000001-0-0-0-32-8";
+    assert.equal(setXiaomiCleaningScheduleEnabled(raw, "2", true), "1-3-08:30-0111110-1-1-1-64-3;2-3-19:00-1000001-0-0-0-32-8");
+    assert.equal(setXiaomiCleaningScheduleEnabled(raw, "1", false), "1-0-08:30-0111110-1-1-1-64-3;2-0-19:00-1000001-0-0-0-32-8");
+});
+
+test("rejects unknown or malformed schedule entries without changing the source", () => {
+    const raw = "1-0-09:00-0111110-1-1-1-32-0";
+    assert.throws(() => setXiaomiCleaningScheduleEnabled(raw, "2", true), /was not found/);
+    assert.throws(() => setXiaomiCleaningScheduleEnabled("1-0-09:00", "1", true), /invalid format/);
 });
