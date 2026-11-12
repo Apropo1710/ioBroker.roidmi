@@ -24,6 +24,7 @@ test("parses device ID and timestamp from miIO header", () => {
 
 test("encrypts and validates a miIO JSON packet", () => {
     const request = buildMiioRequest("get_properties", [{ siid: 3, piid: 1 }], 7, token, header);
+    assert.equal(request.readUInt32BE(12), header.stamp + 1);
     const parsed = parseMiioResponse(request, token);
     assert.deepEqual(parsed, {
         id: 7,
@@ -37,4 +38,25 @@ test("rejects wrong tokens, malformed packets and invalid tokens", () => {
     assert.throws(() => parseMiioResponse(packet, "ffffffffffffffffffffffffffffffff"), /checksum/);
     assert.throws(() => parseMiioResponse(Buffer.alloc(32), token), /Invalid/);
     assert.throws(() => buildMiioRequest("miIO.info", [], 1, "bad", header), /32 hexadecimal/);
+});
+
+
+test("increments the miIO request timestamp with 32-bit wraparound", () => {
+    const request = buildMiioRequest("miIO.info", [], 8, token, { deviceId: header.deviceId, stamp: 0xffffffff });
+    assert.equal(request.readUInt32BE(12), 0);
+});
+
+test("serializes native MIoT action RPC with object params", () => {
+    const actionParams = {
+        did: "123456789",
+        siid: 4,
+        aiid: 1,
+        in: [{ piid: 1, value: 18 }, { piid: 10, value: JSON.stringify({ selects: [[8, 1, 1, 2, 1]] }) }]
+    };
+    const request = buildMiioRequest("action", actionParams, 9, token, header);
+    assert.deepEqual(parseMiioResponse(request, token), {
+        id: 9,
+        method: "action",
+        params: actionParams
+    });
 });

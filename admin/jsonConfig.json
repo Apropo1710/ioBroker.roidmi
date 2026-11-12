@@ -9,8 +9,8 @@
       },
       "default": "",
       "help": {
-        "de": "Lokale IPv4-Adresse des Roidmi EVE Plus",
-        "en": "Local IPv4 address of the Roidmi EVE Plus"
+        "de": "Lokale IPv4-Adresse des Roboters (Roidmi EVE Plus oder Xiaomi X20+)",
+        "en": "Local IPv4 address of the robot (Roidmi EVE Plus or Xiaomi X20+)"
       }
     },
     "did": {
@@ -173,6 +173,61 @@
       "help": {
         "de": "Nur aktivieren, wenn die Xiaomi-Cloud-Anmeldung erfolgreich ist. Steuerbefehle werden dann über die Cloud statt lokal gesendet. Statusabfragen bleiben lokal.",
         "en": "Enable only after Xiaomi Cloud login succeeds. Commands will use cloud transport instead of LAN; status polling remains local."
+      }
+    },
+    "enableRoidmi": {
+      "type": "checkbox",
+      "label": {
+        "de": "Roidmi EVE Plus aktivieren",
+        "en": "Enable Roidmi EVE Plus"
+      },
+      "default": true
+    },
+    "enableXiaomi": {
+      "type": "checkbox",
+      "label": {
+        "de": "Xiaomi X20+ aktivieren",
+        "en": "Enable Xiaomi X20+"
+      },
+      "default": false,
+      "help": {
+        "de": "Kann parallel zum Roidmi aktiviert werden. Eigene Verbindungsdaten verwenden.",
+        "en": "Can be enabled alongside Roidmi. Uses its own connection credentials."
+      }
+    },
+    "xiaomiHost": {
+      "type": "text",
+      "label": {
+        "de": "Xiaomi X20+ – IP-Adresse",
+        "en": "Xiaomi X20+ – IP address"
+      },
+      "default": "",
+      "help": {
+        "de": "Lokale IPv4-Adresse des Xiaomi X20+.",
+        "en": "Local IPv4 address of Xiaomi X20+."
+      }
+    },
+    "xiaomiDid": {
+      "type": "text",
+      "label": {
+        "de": "Xiaomi X20+ – Geräte-DID",
+        "en": "Xiaomi X20+ – device DID"
+      },
+      "default": "",
+      "help": {
+        "de": "Numerische DID mit Xiaomi Cloud Tokens Extractor aus den Xiaomi-Home-Gerätedaten ermitteln: https://github.com/PiotrMachowski/Xiaomi-cloud-tokens-extractor. Anleitung und richtige Kontoregion beachten.",
+        "en": "Find the numeric DID in Xiaomi Home device data using Xiaomi Cloud Tokens Extractor: https://github.com/PiotrMachowski/Xiaomi-cloud-tokens-extractor. Follow its instructions and select the correct account region."
+      }
+    },
+    "xiaomiToken": {
+      "type": "password",
+      "label": {
+        "de": "Xiaomi X20+ – MIoT-/miIO-Token",
+        "en": "Xiaomi X20+ – MIoT / miIO token"
+      },
+      "help": {
+        "de": "Token (meist 32 Hex-Zeichen) mit Xiaomi Cloud Tokens Extractor auslesen: https://github.com/PiotrMachowski/Xiaomi-cloud-tokens-extractor. Anleitung beachten. Geheim halten: niemals posten, in Screenshots zeigen, in Git committen oder in Logs kopieren. Nur hier eintragen; ioBroker speichert ihn verschlüsselt. Separater X20+-Token, nicht der Roidmi-Token.",
+        "en": "Extract the token (usually 32 hexadecimal characters) using Xiaomi Cloud Tokens Extractor: https://github.com/PiotrMachowski/Xiaomi-cloud-tokens-extractor. Follow its instructions. Treat it as a secret: never post it, show it in screenshots, commit it to Git, or copy it into logs. Enter it only here; ioBroker stores it encrypted. This is the X20+ token, not the Roidmi token."
       }
     }
   },

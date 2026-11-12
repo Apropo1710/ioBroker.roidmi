@@ -4,6 +4,7 @@ import { parseRoidmiMapArchive, RoidmiMapMetadata } from "./roidmi-map";
 export interface XiaomiCloudMapOptions { username: string; password: string; country: string; token: string; mapName: string; }
 export interface XiaomiCloudMapResult { metadata: RoidmiMapMetadata; mapName: string; deviceId: string; userId: string; }
 export interface XiaomiCloudAction { did: string; siid: number; aiid: number; in?: unknown[]; }
+export interface XiaomiCloudPropertyWrite { siid: number; piid: number; value: unknown; }
 
 class CookieStore {
     private readonly values = new Map<string, string>();
@@ -98,6 +99,82 @@ export class XiaomiCloudMapClient {
             } })
         }, onSessionChanged);
         return response?.result ?? response;
+    }
+
+    /** Read MIoT properties through Xiaomi Cloud on explicit request (never part of polling). */
+    public async getProperties(
+        country: string,
+        did: string,
+        properties: Array<{ siid: number; piid: number }>,
+        onSessionChanged?: () => Promise<void>,
+        datasource: 1 | 2 = 1
+    ): Promise<unknown> {
+        if (!this.hasSession()) throw new Error("Xiaomi Cloud session is unavailable; sign in and complete verification first.");
+        if (!/^\d{1,20}$/.test(did)) throw new Error("Xiaomi X20+ DID is invalid.");
+        if (!properties.length) throw new Error("At least one MIoT property is required.");
+        const base = `https://${country === "cn" ? "" : country + "."}api.io.mi.com/app`;
+        const response = await this.api(base + "/v2/miotspec/prop/get", {
+            data: JSON.stringify({
+                datasource,
+                params: properties.map(property => ({ did, siid: property.siid, piid: property.piid }))
+            })
+        }, onSessionChanged);
+        return response?.result ?? response;
+    }
+
+    /** Write MIoT properties through Xiaomi Cloud on explicit user request (never part of polling). */
+    public async setProperties(
+        country: string,
+        did: string,
+        properties: XiaomiCloudPropertyWrite[],
+        onSessionChanged?: () => Promise<void>
+    ): Promise<unknown> {
+        if (!this.hasSession()) throw new Error("Xiaomi Cloud session is unavailable; sign in and complete verification first.");
+        if (!/^\d{1,20}$/.test(did)) throw new Error("Xiaomi X20+ DID is invalid.");
+        if (!properties.length) throw new Error("At least one MIoT property is required.");
+        const base = `https://${country === "cn" ? "" : country + "."}api.io.mi.com/app`;
+        const response = await this.api(base + "/v2/miotspec/prop/set", {
+            data: JSON.stringify({
+                params: properties.map(property => ({ did, siid: property.siid, piid: property.piid, value: property.value }))
+            })
+        }, onSessionChanged);
+        return response?.result ?? response;
+    }
+
+    /** Fetch the C102GL saved room map from Xiaomi FDS. This is explicit/manual and never part of polling. */
+    public async fetchXiaomiRooms(country: string, did: string, onSessionChanged?: () => Promise<void>): Promise<Array<{ segmentId: number; name: string; roomId?: string }>> {
+        if (!this.hasSession()) throw new Error("Xiaomi Cloud session is unavailable; sign in via the EVE Plus cloud map first.");
+        if (!/^\d{1,20}$/.test(did)) throw new Error("Xiaomi X20+ DID is invalid.");
+        const base = `https://${country === "cn" ? "" : country + "."}api.io.mi.com/app`;
+        const devices = await this.api(base + "/home/device_list", { data: '{"getVirtualModel":false,"getHuamiDevices":0}' }, onSessionChanged);
+        const device = devices?.result?.list?.find((entry: any) => String(entry?.did) === did);
+        if (!device) throw new Error("Xiaomi X20+ was not found in the Xiaomi Cloud device list.");
+        const uid = String(device.uid ?? this.userId);
+        const history = await this.api(base + "/user/get_user_device_data", {
+            data: JSON.stringify({ uid, did, time_start: 0, time_end: 9999999999, limit: 20, key: "6.3", type: "prop" })
+        }, onSessionChanged);
+        const entries = history?.result;
+        if (!Array.isArray(entries)) throw new Error("Xiaomi Cloud returned no X20+ map history.");
+        const announcements = entries
+            .filter((entry: any) => typeof entry?.value === "string" && entry.value.trim())
+            .sort((a: any, b: any) => Number(b.time ?? 0) - Number(a.time ?? 0));
+        if (!announcements.length) throw new Error("Xiaomi X20+ has not announced a saved FDS map yet.");
+        const { parseXiaomiFdsAnnouncement, parseXiaomiDreameFdsMap } = await import("./xiaomi-dreame-map");
+        const object = parseXiaomiFdsAnnouncement(announcements[0].value);
+        let file: any;
+        try {
+            file = await this.api(base + "/v2/home/get_interim_file_url_pro", { data: JSON.stringify({ obj_name: object.objectName }) }, onSessionChanged);
+            if (file?.code === -8) throw new Error("no fileStorageConfig");
+        } catch {
+            file = await this.api(base + "/v2/home/get_interim_file_url", { data: JSON.stringify({ obj_name: object.objectName }) }, onSessionChanged);
+        }
+        const url = file?.result?.url;
+        if (typeof url !== "string" || !url) throw new Error("Xiaomi Cloud did not return a signed X20+ map URL.");
+        const response = await this.request(url);
+        if (!response.ok) throw new Error("X20+ FDS map download failed (HTTP " + response.status + ").");
+        const body = Buffer.from(await response.arrayBuffer());
+        if (!body.length || body.length > 8 * 1024 * 1024) throw new Error("X20+ FDS map file size is invalid.");
+        return parseXiaomiDreameFdsMap(body, object.suffix);
     }
 
     public async fetchMap(o:XiaomiCloudMapOptions, verificationCode?: string, onProgress?: (message: string) => void, onSessionChanged?: () => Promise<void>):Promise<XiaomiCloudMapResult>{

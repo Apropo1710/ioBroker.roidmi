@@ -23,7 +23,7 @@ export function parseMiioHeader(packet: Buffer): MiioHeader {
     };
 }
 
-export function buildMiioRequest(method: string, params: unknown[], id: number, tokenHex: string, header: MiioHeader): Buffer {
+export function buildMiioRequest(method: string, params: unknown, id: number, tokenHex: string, header: MiioHeader): Buffer {
     const token = Buffer.from(tokenHex, "hex");
     if (token.length !== 16) throw new Error("miIO token must contain exactly 32 hexadecimal characters");
     if (!/^[0-9a-f]+$/i.test(tokenHex)) throw new Error("miIO token must be hexadecimal");
@@ -39,7 +39,10 @@ export function buildMiioRequest(method: string, params: unknown[], id: number, 
     packetHeader[1] = 0x31;
     packetHeader.writeUInt16BE(32 + encrypted.length, 2);
     packetHeader.writeUInt32BE(header.deviceId, 8);
-    packetHeader.writeUInt32BE(header.stamp, 12);
+    // miIO expects the request timestamp to advance beyond the device timestamp
+    // returned by the handshake. This also avoids stale timestamps when the
+    // handshake and RPC cross a device-clock second boundary.
+    packetHeader.writeUInt32BE((header.stamp + 1) >>> 0, 12);
     const checksum = createHash("md5")
         .update(packetHeader.subarray(0, 16))
         .update(token)
