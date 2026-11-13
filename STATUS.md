@@ -548,3 +548,12 @@ Diese Übersicht ist die maßgebliche aktuelle Testliste. Bei jedem neuen Testbe
 - Standardwerte für beide Geräte vereinheitlicht: automatische Synchronisierung **aus**, Intervall **60 Minuten**.
 - Keine Änderung an Abruflogik, Timern oder Zeitplan-Datenpfaden; ausschließlich Admin-Konfiguration und Darstellung.
 - Umsetzung auf `feature/xiaomi-x20plus`, Commit `d5689eb546d8406a379b448bc86fd1f2fc0deb2b`. Admin-UI-Darstellung und CI-Build noch zu verifizieren.
+
+
+## Admin-Konfiguration – übersichtliche Bereiche und gemeinsame Zeitplanüberschrift (13.11.2026)
+- Die Konfiguration ist jetzt in drei klar getrennte Tabs gegliedert: „Geräte & Verbindung“, „Zeitpläne“ und „Xiaomi Cloud“.
+- Im Tab „Zeitpläne“ gibt es eine gemeinsame Überschrift „Zeitpläne automatisch abrufen“ für beide Roboter.
+- Beide Geräte verwenden einheitliche Beschriftungen („automatisch abrufen“ und „Abrufintervall (Minuten)“); die jeweilige Verbindungsmethode wird im Hilfetext erklärt (EVE Plus lokal, X20+ über Xiaomi Cloud).
+- Beide Zeitplanintervalle behalten den Default 60 Minuten, beide Automatiken den Default aus. Bereits in einer Instanz gespeicherte Werte werden durch Default-Änderungen nicht überschrieben.
+- Die vorhandenen Konfigurationsschlüssel bleiben unverändert; die Einstellungen werden nur in der Oberfläche neu gruppiert. Keine Änderung an Adapterlogik, Zeitplan-Timern oder Roboterkommunikation.
+- Auf `feature/xiaomi-x20plus` umgesetzt, letzter Commit `063b642159c9993e9faa6a93901506dfc47f9be0`. CI/Build ausstehend.
