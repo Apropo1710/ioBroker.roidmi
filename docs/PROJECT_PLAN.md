@@ -36,7 +36,7 @@
 - [ ] Zonenreinigung
 - [ ] Karten und Reinigungsverlauf
 - [ ] Zeitpläne / Wartungsdaten, soweit verfügbar
-  - [ ] Roidmi EVE Plus: Bearbeitung bestehender Zeitpläne (Adapter-Schreibpfad implementiert und CI-grün; Adapter 0.1.64 und HomePilot-Build/Hardwaretest noch offen)
+  - [ ] Roidmi EVE Plus: Bearbeitung bestehender Zeitpläne ist im Adapter implementiert; Feature-Branch 0.1.66 und CI-/Build #320 erfolgreich. HomePilot-Editor und bidirektionale Synchronisation sind vorhanden/bestätigt; gezielter Hardwaretest einer Zeitplan-Schreibänderung bleibt offen.
 - [ ] Staubabsaugung und Wartungsreset-Funktionen, soweit sicher verifiziert
 
 ## Phase 4 – Qualität und Veröffentlichung
@@ -48,7 +48,7 @@
 ## Phase 5 – Integration
 - [ ] HomePilot-Anbindung (begonnen: Startseiten-Kachel, Statusansicht und Kernbefehle in HomePilot; reale Geräteausführung noch nicht bestätigt)
 
-**Wichtiger Statushinweis:** Grüne CI-Läufe bestätigen Build und Unit-Tests, nicht die reale Gerätekommunikation. Start-/Pause-/Fortsetzen-/Dock-Mappings sind anhand veröffentlichter V60-Profile hinterlegt und müssen am konkreten Gerät noch bestätigt werden.
+**Aktualisiert 13.11.2026:** Aktiver Entwicklungsstand `feature/xiaomi-x20plus`, Version 0.1.66, Head `33252606a220444756a4a01b6952de7eacb14ee0`, CI-/Build #320 erfolgreich. Grüne CI-Läufe bestätigen Build und Unit-Tests, nicht die reale Gerätekommunikation. Start-/Pause-/Fortsetzen-/Dock-Mappings sind anhand veröffentlichter V60-Profile hinterlegt und müssen am konkreten Gerät noch bestätigt werden.
 
 
 **Raumimport:** Siehe [ROOM_IMPORT.md](ROOM_IMPORT.md). Der Import ist bewusst manuell und erzeugt keine zusätzliche Roboterabfrage. Automatische Karten-/Raumerkennung sowie die reale Ausführung bleiben separate offene Punkte.
