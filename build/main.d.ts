@@ -1,6 +1,7 @@
 import { Adapter } from "@iobroker/adapter-core";
 declare class RoidmiAdapter extends Adapter {
     private pollTimer?;
+    private timingTimer?;
     private stopping;
     private lastPollError;
     private commandRunning;
@@ -16,7 +17,7 @@ declare class RoidmiAdapter extends Adapter {
     private applyRoomProfiles;
     private onStateChange;
     /**
-     * Read the stored schedule JSON only when explicitly requested.
+     * Read the stored schedule JSON on demand or via the optional low-frequency timer.
      * This is deliberately excluded from the fast status polling cycle.
      */
     private refreshTiming;

@@ -12,6 +12,7 @@ const xiaomi_cloud_map_1 = require("./lib/xiaomi-cloud-map");
 const roidmi_status_1 = require("./lib/roidmi-status");
 class RoidmiAdapter extends adapter_core_1.Adapter {
     pollTimer;
+    timingTimer;
     stopping = false;
     lastPollError = "";
     commandRunning = false;
@@ -290,6 +291,27 @@ class RoidmiAdapter extends adapter_core_1.Adapter {
         };
         await poll();
         scheduleNext(this.lastPollError ? Math.min(baseIntervalMs * 2, 300000) : baseIntervalMs);
+        // Schedule data is intentionally kept out of the frequent status poll.
+        // When enabled, read it only at the configured, comparatively long interval.
+        if (config.scheduleAutoRefresh === true) {
+            const intervalMinutes = Math.min(1440, Math.max(5, config.scheduleRefreshIntervalMinutes ?? 60));
+            const intervalMs = intervalMinutes * 60 * 1000;
+            const scheduleTimingRefresh = () => {
+                if (this.stopping)
+                    return;
+                this.timingTimer = setTimeout(async () => {
+                    if (this.commandRunning) {
+                        this.log.debug("Automatic schedule read skipped because another robot request is running");
+                    }
+                    else {
+                        await this.refreshTiming();
+                    }
+                    scheduleTimingRefresh();
+                }, intervalMs);
+            };
+            scheduleTimingRefresh();
+            this.log.info(`Automatic schedule refresh enabled (every ${intervalMinutes} minutes)`);
+        }
     }
     async applyRoomMapConfig(config) {
         const previous = this.roomMapConfig;
@@ -463,7 +485,7 @@ class RoidmiAdapter extends adapter_core_1.Adapter {
         await this.setStateAsync("control." + command, { val: false, ack: true });
     }
     /**
-     * Read the stored schedule JSON only when explicitly requested.
+     * Read the stored schedule JSON on demand or via the optional low-frequency timer.
      * This is deliberately excluded from the fast status polling cycle.
      */
     async refreshTiming() {
@@ -735,6 +757,8 @@ class RoidmiAdapter extends adapter_core_1.Adapter {
         this.stopping = true;
         if (this.pollTimer)
             clearTimeout(this.pollTimer);
+        if (this.timingTimer)
+            clearTimeout(this.timingTimer);
         this.setState("info.connection", false, true);
         callback();
     }
