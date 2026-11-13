@@ -3,7 +3,7 @@ import { MiioClient } from "./lib/miio-client";
 import { mapLegacyStateId, LEGACY_EMPTY_FOLDERS } from "./lib/object-tree-migration";
 import { XIAOMI_X20_PLUS_PROPERTIES, XIAOMI_X20_PLUS_CONSUMABLE_PROPERTIES, XIAOMI_X20_PLUS_OPTIONAL_SETTINGS, XIAOMI_X20_PLUS_LIFETIME_PROPERTIES, XIAOMI_X20_PLUS_CONSUMABLE_POLL_INTERVAL_MS, getXiaomiX20PlusStatusText } from "./lib/xiaomi-x20plus-profile";
 import { parseRoomCleaningRequest } from "./lib/room-cleaning";
-import { parseXiaomiRoomCleanRequest } from "./lib/xiaomi-room-cleaning";
+import { parseXiaomiRoomCleanRequest, mergeXiaomiCleaningMode } from "./lib/xiaomi-room-cleaning";
 import { createRoomCleanObservationTracker, observeRoomCleanStatus, RoomCleanObservationTracker } from "./lib/xiaomi-room-clean-status";
 import { filterXiaomiHomeRooms } from "./lib/xiaomi-dreame-map";
 import { validateConfig, validateRoidmiConfig, validateXiaomiConfig, isRoidmiEnabled, isXiaomiEnabled } from "./lib/config";
@@ -1402,9 +1402,63 @@ class RoidmiAdapter extends Adapter {
                             // Emit the bounded UDP trace only if this command fails.
                             this.xiaomiMiioTrace.length = 0;
                             try {
+                                // Apply and verify the selected cleaning mode immediately before
+                                // the room action. The mode shares packed property 4/23 with the
+                                // mop water level, so preserve every bit except the low two mode bits.
+                                const config = this.config as RoidmiAdapterConfig;
+                                const selectedModeState = await this.getStateAsync("x20Plus.control.cleaningMode");
+                                const packedRead = await this.xiaomiClient.call("get_properties", [{
+                                    did: config.xiaomiDid!,
+                                    siid: 4,
+                                    piid: 23
+                                }]);
+                                const packedItem = Array.isArray(packedRead)
+                                    ? packedRead[0] as { code?: number; value?: unknown } | undefined
+                                    : undefined;
+                                if (!packedItem || packedItem.code !== 0 || typeof packedItem.value !== "number" || !Number.isSafeInteger(packedItem.value)) {
+                                    throw new Error("Could not read packed cleaning settings before room-clean action");
+                                }
+                                const selectedMode = typeof selectedModeState?.val === "number" &&
+                                    Number.isInteger(selectedModeState.val) && selectedModeState.val >= 0 && selectedModeState.val <= 3
+                                    ? selectedModeState.val
+                                    : packedItem.value & 0x03;
+                                const packedTarget = mergeXiaomiCleaningMode(packedItem.value, selectedMode);
+                                if (packedTarget !== packedItem.value) {
+                                    const modeWrite = await this.xiaomiClient.call("set_properties", [{
+                                        did: config.xiaomiDid!,
+                                        siid: 4,
+                                        piid: 23,
+                                        value: packedTarget
+                                    }]);
+                                    const modeWriteItem = Array.isArray(modeWrite)
+                                        ? modeWrite[0] as { code?: number } | undefined
+                                        : undefined;
+                                    if (!modeWriteItem || modeWriteItem.code !== 0) {
+                                        throw new Error("Robot rejected cleaning-mode write before room-clean action: " + JSON.stringify(modeWrite));
+                                    }
+                                }
+                                const packedVerify = await this.xiaomiClient.call("get_properties", [{
+                                    did: config.xiaomiDid!,
+                                    siid: 4,
+                                    piid: 23
+                                }]);
+                                const packedVerified = Array.isArray(packedVerify)
+                                    ? packedVerify[0] as { code?: number; value?: unknown } | undefined
+                                    : undefined;
+                                if (!packedVerified || packedVerified.code !== 0 || typeof packedVerified.value !== "number" ||
+                                    (packedVerified.value & 0x03) !== selectedMode) {
+                                    throw new Error("Cleaning mode could not be verified before room-clean action: " + JSON.stringify(packedVerify));
+                                }
+                                const verifiedMode = packedVerified.value & 0x03;
+                                const verifiedWater = (packedVerified.value >>> 16) & 0x03;
+                                await this.setStateAsync("x20Plus.status.cleaningMode", { val: verifiedMode, ack: true });
+                                await this.setStateAsync("x20Plus.control.cleaningMode", { val: verifiedMode, ack: true });
+                                if (verifiedWater >= 1 && verifiedWater <= 3) {
+                                    await this.setStateAsync("x20Plus.status.mopMode", { val: verifiedWater, ack: true });
+                                    await this.setStateAsync("x20Plus.control.mopMode", { val: verifiedWater, ack: true });
+                                }
                                 const baselineState = await this.getStateAsync("x20Plus.status.vacuumState");
                                 const baselineStatus = typeof baselineState?.val === "number" ? baselineState.val : null;
-                                const config = this.config as RoidmiAdapterConfig;
                                 // Room cleaning needs the firmware-specific two-input form.
                                 // Xiaomi Cloud validates against the published one-input MIoT
                                 // schema and rejects it; send locally like the hardware-validated
