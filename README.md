@@ -29,6 +29,10 @@ Ohne gültige IP-Adresse, DID und Token startet der Adapter, bleibt aber getrenn
 
 Die Xiaomi-Cloud-Anbindung ist **optional** und standardmäßig ausgeschaltet. Sie wird ausschließlich benötigt, um die gespeicherte Karte sowie Raum-IDs und Raumnamen automatisch aus dem Xiaomi-Konto abzurufen. Ohne diese Funktion bleiben lokale Statusabfragen und die lokale Robotersteuerung nutzbar. Die Cloud wird nicht periodisch abgefragt: Der Abruf startet nur, wenn `control.refreshMap` manuell ausgelöst wird. Xiaomi-Benutzername und Passwort werden nur bei aktivierter Funktion verwendet und in ioBroker verschlüsselt gespeichert. Je nach Xiaomi-Konto kann eine Zwei-Faktor-Bestätigung erforderlich sein.
 
+## Automatischer Zeitplanabruf
+
+Der Abruf gespeicherter Reinigungszeitpläne kann in der Adapterkonfiguration optional aktiviert werden. Das Intervall ist zwischen 5 Minuten und 24 Stunden einstellbar (Standard: 60 Minuten). Die Funktion ist standardmäßig ausgeschaltet. Die Zeitpläne werden getrennt vom Status-Polling über eine einzelne MIoT-Anfrage gelesen. Wenn gerade ein anderer Roboterzugriff läuft, wird der automatische Abruf übersprungen. Der manuelle Abruf über `control.refreshTiming` bleibt jederzeit verfügbar.
+
 ## Ziele
 
 - Lokale Verbindung zum Roidmi EVE Plus, soweit das Gerät sie unterstützt
