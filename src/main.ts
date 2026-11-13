@@ -679,6 +679,7 @@ class RoidmiAdapter extends Adapter {
         });
         await this.subscribeStatesAsync(prefix + "control.cleanRooms");
         await this.setObjectNotExistsAsync(prefix + "control.cleanRoomsStatus", { type: "state", common: { name: "X20+ room-clean command status", type: "string", role: "text", read: true, write: false }, native: {} });
+        await this.setObjectNotExistsAsync(prefix + "control.cleanRoomsDiagnostic", { type: "state", common: { name: "X20+ room-clean request and response diagnostics (JSON)", type: "string", role: "json", read: true, write: false }, native: {} });
         // Xiaomi Home remains the source of truth. Schedules are read only on demand.
         await this.setObjectNotExistsAsync(prefix + "control.refreshSchedules", {
             type: "state", common: { name: "Read cleaning schedules from Xiaomi Home", type: "boolean", role: "button", read: false, write: true, def: false }, native: {}
@@ -1464,12 +1465,27 @@ class RoidmiAdapter extends Adapter {
                                 // schema and rejects it; send locally like the hardware-validated
                                 // C102GL implementation. Force a fresh handshake because the
                                 // cached one timed out during the previous room-clean attempt.
-                                const result = await this.xiaomiClient.call("action", {
+                                const actionRequest = {
                                     did: String(config.xiaomiDid),
                                     siid: roomAction.siid,
                                     aiid: roomAction.aiid,
                                     in: roomAction.inputs
-                                }, undefined, true);
+                                };
+                                const diagnostic: Record<string, unknown> = {
+                                    timestamp: new Date().toISOString(),
+                                    requestedRooms: requested.rooms,
+                                    knownRooms: knownRooms.filter((room) => (requested.rooms ?? []).some((requestedRoom) => requestedRoom.segmentId === room.segmentId)),
+                                    selectedCleaningMode: selectedMode,
+                                    verifiedPackedSettings: packedVerified.value,
+                                    actionMethod: "action",
+                                    actionParams: actionRequest,
+                                    transport: "local miIO UDP; fresh handshake"
+                                };
+                                await this.setStateAsync("x20Plus.control.cleanRoomsDiagnostic", { val: JSON.stringify(diagnostic), ack: true });
+                                const result = await this.xiaomiClient.call("action", actionRequest, undefined, true);
+                                diagnostic.response = result;
+                                diagnostic.responseError = getActionResponseError(result);
+                                await this.setStateAsync("x20Plus.control.cleanRoomsDiagnostic", { val: JSON.stringify(diagnostic), ack: true });
                                 const responseError = getActionResponseError(result);
                                 if (responseError) throw new Error(responseError);
                                 this.xiaomiRoomCleanTracker = createRoomCleanObservationTracker(baselineStatus, 3);
@@ -1487,6 +1503,15 @@ class RoidmiAdapter extends Adapter {
                     } catch (error) {
                         const message = "Room-clean request rejected/failed: " + (error instanceof Error ? error.message : "unknown error");
                         this.log.warn("Xiaomi X20+ " + message);
+                        const previousDiagnostic = await this.getStateAsync("x20Plus.control.cleanRoomsDiagnostic");
+                        let diagnostic: Record<string, unknown> = {};
+                        if (typeof previousDiagnostic?.val === "string") {
+                            try { diagnostic = JSON.parse(previousDiagnostic.val) as Record<string, unknown>; } catch { /* replace invalid diagnostic */ }
+                        }
+                        diagnostic.error = message;
+                        diagnostic.miioTrace = [...this.xiaomiMiioTrace];
+                        diagnostic.failedAt = new Date().toISOString();
+                        await this.setStateAsync("x20Plus.control.cleanRoomsDiagnostic", { val: JSON.stringify(diagnostic), ack: true });
                         for (const traceLine of this.xiaomiMiioTrace) this.log.debug("Xiaomi X20+ room-clean miIO trace: " + traceLine);
                         await this.setStateAsync("x20Plus.control.cleanRoomsStatus", { val: message, ack: true });
                     }
