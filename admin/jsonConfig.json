@@ -8,7 +8,6 @@
         "de": "Geräte & Verbindung",
         "en": "Devices & connection"
       },
-      "icon": "settings",
       "items": {
         "host": {
           "type": "text",
@@ -118,15 +117,13 @@
         "de": "Zeitpläne",
         "en": "Schedules"
       },
-      "icon": "schedule",
       "items": {
         "scheduleHeading": {
           "type": "header",
           "text": {
             "de": "Zeitpläne automatisch abrufen",
             "en": "Automatically retrieve schedules"
-          },
-          "size": "h2"
+          }
         },
         "scheduleAutoRefresh": {
           "type": "checkbox",
@@ -188,7 +185,6 @@
         "de": "Xiaomi Cloud",
         "en": "Xiaomi Cloud"
       },
-      "icon": "cloud",
       "items": {
         "cloudEnabled": {
           "type": "checkbox",
