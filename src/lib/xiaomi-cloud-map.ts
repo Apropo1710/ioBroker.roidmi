@@ -141,6 +141,36 @@ export class XiaomiCloudMapClient {
         return response?.result ?? response;
     }
 
+
+    /** Read the newest live map-history frame (MIoT property 6.1), on explicit request only. */
+    public async fetchXiaomiLiveRoomSelection(
+        country: string,
+        did: string,
+        onSessionChanged?: () => Promise<void>
+    ): Promise<{ timestamp: number; segmentIds: number[] }> {
+        if (!this.hasSession()) throw new Error("Xiaomi Cloud session is unavailable; sign in first.");
+        if (!/^\\d{1,20}$/.test(did)) throw new Error("Xiaomi X20+ DID is invalid.");
+        const base = `https://${country === "cn" ? "" : country + "."}api.io.mi.com/app`;
+        const history = await this.api(base + "/user/get_user_device_data", {
+            data: JSON.stringify({ uid: this.userId, did, time_start: 0, time_end: 9999999999, limit: 20, key: "6.1", type: "prop" })
+        }, onSessionChanged);
+        if (!Array.isArray(history?.result)) throw new Error("Xiaomi Cloud returned no live X20+ map history.");
+        const entries = history.result
+            .filter((entry: any) => Number.isFinite(Number(entry?.time)) && typeof entry?.value === "string")
+            .sort((a: any, b: any) => Number(b.time) - Number(a.time));
+        for (const entry of entries) {
+            let payload: unknown = entry.value;
+            if (typeof payload === "string" && payload.trim().startsWith("[")) {
+                try { payload = JSON.parse(payload); } catch { continue; }
+            }
+            if (Array.isArray(payload)) payload = payload[0];
+            if (typeof payload !== "string" || !payload) continue;
+            const { parseXiaomiLiveMapSelection } = await import("./xiaomi-dreame-map");
+            return { timestamp: Number(entry.time) * 1000, segmentIds: parseXiaomiLiveMapSelection(payload) };
+        }
+        throw new Error("Xiaomi X20+ map history contains no decodable live frame.");
+    }
+
     /** Fetch the C102GL saved room map from Xiaomi FDS. This is explicit/manual and never part of polling. */
     public async fetchXiaomiRooms(country: string, did: string, onSessionChanged?: () => Promise<void>): Promise<Array<{ segmentId: number; name: string; roomId?: string }>> {
         if (!this.hasSession()) throw new Error("Xiaomi Cloud session is unavailable; sign in via the EVE Plus cloud map first.");
