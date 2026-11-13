@@ -1,5 +1,14 @@
 # Projektstatus – ioBroker.roidmi
 
+## Geprüfter Branch- und Buildstand – 13.11.2026, 10:xx MEZ
+- Maßgeblicher aktiver Entwicklungsbranch: `feature/xiaomi-x20plus`, Head `33252606a220444756a4a01b6952de7eacb14ee0`, Adapterversion **0.1.66**.
+- CI-/Build-Lauf #320 (Run `43392287262`) für exakt diesen Head: **completed / success**. Lauf #319 ist ebenfalls erfolgreich.
+- Ältere „CI/Build ausstehend“-Notizen zu den Konfigurationsänderungen vom 13.11. sind überholt; sie wurden durch die erfolgreiche Prüfung bis Head `3325260` abgedeckt.
+- Der getrennte Repository-Branch `main` steht auf Version **0.1.36** (Head `99d88d14421011e7449eba4cb0ac2672f6aada7c`) und hat einen eigenen erfolgreichen Distribution-Build #?; er ist nicht der aktuelle X20+-Entwicklungsstand.
+- Letzte Feature-Änderungen: Roidmi-Aktivierung über die IP-Felder gesetzt, Hilfetext bereinigt, Admin-Schemafehler durch `size: 3` behoben; Zeitplan-Automatik bleibt standardmäßig aus und konfigurierbar.
+- Hardwarestatus: X20+-Zeitplansynchronisation bidirektional und Wasserstufensteuerung live bestätigt. Eve-Plus-Zeitplan-Schreibfunktion noch nicht am realen Gerät verifiziert.
+
+
 ## X20+ Wasserstufe in gepacktem Reinigungssetting (11.11.2026)
 
 - Drei Messungen aus der Xiaomi-Original-App bestätigen die Codierung in SIID 4 / PIID 23:
