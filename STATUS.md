@@ -519,3 +519,14 @@ Diese Übersicht ist die maßgebliche aktuelle Testliste. Bei jedem neuen Testbe
 - Nachkontrolle des Fehlerpfads: Eine angenommene Schreiboperation mit fehlgeschlagenem Readback behält jetzt ihre ausdrückliche Meldung „Bestätigung ausstehend“; der äußere State-Handler überschreibt sie nicht mehr mit einer generischen Ablehnung.
 
 - HomePilot erhält parallel eine eigene EVE-Plus-Zeitplanansicht und Bearbeitungsmaske; die App übergibt den vollständigen angezeigten Rohdaten-Snapshot und nur tatsächlich geänderte Felder. Der Android-Build läuft noch.
+
+
+## Roidmi EVE Plus – optionaler automatischer Zeitplanabruf (Version 0.1.65)
+
+- Ausschließlich auf dem aktiven Entwicklungsbranch `feature/xiaomi-x20plus` auf Basis von Version 0.1.64 ergänzt.
+- Neue Instanzeinstellungen direkt nach dem allgemeinen Status-Abfrageintervall: automatischen Zeitplanabruf ein-/ausschalten und Intervall von 5 bis 1440 Minuten einstellen (Standard: deaktiviert, 60 Minuten).
+- Eigener Timer nur für den Roidmi EVE Plus; keine Änderung am Xiaomi-X20+-Zeitplanpfad oder dessen Timer.
+- Zeitplanabruf bleibt außerhalb des normalen Status-Pollings und verwendet den vorhandenen einzelnen MIoT-Leseaufruf SIID 8 / PIID 6.
+- Der Timer wartet bei laufendem Status-Poll oder Roboterbefehl, erzeugt keine parallele Anfrage und plant den nächsten Versuch erst nach dem Intervall. Timer wird beim Entladen der Instanz beendet.
+- Manuelles Aktualisieren und die vorhandene bidirektionale Zeitplanbearbeitung bleiben unverändert.
+- CI/Build und Paketprüfung für 0.1.65 stehen noch aus; bis zum erfolgreichen Lauf nicht installieren. Kein Hardwaretest dieser neuen Automatik durchgeführt.

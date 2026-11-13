@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - feat/room-profile-read
+      - feature/xiaomi-x20plus
   pull_request:
   workflow_dispatch:
 

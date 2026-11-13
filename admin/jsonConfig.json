@@ -46,6 +46,32 @@
       "max": 3600,
       "default": 30
     },
+    "scheduleAutoRefresh": {
+      "type": "checkbox",
+      "label": {
+        "de": "Zeitpläne automatisch abrufen",
+        "en": "Automatically retrieve schedules"
+      },
+      "default": false,
+      "help": {
+        "de": "Liest die gespeicherten Reinigungszeitpläne des Roidmi EVE Plus regelmäßig direkt vom Roboter. Standardmäßig ausgeschaltet; unabhängig vom Status-Abfrageintervall.",
+        "en": "Periodically reads saved Roidmi EVE Plus cleaning schedules directly from the robot. Disabled by default and independent of status polling."
+      }
+    },
+    "scheduleRefreshIntervalMinutes": {
+      "type": "number",
+      "label": {
+        "de": "Abrufintervall für Zeitpläne (Minuten)",
+        "en": "Schedule refresh interval (minutes)"
+      },
+      "min": 5,
+      "max": 1440,
+      "default": 60,
+      "help": {
+        "de": "Zeit zwischen automatischen Abrufen (5 bis 1440 Minuten). Empfohlen sind längere Intervalle, da Zeitpläne selten geändert werden.",
+        "en": "Time between automatic reads (5 to 1440 minutes). Longer intervals are recommended because schedules rarely change."
+      }
+    },
     "cloudEnabled": {
       "type": "checkbox",
       "label": {

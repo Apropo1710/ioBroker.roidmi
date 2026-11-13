@@ -70,7 +70,7 @@ Beim ersten Start mit der neuen Version werden bisherige Roidmi-Datenpunkte (z. 
 
 MIoT-/miIO-Zugangsdaten und Tokens dürfen niemals eingecheckt oder in Logs ausgegeben werden. Zugangsdaten gehören ausschließlich in die Adapterkonfiguration bzw. geschützte Laufzeitdaten.
 
-Die Statusabfrage erfolgt standardmäßig alle 30 Sekunden. Alle sieben aktuell unterstützten Status- und Einstellungswerte werden in einer gebündelten MIoT-Anfrage gelesen. Dadurch sinkt die Zahl der Status-RPCs pro Polling-Zyklus von sieben auf eine. Polling-Zyklen überlappen nicht; bei Fehlern verlängert der Adapter das Intervall automatisch. Zeitpläne werden nur auf ausdrückliche Anforderung gelesen und sind nicht Teil des regelmäßigen Pollings.
+Die Statusabfrage erfolgt standardmäßig alle 30 Sekunden. Alle sieben aktuell unterstützten Status- und Einstellungswerte werden in einer gebündelten MIoT-Anfrage gelesen. Dadurch sinkt die Zahl der Status-RPCs pro Polling-Zyklus von sieben auf eine. Polling-Zyklen überlappen nicht; bei Fehlern verlängert der Adapter das Intervall automatisch. Zeitpläne werden standardmäßig nur auf ausdrückliche Anforderung gelesen. Optional kann in den Instanzeinstellungen ein automatischer Abruf aktiviert und ein eigenes Intervall von 5 bis 1440 Minuten festgelegt werden. Die Zeitplanabfrage bleibt vom häufigen Status-Polling getrennt und ist standardmäßig ausgeschaltet.
 
 ## Entwicklungsstand
 

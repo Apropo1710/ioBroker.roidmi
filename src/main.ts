@@ -22,6 +22,8 @@ interface RoidmiAdapterConfig {
     did?: string;
     token?: string;
     pollIntervalSeconds?: number;
+    scheduleAutoRefresh?: boolean;
+    scheduleRefreshIntervalMinutes?: number;
     cloudEnabled?: boolean;
     cloudControlEnabled?: boolean;
     cloudUsername?: string;
@@ -50,6 +52,7 @@ interface MiotAction {
 
 class RoidmiAdapter extends Adapter {
     private pollTimer?: NodeJS.Timeout;
+    private timingTimer?: NodeJS.Timeout;
     private xiaomiPollTimer?: NodeJS.Timeout;
     private xiaomiScheduleTimer?: NodeJS.Timeout;
     private xiaomiPollRunning = false;
@@ -463,6 +466,33 @@ class RoidmiAdapter extends Adapter {
 
         await poll();
         scheduleNext(this.lastPollError ? Math.min(baseIntervalMs * 2, 300000) : baseIntervalMs);
+
+        // Keep saved EVE Plus schedules out of the fast status polling cycle.
+        // Only read them when explicitly enabled, at a separately configured interval.
+        if (config.scheduleAutoRefresh === true) {
+            const intervalMinutes = Math.min(1440, Math.max(5, config.scheduleRefreshIntervalMinutes ?? 60));
+            const intervalMs = intervalMinutes * 60 * 1000;
+            const scheduleNextTimingRead = (): void => {
+                if (this.stopping) return;
+                this.timingTimer = setTimeout(() => {
+                    void (async () => {
+                        try {
+                            if (this.commandRunning) {
+                                this.log.debug("Automatic EVE Plus schedule read skipped because another robot request is running");
+                            } else if (!this.client || !config.did) {
+                                this.log.debug("Automatic EVE Plus schedule read skipped because the robot is unavailable");
+                            } else {
+                                await this.refreshTiming();
+                            }
+                        } finally {
+                            scheduleNextTimingRead();
+                        }
+                    })();
+                }, intervalMs);
+            };
+            scheduleNextTimingRead();
+            this.log.info(`Automatic EVE Plus schedule refresh enabled (every ${intervalMinutes} minutes)`);
+        }
     }
 
 
@@ -2044,6 +2074,7 @@ class RoidmiAdapter extends Adapter {
     private onUnload(callback: () => void): void {
         this.stopping = true;
         if (this.pollTimer) clearTimeout(this.pollTimer);
+        if (this.timingTimer) clearTimeout(this.timingTimer);
         if (this.xiaomiPollTimer) clearTimeout(this.xiaomiPollTimer);
         if (this.xiaomiScheduleTimer) clearTimeout(this.xiaomiScheduleTimer);
         this.setState("evePlus.info.connection", false, true);
