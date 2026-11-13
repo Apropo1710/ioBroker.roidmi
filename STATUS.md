@@ -529,4 +529,4 @@ Diese Übersicht ist die maßgebliche aktuelle Testliste. Bei jedem neuen Testbe
 - Zeitplanabruf bleibt außerhalb des normalen Status-Pollings und verwendet den vorhandenen einzelnen MIoT-Leseaufruf SIID 8 / PIID 6.
 - Der Timer wartet bei laufendem Status-Poll oder Roboterbefehl, erzeugt keine parallele Anfrage und plant den nächsten Versuch erst nach dem Intervall. Timer wird beim Entladen der Instanz beendet.
 - Manuelles Aktualisieren und die vorhandene bidirektionale Zeitplanbearbeitung bleiben unverändert.
-- CI/Build und Paketprüfung für 0.1.65 stehen noch aus; bis zum erfolgreichen Lauf nicht installieren. Kein Hardwaretest dieser neuen Automatik durchgeführt.
+- **CI/Build/Paketierung erfolgreich:** Workflow „Test and build adapter“ für Commit `bf77b7a` erfolgreich (Run `43379940955`): `npm ci`, alle Tests, TypeScript-Lint, Build, Tar-Paketierung und Upload-Artefakt abgeschlossen. Artefakt-ID `14015568577`. Kein Hardwaretest der neuen Automatik durchgeführt.
