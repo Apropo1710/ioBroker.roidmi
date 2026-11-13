@@ -3,7 +3,7 @@
 Stand: 2026-11-13, 10:xx MEZ
 
 ## Geprüfter Main-Branch-Stand
-- Branch: `main`; Head `99d88d14421011e7449eba4cb0ac2672f6aada7c`.
+- Branch: `main`; zuletzt geprüfter Laufzeitcode-Commit `99d88d14421011e7449eba4cb0ac2672f6aada7c`.
 - Adapter-Version laut `package.json`: **0.1.36**.
 - Workflow „Build distribution“ Run `43378078837`: **completed / success** für exakt diesen Head.
 - Der aktive Xiaomi-X20+-Entwicklungsstand liegt separat auf `feature/xiaomi-x20plus`, Version **0.1.66**, CI-/Build #320 erfolgreich. Die beiden Branches dürfen nicht vermischt werden.
