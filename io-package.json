@@ -1,7 +1,7 @@
 {
   "common": {
     "name": "roidmi",
-    "version": "0.1.66",
+    "version": "0.1.67",
     "title": "Roidmi",
     "titleLang": {
       "en": "Roidmi",
@@ -27,6 +27,10 @@
       "xiaomiToken"
     ],
     "news": {
+      "0.1.67": {
+        "en": "Ensure selected cleaning mode is applied and verified before Xiaomi X20+ multi-room cleaning",
+        "de": "Gewählten Reinigungsmodus vor der Xiaomi-X20+-Mehrraumreinigung sicher setzen und überprüfen"
+      },
       "0.1.66": {
         "en": "Added independent enable/disable and interval settings for automatic EVE Plus and Xiaomi X20+ schedule refresh",
         "de": "Getrennte Ein/Aus- und Intervall-Einstellungen für den automatischen Zeitplanabruf von EVE Plus und Xiaomi X20+ ergänzt"
