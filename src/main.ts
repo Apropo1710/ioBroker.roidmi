@@ -15,6 +15,8 @@ interface RoidmiAdapterConfig {
     did?: string;
     token?: string;
     pollIntervalSeconds?: number;
+    scheduleAutoRefresh?: boolean;
+    scheduleRefreshIntervalMinutes?: number;
     cloudEnabled?: boolean;
     cloudControlEnabled?: boolean;
     cloudUsername?: string;
@@ -38,6 +40,7 @@ interface MiotAction {
 
 class RoidmiAdapter extends Adapter {
     private pollTimer?: NodeJS.Timeout;
+    private timingTimer?: NodeJS.Timeout;
     private stopping = false;
     private lastPollError = "";
     private commandRunning = false;
@@ -313,6 +316,26 @@ class RoidmiAdapter extends Adapter {
 
         await poll();
         scheduleNext(this.lastPollError ? Math.min(baseIntervalMs * 2, 300000) : baseIntervalMs);
+
+        // Schedule data is intentionally kept out of the frequent status poll.
+        // When enabled, read it only at the configured, comparatively long interval.
+        if (config.scheduleAutoRefresh === true) {
+            const intervalMinutes = Math.min(1440, Math.max(5, config.scheduleRefreshIntervalMinutes ?? 60));
+            const intervalMs = intervalMinutes * 60 * 1000;
+            const scheduleTimingRefresh = (): void => {
+                if (this.stopping) return;
+                this.timingTimer = setTimeout(async () => {
+                    if (this.commandRunning) {
+                        this.log.debug("Automatic schedule read skipped because another robot request is running");
+                    } else {
+                        await this.refreshTiming();
+                    }
+                    scheduleTimingRefresh();
+                }, intervalMs);
+            };
+            scheduleTimingRefresh();
+            this.log.info(`Automatic schedule refresh enabled (every ${intervalMinutes} minutes)`);
+        }
     }
 
     private async applyRoomMapConfig(config: RoomMapConfig): Promise<void> {
@@ -484,7 +507,7 @@ class RoidmiAdapter extends Adapter {
         await this.setStateAsync("control." + command, { val: false, ack: true });
     }
     /**
-     * Read the stored schedule JSON only when explicitly requested.
+     * Read the stored schedule JSON on demand or via the optional low-frequency timer.
      * This is deliberately excluded from the fast status polling cycle.
      */
     private async refreshTiming(): Promise<void> {
@@ -741,6 +764,7 @@ class RoidmiAdapter extends Adapter {
     private onUnload(callback: () => void): void {
         this.stopping = true;
         if (this.pollTimer) clearTimeout(this.pollTimer);
+        if (this.timingTimer) clearTimeout(this.timingTimer);
         this.setState("info.connection", false, true);
         callback();
     }
