@@ -31,7 +31,7 @@ test("X20+ room-clean request validates IDs, duplicate rooms and parameter range
 
 test("X20+ cleaning-mode update preserves water level and unrelated packed bits", () => {
   const raw = 0x30801;
-  assert.equal(mergeXiaomiCleaningMode(raw, 3), raw);
+  assert.equal(mergeXiaomiCleaningMode(raw, 3), 0x30803);
   assert.equal(mergeXiaomiCleaningMode(raw, 2), 0x30802);
   assert.equal(mergeXiaomiCleaningMode(0x20801, 1), 0x20801);
   assert.throws(() => mergeXiaomiCleaningMode(raw, 4), /cleaningMode/i);
