@@ -15,6 +15,13 @@ export interface XiaomiRoomCleanAction {
     inputs: Array<{ piid: 1 | 10; value: number | string }>;
 }
 
+/** Replace only the cleaning-mode bits in the packed SIID 4 / PIID 23 value. */
+export function mergeXiaomiCleaningMode(rawValue: number, cleaningMode: number): number {
+    if (!Number.isSafeInteger(rawValue) || rawValue < 0) throw new Error("Gültiger Rohwert für Reinigungssetting erforderlich");
+    if (!Number.isInteger(cleaningMode) || cleaningMode < 0 || cleaningMode > 3) throw new Error("cleaningMode muss zwischen 0 und 3 liegen");
+    return (rawValue & ~0x03) | (cleaningMode & 0x03);
+}
+
 export function buildXiaomiRoomCleanAction(rooms: XiaomiRoomSelection[]): XiaomiRoomCleanAction {
     if (!Array.isArray(rooms) || rooms.length === 0) throw new Error("Mindestens ein Raum muss ausgewählt sein");
     const seen = new Set<number>();
