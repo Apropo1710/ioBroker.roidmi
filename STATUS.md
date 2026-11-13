@@ -1,7 +1,7 @@
 # Projektstatus – ioBroker.roidmi
 
-## Geprüfter Branch- und Buildstand – 13.11.2026, 10:xx MEZ
-- Maßgeblicher aktiver Entwicklungsbranch: `feature/xiaomi-x20plus`, Head `33252606a220444756a4a01b6952de7eacb14ee0`, Adapterversion **0.1.66**.
+## Geprüfter Branch- und Buildstand – 13.11.2026 (vormittags, MEZ)
+- Maßgeblicher aktiver Entwicklungsbranch: `feature/xiaomi-x20plus`, zuletzt geprüfter Laufzeitcode-Commit `33252606a220444756a4a01b6952de7eacb14ee0`, Adapterversion **0.1.66**.
 - CI-/Build-Lauf #320 (Run `43392287262`) für exakt diesen Head: **completed / success**. Lauf #319 ist ebenfalls erfolgreich.
 - Ältere „CI/Build ausstehend“-Notizen zu den Konfigurationsänderungen vom 13.11. sind überholt; sie wurden durch die erfolgreiche Prüfung bis Head `3325260` abgedeckt.
 - Der getrennte Repository-Branch `main` steht auf Version **0.1.36** (Head `99d88d14421011e7449eba4cb0ac2672f6aada7c`) und hat einen eigenen erfolgreichen Distribution-Build #?; er ist nicht der aktuelle X20+-Entwicklungsstand.
