@@ -38,6 +38,32 @@ function decodeBase64UrlZlib(value: string): Buffer {
     return inflateBounded(Buffer.from(normalized, "base64"));
 }
 
+
+/** Decode the active-room selection (sa) from a live C102GL map-history frame. */
+export function parseXiaomiLiveMapSelection(value: string): number[] {
+    const normalized = value.replace(/-/g, "+").replace(/_/g, "/");
+    const compressed = Buffer.from(normalized, "base64");
+    const frame = inflateBounded(compressed);
+    if (frame.length < MAP_HEADER_SIZE) throw new Error("X20+ live map frame is too short");
+    const width = frame.readUInt16LE(19);
+    const height = frame.readUInt16LE(21);
+    const jsonStart = MAP_HEADER_SIZE + width * height;
+    if (jsonStart > frame.length) throw new Error("X20+ live map frame dimensions are invalid");
+    let metadata: unknown;
+    try { metadata = JSON.parse(frame.subarray(jsonStart).toString("utf8")); }
+    catch { throw new Error("X20+ live map frame metadata is invalid"); }
+    if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) return [];
+    const raw = (metadata as Record<string, unknown>).sa;
+    if (!Array.isArray(raw)) return [];
+    const segments: number[] = [];
+    for (const entry of raw) {
+        if (!Array.isArray(entry) || entry.length === 0) continue;
+        const id = Number(entry[0]);
+        if (Number.isSafeInteger(id) && id > 0 && !segments.includes(id)) segments.push(id);
+    }
+    return segments;
+}
+
 /** Decode C102GL FDS saved-map room metadata. This parser is separate from the EVE Plus map parser. */
 export function parseXiaomiDreameFdsMap(body: Buffer | string, suffix: string): XiaomiDreameRoom[] {
     if (!/^[\x20-\x7e]{16}$/.test(suffix)) throw new Error("X20+ map encryption suffix is invalid");
