@@ -1,7 +1,7 @@
 {
   "common": {
     "name": "roidmi",
-    "version": "0.1.35",
+    "version": "0.1.36",
     "title": "Roidmi",
     "titleLang": {
       "en": "Roidmi",
@@ -26,6 +26,10 @@
       "cloudPassword"
     ],
     "news": {
+      "0.1.36": {
+        "de": "Optionalen automatischen Zeitplanabruf mit einstellbarem Intervall ergänzt",
+        "en": "Add optional automatic schedule retrieval with configurable interval"
+      },
       "0.1.4": {
         "en": "Added local status polling diagnostics",
         "de": "Lokale Diagnose für Statusabfragen ergänzt"
@@ -172,6 +176,8 @@
     "cloudCountry": "de",
     "cloudSession": "",
     "debugMiio": false,
-    "cloudControlEnabled": false
+    "cloudControlEnabled": false,
+    "scheduleAutoRefresh": false,
+    "scheduleRefreshIntervalMinutes": 60
   }
 }
