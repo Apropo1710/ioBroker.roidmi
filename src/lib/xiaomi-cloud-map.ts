@@ -149,7 +149,7 @@ export class XiaomiCloudMapClient {
         onSessionChanged?: () => Promise<void>
     ): Promise<{ timestamp: number; segmentIds: number[] }> {
         if (!this.hasSession()) throw new Error("Xiaomi Cloud session is unavailable; sign in first.");
-        if (!/^\\d{1,20}$/.test(did)) throw new Error("Xiaomi X20+ DID is invalid.");
+        if (!/^\d{1,20}$/.test(did)) throw new Error("Xiaomi X20+ DID is invalid.");
         const base = `https://${country === "cn" ? "" : country + "."}api.io.mi.com/app`;
         const devices = await this.api(base + "/home/device_list", { data: '{"getVirtualModel":false,"getHuamiDevices":0}' }, onSessionChanged);
         const device = devices?.result?.list?.find((entry: any) => String(entry?.did) === did);
