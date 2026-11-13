@@ -43,7 +43,11 @@ function decodeBase64UrlZlib(value: string): Buffer {
 export function parseXiaomiLiveMapSelection(value: string): number[] {
     const normalized = value.replace(/-/g, "+").replace(/_/g, "/");
     const compressed = Buffer.from(normalized, "base64");
-    const frame = inflateBounded(compressed);
+    let frame: Buffer;
+    try { frame = inflateBounded(compressed); }
+    catch (error) {
+        throw new Error("X20+ live map frame compression is invalid", { cause: error });
+    }
     if (frame.length < MAP_HEADER_SIZE) throw new Error("X20+ live map frame is too short");
     const width = frame.readUInt16LE(19);
     const height = frame.readUInt16LE(21);
