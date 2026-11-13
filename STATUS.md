@@ -1,5 +1,14 @@
 # Projektstatus – ioBroker.roidmi
 
+## X20+ Mehrraumreinigung: Reinigungsmodus vor dem Start absichern (13.11.2026)
+
+- Ursache im bisherigen Ablauf: `control.cleanRooms` hat die Raumaktion direkt gestartet, ohne den separat gewählten `control.cleaningMode` unmittelbar davor aus dem gepackten MIoT-Setting SIID 4 / PIID 23 erneut anzuwenden und zu verifizieren.
+- Korrektur auf `feature/xiaomi-x20plus`: Vor jeder Raumaktion wird der gewünschte Modus aus `control.cleaningMode` gelesen, der aktuelle Rohwert 4/23 abgefragt, ausschließlich die unteren zwei Bits (`0x03`) aktualisiert und der Wert zurückgelesen. Stimmen die Modusbits nicht, wird die Raumaktion abgebrochen. Wasserstufe und übrige Bits bleiben erhalten.
+- Nach erfolgreicher Prüfung werden Modus und Wasserstufe in den Status-/Steuerstates synchronisiert; erst danach wird die bestehende Mehrraumaktion 4/1 gesendet. Einzelraum und Mehrraum nutzen denselben Ablauf.
+- Neue Unit-Tests prüfen das Erhalten der Wasserstufen- und übrigen Bits bei Modusänderungen.
+- Adapterversion **0.1.67**. Hardwaretest mit Einzel- und Mehrraumauswahl sowie allen Reinigungsmodi steht noch aus; CI/Build-Ergebnis nach Commit ergänzen.
+
+
 ## Geprüfter Branch- und Buildstand – 13.11.2026 (vormittags, MEZ)
 - Maßgeblicher aktiver Entwicklungsbranch: `feature/xiaomi-x20plus`, zuletzt geprüfter Laufzeitcode-Commit `33252606a220444756a4a01b6952de7eacb14ee0`, Adapterversion **0.1.66**.
 - CI-/Build-Lauf #320 (Run `43392287262`) für exakt diesen Head: **completed / success**. Lauf #319 ist ebenfalls erfolgreich.
