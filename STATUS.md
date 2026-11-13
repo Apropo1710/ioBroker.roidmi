@@ -5,8 +5,9 @@
 - Ursache im bisherigen Ablauf: `control.cleanRooms` hat die Raumaktion direkt gestartet, ohne den separat gewählten `control.cleaningMode` unmittelbar davor aus dem gepackten MIoT-Setting SIID 4 / PIID 23 erneut anzuwenden und zu verifizieren.
 - Korrektur auf `feature/xiaomi-x20plus`: Vor jeder Raumaktion wird der gewünschte Modus aus `control.cleaningMode` gelesen, der aktuelle Rohwert 4/23 abgefragt, ausschließlich die unteren zwei Bits (`0x03`) aktualisiert und der Wert zurückgelesen. Stimmen die Modusbits nicht, wird die Raumaktion abgebrochen. Wasserstufe und übrige Bits bleiben erhalten.
 - Nach erfolgreicher Prüfung werden Modus und Wasserstufe in den Status-/Steuerstates synchronisiert; erst danach wird die bestehende Mehrraumaktion 4/1 gesendet. Einzelraum und Mehrraum nutzen denselben Ablauf.
-- Neue Unit-Tests prüfen das Erhalten der Wasserstufen- und übrigen Bits bei Modusänderungen.
-- Adapterversion **0.1.67**. Hardwaretest mit Einzel- und Mehrraumauswahl sowie allen Reinigungsmodi steht noch aus; CI/Build-Ergebnis nach Commit ergänzen.
+- Neue Unit-Tests prüfen das Erhalten der Wasserstufen- und übrigen Bits bei Modusänderungen. Der erste Testlauf schlug wegen eines falschen erwarteten Testwerts fehl (Test erwartete 198657 statt korrekt 198659); die Testassertion wurde korrigiert.
+- Adapterversion **0.1.67**. GitHub Actions **Build #332** für Commit `d8527719741d4ae7589ff6e3b3e3a77e47958112`: **completed / success**. Alle 99 Tests bestanden, Lint und TypeScript-Build erfolgreich, Testpaket erstellt.
+- Noch offen: Hardwaretest am Xiaomi X20+ mit Einzelraum und Mehrraum sowie den verschiedenen Reinigungsmodi. Bis dahin ist die Funktion nicht als am Gerät bestätigt zu betrachten. HomePilot muss für diese Adapterkorrektur nicht geändert werden.
 
 
 ## Geprüfter Branch- und Buildstand – 13.11.2026 (vormittags, MEZ)
