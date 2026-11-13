@@ -46,11 +46,18 @@
       "max": 3600,
       "default": 30
     },
+    "scheduleSection": {
+      "type": "header",
+      "text": {
+        "de": "Roidmi EVE Plus – Zeitplanabruf",
+        "en": "Roidmi EVE Plus – schedule retrieval"
+      }
+    },
     "scheduleAutoRefresh": {
       "type": "checkbox",
       "label": {
-        "de": "Zeitpläne automatisch abrufen",
-        "en": "Automatically retrieve schedules"
+        "de": "Roidmi EVE Plus: Zeitpläne automatisch abrufen",
+        "en": "Roidmi EVE Plus: Automatically retrieve schedules"
       },
       "default": false,
       "help": {
@@ -61,8 +68,8 @@
     "scheduleRefreshIntervalMinutes": {
       "type": "number",
       "label": {
-        "de": "Abrufintervall für Zeitpläne (Minuten)",
-        "en": "Schedule refresh interval (minutes)"
+        "de": "Roidmi EVE Plus: Abrufintervall für Zeitpläne (Minuten)",
+        "en": "Roidmi EVE Plus: Schedule refresh interval (minutes)"
       },
       "min": 5,
       "max": 1440,
@@ -72,27 +79,34 @@
         "en": "Time between automatic reads (5 to 1440 minutes). Longer intervals are recommended because schedules rarely change."
       }
     },
+    "xiaomiScheduleSection": {
+      "type": "header",
+      "text": {
+        "de": "Xiaomi X20+ – Zeitplansynchronisierung",
+        "en": "Xiaomi X20+ – schedule synchronization"
+      }
+    },
     "xiaomiScheduleAutoRefresh": {
       "type": "checkbox",
       "label": {
-        "de": "Xiaomi X20+ Zeitpläne automatisch synchronisieren",
-        "en": "Automatically sync Xiaomi X20+ schedules"
+        "de": "Xiaomi X20+: Zeitpläne automatisch synchronisieren",
+        "en": "Xiaomi X20+: Automatically sync schedules"
       },
-      "default": true,
+      "default": false,
       "help": {
-        "de": "Synchronisiert die Zeitpläne über die Xiaomi-Cloud. Benötigt eine aktive Xiaomi-Cloud-Anmeldung. Standardmäßig eingeschaltet, wie bisher.",
-        "en": "Synchronizes schedules through Xiaomi Cloud. Requires an active Xiaomi Cloud login. Enabled by default to preserve existing behavior."
+        "de": "Synchronisiert die Zeitpläne über die Xiaomi-Cloud. Benötigt eine aktive Xiaomi-Cloud-Anmeldung. Standardmäßig ausgeschaltet.",
+        "en": "Synchronizes schedules through Xiaomi Cloud. Requires an active Xiaomi Cloud login. Disabled by default."
       }
     },
     "xiaomiScheduleRefreshIntervalMinutes": {
       "type": "number",
       "label": {
-        "de": "Xiaomi X20+ Abrufintervall (Minuten)",
-        "en": "Xiaomi X20+ refresh interval (minutes)"
+        "de": "Xiaomi X20+: Abrufintervall für Zeitpläne (Minuten)",
+        "en": "Xiaomi X20+: Schedule refresh interval (minutes)"
       },
       "min": 5,
       "max": 1440,
-      "default": 30,
+      "default": 60,
       "help": {
         "de": "Zeit zwischen automatischen Synchronisierungen (5 bis 1440 Minuten). Bei fehlender Cloud-Sitzung wird kein Abruf ausgeführt.",
         "en": "Time between automatic syncs (5 to 1440 minutes). No refresh is performed while the cloud session is unavailable."
