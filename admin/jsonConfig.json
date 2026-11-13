@@ -9,23 +9,31 @@
         "en": "Devices & connection"
       },
       "items": {
+        "enableRoidmi": {
+          "type": "checkbox",
+          "label": {
+            "de": "Roidmi EVE Plus aktivieren",
+            "en": "Enable Roidmi EVE Plus"
+          },
+          "default": true
+        },
         "host": {
           "type": "text",
           "label": {
-            "de": "Roboter-IP-Adresse",
-            "en": "Robot IP address"
+            "de": "Roidmi EVE Plus – IP-Adresse",
+            "en": "Roidmi EVE Plus – IP address"
           },
           "default": "",
           "help": {
-            "de": "Lokale IPv4-Adresse des Roboters (Roidmi EVE Plus oder Xiaomi X20+)",
-            "en": "Local IPv4 address of the robot (Roidmi EVE Plus or Xiaomi X20+)"
+            "de": "Lokale IPv4-Adresse des Roidmi EVE Plus.",
+            "en": "Local IPv4 address of the Roidmi EVE Plus."
           }
         },
         "did": {
           "type": "text",
           "label": {
-            "de": "Xiaomi-Geräte-DID",
-            "en": "Xiaomi device DID"
+            "de": "Roidmi EVE Plus – Geräte-DID",
+            "en": "Roidmi EVE Plus – device DID"
           },
           "default": "",
           "help": {
@@ -36,12 +44,12 @@
         "token": {
           "type": "password",
           "label": {
-            "de": "MIoT-/miIO-Token",
-            "en": "MIoT / miIO token"
+            "de": "Roidmi EVE Plus – MIoT-/miIO-Token",
+            "en": "Roidmi EVE Plus – MIoT / miIO token"
           },
           "help": {
-            "de": "Wird von ioBroker verschlüsselt gespeichert. Gib diesen Token niemals weiter.",
-            "en": "Stored encrypted by ioBroker. Never share this token."
+            "de": "Wird von ioBroker verschlüsselt gespeichert. Geheim halten und niemals weitergeben.",
+            "en": "Stored encrypted by ioBroker. Keep it secret and never share it."
           }
         },
         "pollIntervalSeconds": {
@@ -54,25 +62,13 @@
           "max": 3600,
           "default": 30
         },
-        "enableRoidmi": {
-          "type": "checkbox",
-          "label": {
-            "de": "Roidmi EVE Plus aktivieren",
-            "en": "Enable Roidmi EVE Plus"
-          },
-          "default": true
-        },
         "enableXiaomi": {
           "type": "checkbox",
           "label": {
             "de": "Xiaomi X20+ aktivieren",
             "en": "Enable Xiaomi X20+"
           },
-          "default": false,
-          "help": {
-            "de": "Kann parallel zum Roidmi aktiviert werden. Eigene Verbindungsdaten verwenden.",
-            "en": "Can be enabled alongside Roidmi. Uses its own connection credentials."
-          }
+          "default": false
         },
         "xiaomiHost": {
           "type": "text",
@@ -94,8 +90,8 @@
           },
           "default": "",
           "help": {
-            "de": "Numerische DID mit Xiaomi Cloud Tokens Extractor aus den Xiaomi-Home-Gerätedaten ermitteln: https://github.com/PiotrMachowski/Xiaomi-cloud-tokens-extractor. Anleitung und richtige Kontoregion beachten.",
-            "en": "Find the numeric DID in Xiaomi Home device data using Xiaomi Cloud Tokens Extractor: https://github.com/PiotrMachowski/Xiaomi-cloud-tokens-extractor. Follow its instructions and select the correct account region."
+            "de": "Numerische Geräte-ID (DID) aus den Xiaomi-Home-Gerätedaten. Für MIoT-Anfragen erforderlich. Ermittlung z. B. mit Xiaomi Cloud Tokens Extractor.",
+            "en": "Numeric device ID (DID) from Xiaomi Home device data. Required for MIoT requests. Can be obtained using Xiaomi Cloud Tokens Extractor."
           }
         },
         "xiaomiToken": {
@@ -105,8 +101,8 @@
             "en": "Xiaomi X20+ – MIoT / miIO token"
           },
           "help": {
-            "de": "Token (meist 32 Hex-Zeichen) mit Xiaomi Cloud Tokens Extractor auslesen: https://github.com/PiotrMachowski/Xiaomi-cloud-tokens-extractor. Anleitung beachten. Geheim halten: niemals posten, in Screenshots zeigen, in Git committen oder in Logs kopieren. Nur hier eintragen; ioBroker speichert ihn verschlüsselt. Separater X20+-Token, nicht der Roidmi-Token.",
-            "en": "Extract the token (usually 32 hexadecimal characters) using Xiaomi Cloud Tokens Extractor: https://github.com/PiotrMachowski/Xiaomi-cloud-tokens-extractor. Follow its instructions. Treat it as a secret: never post it, show it in screenshots, commit it to Git, or copy it into logs. Enter it only here; ioBroker stores it encrypted. This is the X20+ token, not the Roidmi token."
+            "de": "Wird von ioBroker verschlüsselt gespeichert. Geheim halten und niemals weitergeben. Separater Token für den Xiaomi X20+.",
+            "en": "Stored encrypted by ioBroker. Keep it secret and never share it. Separate token for Xiaomi X20+."
           }
         }
       }
