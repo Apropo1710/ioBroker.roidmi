@@ -1,6 +1,7 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { parseXiaomiFdsAnnouncement, filterXiaomiHomeRooms } = require("../build/lib/xiaomi-dreame-map.js");
+const { deflateSync } = require("node:zlib");
+const { parseXiaomiFdsAnnouncement, filterXiaomiHomeRooms, parseXiaomiLiveMapSelection } = require("../build/lib/xiaomi-dreame-map.js");
 
 test("X20+ FDS announcement extracts object name and 16-character suffix", () => {
   assert.deepEqual(parseXiaomiFdsAnnouncement('["12345/987654321/1,abcdefghijklmnop"]'), {
@@ -26,4 +27,19 @@ test("X20+ room filtering excludes outdoor phantom segments without Xiaomi Home 
     { segmentId: 8, name: "Flur unten", roomId: "386001053017" }
   ];
   assert.deepEqual(filterXiaomiHomeRooms(rooms).map(room => room.segmentId), [1, 4, 8]);
+});
+
+test("X20+ live map frame decodes selected room segment IDs", () => {
+  const metadata = Buffer.from(JSON.stringify({ sa: [[1, 1, 2, 3, 0], [4, 1, 2, 3, 1], [1, 2, 2, 3, 2]] }));
+  const frame = Buffer.alloc(28 + metadata.length);
+  frame.writeUInt16LE(1, 19);
+  frame.writeUInt16LE(1, 21);
+  frame[27] = 0;
+  metadata.copy(frame, 28);
+  const encoded = deflateSync(frame).toString("base64url");
+  assert.deepEqual(parseXiaomiLiveMapSelection(encoded), [1, 4]);
+});
+
+test("X20+ live map frame rejects invalid compressed data", () => {
+  assert.throws(() => parseXiaomiLiveMapSelection("not-a-valid-frame"), /live map frame/i);
 });

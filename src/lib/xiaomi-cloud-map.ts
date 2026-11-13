@@ -151,8 +151,12 @@ export class XiaomiCloudMapClient {
         if (!this.hasSession()) throw new Error("Xiaomi Cloud session is unavailable; sign in first.");
         if (!/^\\d{1,20}$/.test(did)) throw new Error("Xiaomi X20+ DID is invalid.");
         const base = `https://${country === "cn" ? "" : country + "."}api.io.mi.com/app`;
+        const devices = await this.api(base + "/home/device_list", { data: '{"getVirtualModel":false,"getHuamiDevices":0}' }, onSessionChanged);
+        const device = devices?.result?.list?.find((entry: any) => String(entry?.did) === did);
+        if (!device) throw new Error("Xiaomi X20+ was not found in the Xiaomi Cloud device list.");
+        const uid = String(device.uid ?? this.userId);
         const history = await this.api(base + "/user/get_user_device_data", {
-            data: JSON.stringify({ uid: this.userId, did, time_start: 0, time_end: 9999999999, limit: 20, key: "6.1", type: "prop" })
+            data: JSON.stringify({ uid, did, time_start: 0, time_end: 9999999999, limit: 20, key: "6.1", type: "prop" })
         }, onSessionChanged);
         if (!Array.isArray(history?.result)) throw new Error("Xiaomi Cloud returned no live X20+ map history.");
         const entries = history.result
