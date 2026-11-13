@@ -540,3 +540,11 @@ Diese Übersicht ist die maßgebliche aktuelle Testliste. Bei jedem neuen Testbe
 - Xiaomi X20+: Standard aktiviert, Intervall 30 Minuten, um das bisherige Verhalten beizubehalten; vorhandener Xiaomi-Cloud-Ablauf mit Cache-/Direktvergleich bleibt unverändert. Aktive Cloud-Sitzung erforderlich.
 - Die Timer sind unabhängig voneinander und vom Status-Polling. Der bestehende Schutz vor überlappenden Xiaomi-Befehlen bleibt erhalten.
 - Version auf 0.1.66 erhöht. CI/Build/Paketprüfung für diesen Commit stehen noch aus; bis zum erfolgreichen Lauf nicht installieren.
+
+
+## Instanzeinstellungen – Zeitplanbereiche klar getrennt (13.11.2026)
+- Die automatischen Zeitplanoptionen sind in der Admin-Oberfläche jetzt ausdrücklich den jeweiligen Geräten zugeordnet: eigener Abschnitt „Roidmi EVE Plus – Zeitplanabruf“ und eigener Abschnitt „Xiaomi X20+ – Zeitplansynchronisierung“.
+- Beschriftungen der beiden Abrufintervalle nennen ebenfalls das jeweilige Gerät, damit die Zuordnung auch ohne Abschnittskontext eindeutig bleibt.
+- Standardwerte für beide Geräte vereinheitlicht: automatische Synchronisierung **aus**, Intervall **60 Minuten**.
+- Keine Änderung an Abruflogik, Timern oder Zeitplan-Datenpfaden; ausschließlich Admin-Konfiguration und Darstellung.
+- Umsetzung auf `feature/xiaomi-x20plus`, Commit `d5689eb546d8406a379b448bc86fd1f2fc0deb2b`. Admin-UI-Darstellung und CI-Build noch zu verifizieren.
