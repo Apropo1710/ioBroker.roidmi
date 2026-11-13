@@ -530,3 +530,13 @@ Diese Übersicht ist die maßgebliche aktuelle Testliste. Bei jedem neuen Testbe
 - Der Timer wartet bei laufendem Status-Poll oder Roboterbefehl, erzeugt keine parallele Anfrage und plant den nächsten Versuch erst nach dem Intervall. Timer wird beim Entladen der Instanz beendet.
 - Manuelles Aktualisieren und die vorhandene bidirektionale Zeitplanbearbeitung bleiben unverändert.
 - **CI/Build/Paketierung erfolgreich:** Workflow „Test and build adapter“ für Commit `bf77b7a` erfolgreich (Run `43379940955`): `npm ci`, alle Tests, TypeScript-Lint, Build, Tar-Paketierung und Upload-Artefakt abgeschlossen. Artefakt-ID `14015568577`. Kein Hardwaretest der neuen Automatik durchgeführt.
+
+
+## Getrennte automatische Zeitplansynchronisierung für beide Roboter (Version 0.1.66)
+
+- Nutzerhinweis: Die vorherige Version 0.1.65 hatte die neue konfigurierbare Automatik nur für den Eve Plus ergänzt. Im X20+-Code existierte bereits ein fester automatischer Xiaomi-Cloud-Abgleich alle 30 Minuten; dieser war nicht konfigurierbar.
+- Beide Zeitplanabrufe besitzen jetzt eigene Ein/Aus- und Intervalloptionen in den Instanzeinstellungen (5 bis 1440 Minuten).
+- Roidmi EVE Plus: Standard weiterhin deaktiviert, Intervall 60 Minuten; lokaler MIoT-Abruf SIID 8 / PIID 6.
+- Xiaomi X20+: Standard aktiviert, Intervall 30 Minuten, um das bisherige Verhalten beizubehalten; vorhandener Xiaomi-Cloud-Ablauf mit Cache-/Direktvergleich bleibt unverändert. Aktive Cloud-Sitzung erforderlich.
+- Die Timer sind unabhängig voneinander und vom Status-Polling. Der bestehende Schutz vor überlappenden Xiaomi-Befehlen bleibt erhalten.
+- Version auf 0.1.66 erhöht. CI/Build/Paketprüfung für diesen Commit stehen noch aus; bis zum erfolgreichen Lauf nicht installieren.

@@ -1,7 +1,7 @@
 {
   "common": {
     "name": "roidmi",
-    "version": "0.1.65",
+    "version": "0.1.66",
     "title": "Roidmi",
     "titleLang": {
       "en": "Roidmi",
@@ -27,6 +27,10 @@
       "xiaomiToken"
     ],
     "news": {
+      "0.1.66": {
+        "en": "Added independent enable/disable and interval settings for automatic EVE Plus and Xiaomi X20+ schedule refresh",
+        "de": "Getrennte Ein/Aus- und Intervall-Einstellungen für den automatischen Zeitplanabruf von EVE Plus und Xiaomi X20+ ergänzt"
+      },
       "0.1.65": {
         "en": "Added optional automatic Roidmi EVE Plus schedule refresh with a configurable interval",
         "de": "Optionalen automatischen Abruf der Roidmi-EVE-Plus-Zeitpläne mit einstellbarem Intervall ergänzt"
@@ -282,6 +286,8 @@
       }
     ],
     "scheduleAutoRefresh": false,
-    "scheduleRefreshIntervalMinutes": 60
+    "scheduleRefreshIntervalMinutes": 60,
+    "xiaomiScheduleAutoRefresh": true,
+    "xiaomiScheduleRefreshIntervalMinutes": 30
   }
 }

@@ -24,6 +24,8 @@ interface RoidmiAdapterConfig {
     pollIntervalSeconds?: number;
     scheduleAutoRefresh?: boolean;
     scheduleRefreshIntervalMinutes?: number;
+    xiaomiScheduleAutoRefresh?: boolean;
+    xiaomiScheduleRefreshIntervalMinutes?: number;
     cloudEnabled?: boolean;
     cloudControlEnabled?: boolean;
     cloudUsername?: string;
@@ -984,31 +986,37 @@ class RoidmiAdapter extends Adapter {
         await poll();
         schedule(lastError ? Math.min(interval * 2, 300000) : interval);
 
-        // Read-only Xiaomi Home schedule sync: one cloud property read every 30 minutes.
-        // If another Xiaomi command is active, defer by one minute instead of overlapping it.
-        const scheduleSyncInterval = 30 * 60 * 1000;
-        const scheduleSync = (): void => {
-            if (this.stopping) return;
-            this.xiaomiScheduleTimer = setTimeout(async () => {
+        // Optional Xiaomi Home schedule sync. Keep the existing 30-minute default,
+        // but let users disable it or choose a lower-frequency interval.
+        if (config.xiaomiScheduleAutoRefresh !== false) {
+            const scheduleIntervalMinutes = Math.min(1440, Math.max(5, config.xiaomiScheduleRefreshIntervalMinutes ?? 30));
+            const scheduleSyncInterval = scheduleIntervalMinutes * 60 * 1000;
+            const scheduleSync = (): void => {
                 if (this.stopping) return;
-                if (this.xiaomiCommandRunning) {
-                    this.log.debug("Xiaomi X20+ schedule sync deferred because another command is running");
-                    this.xiaomiScheduleTimer = setTimeout(scheduleSync, 60 * 1000);
-                    return;
-                }
-                if (!this.cloudMapClient.hasSession()) {
-                    await this.setStateChangedAsync(prefix + "timing.status", {
-                        val: "Automatische Synchronisierung übersprungen: Xiaomi-Cloud-Sitzung nicht verfügbar.",
-                        ack: true
-                    });
+                this.xiaomiScheduleTimer = setTimeout(async () => {
+                    if (this.stopping) return;
+                    if (this.xiaomiCommandRunning) {
+                        this.log.debug("Xiaomi X20+ schedule sync deferred because another command is running");
+                        this.xiaomiScheduleTimer = setTimeout(scheduleSync, 60 * 1000);
+                        return;
+                    }
+                    if (!this.cloudMapClient.hasSession()) {
+                        await this.setStateChangedAsync(prefix + "timing.status", {
+                            val: "Automatische Synchronisierung übersprungen: Xiaomi-Cloud-Sitzung nicht verfügbar.",
+                            ack: true
+                        });
+                        scheduleSync();
+                        return;
+                    }
+                    await this.setStateAsync(prefix + "control.refreshSchedules", { val: true, ack: false });
                     scheduleSync();
-                    return;
-                }
-                await this.setStateAsync(prefix + "control.refreshSchedules", { val: true, ack: false });
-                scheduleSync();
-            }, scheduleSyncInterval);
-        };
-        scheduleSync();
+                }, scheduleSyncInterval);
+            };
+            scheduleSync();
+            this.log.info(`Automatic Xiaomi X20+ schedule sync enabled (every ${scheduleIntervalMinutes} minutes)`);
+        } else {
+            this.log.info("Automatic Xiaomi X20+ schedule sync disabled in adapter settings");
+        }
     }
 
     private async applyRoomMapConfig(config: RoomMapConfig): Promise<void> {

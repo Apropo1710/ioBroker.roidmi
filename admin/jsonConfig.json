@@ -72,6 +72,32 @@
         "en": "Time between automatic reads (5 to 1440 minutes). Longer intervals are recommended because schedules rarely change."
       }
     },
+    "xiaomiScheduleAutoRefresh": {
+      "type": "checkbox",
+      "label": {
+        "de": "Xiaomi X20+ Zeitpläne automatisch synchronisieren",
+        "en": "Automatically sync Xiaomi X20+ schedules"
+      },
+      "default": true,
+      "help": {
+        "de": "Synchronisiert die Zeitpläne über die Xiaomi-Cloud. Benötigt eine aktive Xiaomi-Cloud-Anmeldung. Standardmäßig eingeschaltet, wie bisher.",
+        "en": "Synchronizes schedules through Xiaomi Cloud. Requires an active Xiaomi Cloud login. Enabled by default to preserve existing behavior."
+      }
+    },
+    "xiaomiScheduleRefreshIntervalMinutes": {
+      "type": "number",
+      "label": {
+        "de": "Xiaomi X20+ Abrufintervall (Minuten)",
+        "en": "Xiaomi X20+ refresh interval (minutes)"
+      },
+      "min": 5,
+      "max": 1440,
+      "default": 30,
+      "help": {
+        "de": "Zeit zwischen automatischen Synchronisierungen (5 bis 1440 Minuten). Bei fehlender Cloud-Sitzung wird kein Abruf ausgeführt.",
+        "en": "Time between automatic syncs (5 to 1440 minutes). No refresh is performed while the cloud session is unavailable."
+      }
+    },
     "cloudEnabled": {
       "type": "checkbox",
       "label": {
