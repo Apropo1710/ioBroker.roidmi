@@ -565,3 +565,10 @@ Diese Übersicht ist die maßgebliche aktuelle Testliste. Bei jedem neuen Testbe
 - Verbindungsfelder beider Roboter verwenden parallele Bezeichnungen und einheitliche Hilfetexte für IP-Adresse, Geräte-DID und MIoT-/miIO-Token. Gerätespezifische Hinweise bleiben dort erhalten, wo sie tatsächlich nötig sind.
 - Bestehende Konfigurationsschlüssel, gespeicherte Werte und Adapterlogik bleiben unverändert.
 - Auf `feature/xiaomi-x20plus` umgesetzt, Commit `3895cff20a564e8485614b84b9ceeb98bf94747e`. CI/Build ausstehend.
+
+
+## Admin-Konfiguration – JSON-Schemafehler bei Zeitplanüberschrift behoben (13.11.2026)
+- ioBroker Admin meldete für `schedules.scheduleHeading` die fehlende Pflichtangabe `size` beim `header`-Element.
+- Ursache: Beim vorherigen Schema-Aufräumen wurde das erforderliche numerische Header-Feld entfernt. Korrektur: `size: 3` ergänzt.
+- Sonst keine Änderungen an Konfiguration, Einstellungen oder Adapterlogik.
+- Commit `852f0ec2275474b8dabe52fff4feb29d919db601` auf `feature/xiaomi-x20plus`. CI/Build ausstehend.
