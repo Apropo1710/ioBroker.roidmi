@@ -668,6 +668,12 @@ class RoidmiAdapter extends Adapter {
         await this.setObjectNotExistsAsync(prefix + "rooms.lastUpdate", {
             type: "state", common: { name: "X20+ map last update", type: "string", role: "date", read: true, write: false }, native: {}
         });
+        await this.setObjectNotExistsAsync(prefix + "rooms.lastSelectedSegments", {
+            type: "state", common: { name: "Segments from newest live map frame (6.1)", type: "string", role: "json", read: true, write: false }, native: {}
+        });
+        await this.setObjectNotExistsAsync(prefix + "rooms.lastSelectedAt", {
+            type: "state", common: { name: "Timestamp of newest live map frame", type: "string", role: "date", read: true, write: false }, native: {}
+        });
         await this.setObjectNotExistsAsync(prefix + "control.refreshRooms", {
             type: "state", common: { name: "Refresh Xiaomi X20+ room map from cloud", type: "boolean", role: "button", read: false, write: true, def: false }, native: {}
         });
@@ -1368,6 +1374,17 @@ class RoidmiAdapter extends Adapter {
                             await this.setStateAsync(channel + ".roomId", { val: room.roomId!, ack: true });
                         }
                         await this.setStateAsync("x20Plus.rooms.lastUpdate", { val: new Date().toISOString(), ack: true });
+                        // The 6.1 history is a live frame stream; unlike the saved FDS map it also carries the last selected room IDs (sa).
+                        try {
+                            const live = await this.cloudMapClient.fetchXiaomiLiveRoomSelection(config.cloudCountry || "de", config.xiaomiDid, async () => {
+                                await this.persistCloudSession();
+                            });
+                            await this.setStateAsync("x20Plus.rooms.lastSelectedSegments", { val: JSON.stringify(live.segmentIds), ack: true });
+                            await this.setStateAsync("x20Plus.rooms.lastSelectedAt", { val: new Date(live.timestamp).toISOString(), ack: true });
+                        } catch (liveError) {
+                            const liveMessage = liveError instanceof Error ? liveError.message : String(liveError);
+                            this.log.warn("Could not read X20+ live map selection (6.1): " + liveMessage);
+                        }
                         await this.setStateAsync("x20Plus.rooms.mapStatus", { val: "Map refreshed: " + selectableRooms.length + " named Xiaomi Home rooms (filtered " + (rooms.length - selectableRooms.length) + " unnamed/outdoor segments).", ack: true });
                         this.log.info("Xiaomi X20+ saved room map refreshed from Xiaomi FDS: " + selectableRooms.length + " named rooms; filtered " + (rooms.length - selectableRooms.length) + " false-positive segments.");
                     } catch (error) {
