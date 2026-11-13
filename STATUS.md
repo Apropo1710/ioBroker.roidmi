@@ -557,3 +557,11 @@ Diese Übersicht ist die maßgebliche aktuelle Testliste. Bei jedem neuen Testbe
 - Beide Zeitplanintervalle behalten den Default 60 Minuten, beide Automatiken den Default aus. Bereits in einer Instanz gespeicherte Werte werden durch Default-Änderungen nicht überschrieben.
 - Die vorhandenen Konfigurationsschlüssel bleiben unverändert; die Einstellungen werden nur in der Oberfläche neu gruppiert. Keine Änderung an Adapterlogik, Zeitplan-Timern oder Roboterkommunikation.
 - Auf `feature/xiaomi-x20plus` umgesetzt, letzter Commit `063b642159c9993e9faa6a93901506dfc47f9be0`. CI/Build ausstehend.
+
+
+## Admin-Konfiguration – Aktivierung und Gerätefelder vereinheitlicht (13.11.2026)
+- „Roidmi EVE Plus aktivieren“ steht jetzt direkt oberhalb der Roidmi-IP-Adresse, analog zur X20+-Aktivierung oberhalb seiner Verbindungsdaten.
+- Der erklärende Hilfetext unter „Xiaomi X20+ aktivieren“ wurde entfernt.
+- Verbindungsfelder beider Roboter verwenden parallele Bezeichnungen und einheitliche Hilfetexte für IP-Adresse, Geräte-DID und MIoT-/miIO-Token. Gerätespezifische Hinweise bleiben dort erhalten, wo sie tatsächlich nötig sind.
+- Bestehende Konfigurationsschlüssel, gespeicherte Werte und Adapterlogik bleiben unverändert.
+- Auf `feature/xiaomi-x20plus` umgesetzt, Commit `3895cff20a564e8485614b84b9ceeb98bf94747e`. CI/Build ausstehend.
