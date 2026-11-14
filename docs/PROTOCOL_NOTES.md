@@ -121,3 +121,32 @@ Diese Werte stammen aus Screenshots des realen Geräts. Sie sind Beobachtungen, 
 - Sicherheitsablauf: aktuellen Wert frisch lesen → Snapshot strukturell vergleichen → ausschließlich explizite Felder ändern → vollständigen JSON-Wert schreiben → direkt zurücklesen → strukturell prüfen, dass nur die angeforderten Felder verändert wurden. Bei Snapshot-Konflikt wird vor dem Schreiben abgebrochen.
 - Nach MIoT-Schreibannahme und fehlgeschlagenem Readback wird der Ausgang ausdrücklich als unbestätigt gemeldet. Kein automatischer Wiederholungsversuch.
 - Alle Lese-/Schreib-/Readback-Aufrufe erfolgen ausschließlich auf explizite Benutzeraktion; keine Zeitplanabfrage im regulären Polling.
+
+
+## Live-Test Xiaomi X20+ – Mehrraumreinigung in Modus 3 (14.11.2026)
+
+**Testumgebung:** Xiaomi X20+ über lokalen miIO-UDP-Transport; Adapter-Branch `feature/xiaomi-x20plus`. Der Test wurde mit einem separaten ioBroker-JavaScript-Testskript durchgeführt. Die Roidmi-Adapterinstanz war während der direkten miIO-Aufrufe gestoppt. Zugangsdaten wurden lokal aus der Adapterkonfiguration gelesen und nicht protokolliert.
+
+**Reinigungsmodus:** `3` (in der Bedienoberfläche „Saugen vor Wischen“).
+
+**Räume:**
+- Segment-/Raum-ID `1`: Toilette
+- Segment-/Raum-ID `8`: Flur unten
+
+Beide Aufrufe verwendeten dieselbe MIoT-Aktion (SIID 4 / AIID 1), dieselben übrigen Parameter und wurden vom Roboter jeweils mit `code: 0` beantwortet. Geändert wurde ausschließlich der fünfte Wert des zweiten Eintrags in `selects`:
+
+| Variante | `selects` | Beobachtung in Xiaomi Home |
+|---|---|---|
+| A | `[[1,1,1,2,1],[8,1,1,2,2]]` | Nur Toilette wurde als ausgewählter Raum angezeigt |
+| B | `[[1,1,1,2,1],[8,1,1,2,1]]` | Toilette und Flur unten wurden beide als ausgewählte Räume angezeigt |
+
+**Vorläufige Schlussfolgerung:** Für diese getestete Zwei-Raum-Kombination im Modus 3 muss der fünfte Wert beider Raumeinträge offenbar `1` sein. Ein fortlaufender Wert `1,2` führte dazu, dass nur der erste Raum ausgewählt wurde. Die Annahme, dass alle Raumeinträge unabhängig von der Anzahl denselben fünften Wert `1` benötigen, ist noch nicht für drei oder mehr Räume und nicht für alle Raumkombinationen bestätigt.
+
+**Noch nicht nachgewiesen:** Die Anzeige beider Räume in Xiaomi Home bestätigt die Mehrraumauswahl, aber dieser Test allein belegt noch nicht den vollständigen erfolgreichen Reinigungsdurchlauf beider Räume.
+
+**Nächste Schritte:**
+- Drei-Raum-Reinigung mit fünftem Wert `1` für jeden Eintrag testen.
+- Weitere Raumkombinationen testen.
+- Danach den Payload-Builder gezielt anpassen und Regressionstests für Einzelraum-, Mehrraum- und die übrigen Reinigungsmodi ergänzen.
+
+Bis zu diesen Prüfungen bleibt dies eine dokumentierte Live-Beobachtung und noch keine implementierte Adapterkorrektur.
