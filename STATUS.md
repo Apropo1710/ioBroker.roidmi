@@ -1,7 +1,7 @@
 # Projektstatus – ioBroker.roidmi
 
 ## Aktueller geprüfter Branch- und Buildstand – 14.11.2026, 02:57 MEZ
-- Aktiver Entwicklungsbranch: `feature/xiaomi-x20plus`; zuletzt vor dieser Dokumentationspflege geprüfter Code-Head `68d3508ecb079bf81e31da5941a9f970fce69b89`.
+- Aktiver Entwicklungsbranch: `feature/xiaomi-x20plus`; letzter geprüfter Code-Head `68d3508ecb079bf81e31da5941a9f970fce69b89` (unverändert; seitdem nur Dokumentations-Commits).
 - Adapterversion laut `package.json`: **0.1.67**. Dies ist der Feature-Branch-Paketstand, keine Übernahme nach `main`.
 - Letzter Code-Commit: `68d3508ecb079bf81e31da5941a9f970fce69b89` – Korrektur der übermäßig maskierten Regex zur Validierung der Xiaomi-X20+-DID.
 - GitHub Actions „Test and build adapter“ #341 (Run `43449224003`) für exakt diesen Head: **completed / success**.
@@ -601,3 +601,13 @@ Diese Übersicht ist die maßgebliche aktuelle Testliste. Bei jedem neuen Testbe
 - Ursache: Beim vorherigen Schema-Aufräumen wurde das erforderliche numerische Header-Feld entfernt. Korrektur: `size: 3` ergänzt.
 - Sonst keine Änderungen an Konfiguration, Einstellungen oder Adapterlogik.
 - Commit `852f0ec2275474b8dabe52fff4feb29d919db601` auf `feature/xiaomi-x20plus`. CI/Build ausstehend.
+
+
+## X20+ Mehrraumreinigung – Live-Diagnose Modus 3 (14.11.2026)
+
+- Der Nutzer hat den MIoT-Aufruf für zwei Räume im Reinigungsmodus 3 („Saugen vor Wischen“) direkt getestet. Räume: Toilette (Segment 1) und Flur unten (Segment 8). Der Roboter antwortete jeweils mit `code: 0`.
+- Variante A mit `selects=[[1,1,1,2,1],[8,1,1,2,2]]`: In Xiaomi Home wurde nur die Toilette als ausgewählt angezeigt.
+- Variante B mit `selects=[[1,1,1,2,1],[8,1,1,2,1]]`: In Xiaomi Home wurden anschließend beide Räume als ausgewählt angezeigt. Damit ist für diese konkrete Zwei-Raum-Kombination belegt, dass der fünfte Wert beider Raumzeilen auf `1` gesetzt sein muss.
+- **Wichtige Grenze des Nachweises:** Bestätigt ist die Auswahl beider Räume in Xiaomi Home, nicht bereits der vollständige tatsächliche Reinigungslauf beider Räume. Drei oder mehr Räume sowie weitere Kombinationen sind noch nicht getestet.
+- Nächster Praxistest: Drei-Raum-Reinigung im Modus 3; anschließend weitere Raumkombinationen prüfen. Erst danach die Builder-Logik gezielt ändern und automatisierte Regressionstests ergänzen.
+- Adaptercode und Version wurden für diesen Befund noch nicht geändert. Version bleibt **0.1.67**; der letzte Code-Head bleibt `68d3508ecb079bf81e31da5941a9f970fce69b89`. Die beiden Commits vom 14.11. aktualisieren ausschließlich `docs/PROTOCOL_NOTES.md` und `docs/PROJECT_PLAN.md`; `STATUS.md` wird mit diesem Commit nachgezogen. Kein neuer Build ausgelöst, da keine Codeänderung erfolgt ist.
