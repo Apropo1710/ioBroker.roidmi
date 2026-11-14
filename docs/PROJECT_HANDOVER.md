@@ -1,9 +1,9 @@
 # Technische Übergabe – Roidmi ioBroker Adapter
 
-> **Aktualitätskorrektur 13.11.2026:** Diese Datei enthält ältere technische Historie. Maßgeblich ist `STATUS.md` auf `feature/xiaomi-x20plus`: zuletzt geprüfter Laufzeitcode-Commit `33252606a220444756a4a01b6952de7eacb14ee0`, Version 0.1.66, CI-/Build #320 erfolgreich. Der Repository-`main`-Branch ist separat und steht auf Version 0.1.36; dessen Distribution-Build für Head `99d88d14421011e7449eba4cb0ac2672f6aada7c` ist erfolgreich. Alte Angaben zu Branch `main`, Version 0.1.7 und damaligen Cloud-Fehlerständen sind historische Momentaufnahmen und keine aktuellen Branch-/Versionsangaben.
+> **Aktualitätskorrektur 14.11.2026:** Maßgeblich ist `STATUS.md` auf `feature/xiaomi-x20plus`. Aktueller Feature-Head `68d3508ecb079bf81e31da5941a9f970fce69b89`, Adapterversion 0.1.67; GitHub Actions „Test and build adapter“ #341 (Run `43449224003`) für exakt diesen Head: completed / success. Letzte Codekorrektur: DID-Regex-Validierung in `src/lib/xiaomi-cloud-map.ts`. Die Mehrraum-Reinigungsmodus-Absicherung ist enthalten, aber der zugehörige Praxistest am X20+ bleibt offen. Der getrennte Repository-`main`-Branch steht auf Version 0.1.36; sein Build-Distribution-Run `43378078837` war erfolgreich. Alte Angaben zu Branch `main`, Version 0.1.7 und damaligen Cloud-Fehlerständen sind historische Momentaufnahmen.
 
 
-**Stand:** 01.11.2026  
+**Historischer Ausgangsstand:** 01.11.2026  
 **Repository:** https://github.com/Apropo1710/ioBroker.roidmi  
 **Branch:** `main`  
 **Aktueller Build-Commit:** `fd5baf50c09cfd84bec2b2d240f774dbc8d30222`  
