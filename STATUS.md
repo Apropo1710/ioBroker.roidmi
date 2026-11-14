@@ -1,15 +1,15 @@
 # Roidmi Adapter – aktueller Status
 
-Stand: 2026-11-13, 10:xx MEZ
+Stand: 2026-11-14, 02:57 MEZ
 
 ## Geprüfter Main-Branch-Stand
-- Branch: `main`; zuletzt geprüfter Laufzeitcode-Commit `99d88d14421011e7449eba4cb0ac2672f6aada7c`.
-- Adapter-Version laut `package.json`: **0.1.36**.
-- Workflow „Build distribution“ Run `43378078837`: **completed / success** für exakt diesen Head.
-- Der aktive Xiaomi-X20+-Entwicklungsstand liegt separat auf `feature/xiaomi-x20plus`, Version **0.1.66**, CI-/Build #320 erfolgreich. Die beiden Branches dürfen nicht vermischt werden.
+- Paketversion auf `main`: **0.1.36**. Letzter Build-/Distribution-Commit: `99d88d14421011e7449eba4cb0ac2672f6aada7c`; „Build distribution“ Run `43378078837`: **completed / success**.
+- Der zugrunde liegende Quellstand `65c1769b9d1b05da54ee2cdb7276b30af8e2982e` wurde mit CI Run `43378028113` und „Test and build adapter“ Run `43378028172` erfolgreich geprüft.
+- Der aktuelle Xiaomi-X20+-Entwicklungsstand liegt getrennt auf `feature/xiaomi-x20plus`: Paketversion **0.1.67**, letzter Code-Commit `68d3508ecb079bf81e31da5941a9f970fce69b89`, Actions #341 / Run `43449224003`: **completed / success**.
+- Die Feature-Branch-Statusdateien wurden danach dokumentarisch aktualisiert; es erfolgte keine Übernahme nach `main`.
+- `main` und `feature/xiaomi-x20plus` bleiben getrennte Entwicklungsstände; nicht vermischen.
 
-
-Stand: 2026-11-13
+## Historischer Detailstand – 13.11.2026
 
 ## Aktuelle Version
 - Adapter-Version: 0.1.36
