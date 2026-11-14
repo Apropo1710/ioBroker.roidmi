@@ -1,5 +1,15 @@
 # Projektstatus – ioBroker.roidmi
 
+## Aktueller geprüfter Branch- und Buildstand – 14.11.2026, 02:57 MEZ
+- Aktiver Entwicklungsbranch: `feature/xiaomi-x20plus`; aktueller Head `68d3508ecb079bf81e31da5941a9f970fce69b89`.
+- Adapterversion laut `package.json`: **0.1.67**. Dies ist der Feature-Branch-Paketstand, keine Übernahme nach `main`.
+- Letzter Code-Commit: `68d3508ecb079bf81e31da5941a9f970fce69b89` – Korrektur der übermäßig maskierten Regex zur Validierung der Xiaomi-X20+-DID.
+- GitHub Actions „Test and build adapter“ #341 (Run `43449224003`) für exakt diesen Head: **completed / success**.
+- Der aktuelle Build enthält weiterhin die zuvor umgesetzte Mehrraum-Reinigungsmodus-Absicherung. Der Praxistest am X20+ mit Einzelraum/Mehrraum und den verschiedenen Reinigungsmodi bleibt offen; CI-Erfolg ist kein Hardware-Nachweis.
+- `main` bleibt getrennt auf Version **0.1.36**; der Build-Distribution-Lauf `43378078837` für dessen Stand war erfolgreich. Keine Übernahme zwischen den Branches erfolgt.
+- HomePilot musste für die DID-Validierung nicht geändert werden.
+
+
 ## X20+ Mehrraumreinigung: Reinigungsmodus vor dem Start absichern (13.11.2026)
 
 - Ursache im bisherigen Ablauf: `control.cleanRooms` hat die Raumaktion direkt gestartet, ohne den separat gewählten `control.cleaningMode` unmittelbar davor aus dem gepackten MIoT-Setting SIID 4 / PIID 23 erneut anzuwenden und zu verifizieren.
@@ -10,7 +20,7 @@
 - Noch offen: Hardwaretest am Xiaomi X20+ mit Einzelraum und Mehrraum sowie den verschiedenen Reinigungsmodi. Bis dahin ist die Funktion nicht als am Gerät bestätigt zu betrachten. HomePilot muss für diese Adapterkorrektur nicht geändert werden.
 
 
-## Geprüfter Branch- und Buildstand – 13.11.2026 (vormittags, MEZ)
+## Historischer Branch- und Buildstand – 13.11.2026 (vormittags, MEZ; durch den aktuellen Stand oben ersetzt)
 - Maßgeblicher aktiver Entwicklungsbranch: `feature/xiaomi-x20plus`, zuletzt geprüfter Laufzeitcode-Commit `33252606a220444756a4a01b6952de7eacb14ee0`, Adapterversion **0.1.66**.
 - CI-/Build-Lauf #320 (Run `43392287262`) für exakt diesen Head: **completed / success**. Lauf #319 ist ebenfalls erfolgreich.
 - Ältere „CI/Build ausstehend“-Notizen zu den Konfigurationsänderungen vom 13.11. sind überholt; sie wurden durch die erfolgreiche Prüfung bis Head `3325260` abgedeckt.
