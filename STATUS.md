@@ -1,7 +1,7 @@
 # Projektstatus – ioBroker.roidmi
 
 ## Aktueller geprüfter Branch- und Buildstand – 14.11.2026, 02:57 MEZ
-- Aktiver Entwicklungsbranch: `feature/xiaomi-x20plus`; aktueller Head `68d3508ecb079bf81e31da5941a9f970fce69b89`.
+- Aktiver Entwicklungsbranch: `feature/xiaomi-x20plus`; zuletzt vor dieser Dokumentationspflege geprüfter Code-Head `68d3508ecb079bf81e31da5941a9f970fce69b89`.
 - Adapterversion laut `package.json`: **0.1.67**. Dies ist der Feature-Branch-Paketstand, keine Übernahme nach `main`.
 - Letzter Code-Commit: `68d3508ecb079bf81e31da5941a9f970fce69b89` – Korrektur der übermäßig maskierten Regex zur Validierung der Xiaomi-X20+-DID.
 - GitHub Actions „Test and build adapter“ #341 (Run `43449224003`) für exakt diesen Head: **completed / success**.
