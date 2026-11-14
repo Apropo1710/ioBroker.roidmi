@@ -2,6 +2,9 @@
 
 > **Aktualitätskorrektur 14.11.2026:** Maßgeblich ist `STATUS.md` auf `feature/xiaomi-x20plus`. Zuletzt geprüfter Feature-Code-Head `68d3508ecb079bf81e31da5941a9f970fce69b89`, Adapterversion 0.1.67; GitHub Actions „Test and build adapter“ #341 (Run `43449224003`) für exakt diesen Head: completed / success. Letzte Codekorrektur: DID-Regex-Validierung in `src/lib/xiaomi-cloud-map.ts`. Die Mehrraum-Reinigungsmodus-Absicherung ist enthalten, aber der zugehörige Praxistest am X20+ bleibt offen. Der getrennte Repository-`main`-Branch steht auf Version 0.1.36; sein Build-Distribution-Run `43378078837` war erfolgreich. Alte Angaben zu Branch `main`, Version 0.1.7 und damaligen Cloud-Fehlerständen sind historische Momentaufnahmen.
 
+> **Ergänzung zum aktuellen Stand – 14.11.2026:** Der Live-Diagnosetest für Xiaomi X20+ Mehrraumreinigung im Modus 3 („Saugen vor Wischen“) ergab bei Toilette (Segment 1) und Flur unten (Segment 8): Mit fünftem `selects`-Wert `1` für den ersten Raum und `2` für den zweiten wurde in Xiaomi Home nur die Toilette ausgewählt; mit `1` für beide Raumzeilen wurden beide Räume ausgewählt. Bestätigt ist bislang die Auswahl in Xiaomi Home, nicht der vollständige Reinigungslauf. Drei oder mehr Räume und weitere Kombinationen bleiben offen. Der Adaptercode ist dafür noch nicht geändert; Version 0.1.67 und Code-Head `68d3508ecb079bf81e31da5941a9f970fce69b89` bleiben unverändert. Vor der gezielten Änderung zuerst den Drei-Raum-Live-Test abwarten. Details und genaue Payloads: `STATUS.md` sowie `docs/PROTOCOL_NOTES.md`.
+
+
 
 **Historischer Ausgangsstand:** 01.11.2026  
 **Repository:** https://github.com/Apropo1710/ioBroker.roidmi  
