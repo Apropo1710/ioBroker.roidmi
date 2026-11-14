@@ -28,6 +28,6 @@ Stand: 2026-11-13
 ## Belastungsprinzip
 Statuswerte werden weiterhin gebündelt und mit dem konfigurierten Statusintervall abgefragt. Zeitpläne werden nur manuell oder bei ausdrücklich aktivierter Automatik in einem deutlich längeren Intervall gelesen. Standardmäßig entsteht keine zusätzliche Roboterlast.
 
-## Noch zu prüfen
-- CI: TypeScript-Build und Tests für Version 0.1.36.
-- Nach Installation am realen EVE Plus prüfen, ob automatischer Abruf und Intervall wie konfiguriert arbeiten.
+## Offene Hardwareprüfung
+- Das Verhalten der optionalen automatischen Zeitplanaktualisierung und des konfigurierbaren Intervalls am realen EVE Plus noch praktisch prüfen. Die Automatik bleibt standardmäßig deaktiviert; keine zusätzliche Roboterlast ohne ausdrückliche Aktivierung.
+- Der frühere CI-Pending-Punkt für Version 0.1.36 ist erledigt: CI, Adapter-Build und Distribution sind für die oben genannten Commits erfolgreich.
