@@ -197,3 +197,14 @@ Adapterversion **0.1.29** wurde auf dem produktiven ioBroker installiert und ges
 - Letzter Quellcode-Commit mit Befehlsfehlerklassifizierung: `129b5ec77168815fef6bcd60f52959665d4bac44`. CI und Distribution Build für diesen Commit sind beide erfolgreich.
 
 **Nächster sinnvoller Ablauf:** Am 03.11.2026 zuerst die Xiaomi-2FA-Sperre beim Nutzer bestätigen lassen, dann einen einzelnen Cloud-Login-Versuch durchführen. Vorher lokale Statusabfrage nicht unnötig intensivieren; Standard-Polling von 30 Sekunden beibehalten.
+
+
+## Aktueller Hardware-Nachweis – X20+ Drei-Raum-Reinigung (15.11.2026)
+
+- Branch: `feature/xiaomi-x20plus`; Adapterversion `0.1.67`; keine Quellcodeänderung durch diesen Hardwaretest.
+- Separate ioBroker-JavaScript-Testaktion mit Modus 3 („Saugen vor Wischen“) und Segment-IDs Toilette 1, Küche 2, Wohnzimmer 4. Die Segment-IDs stammen aus `x20Plus.rooms.roomsJson`; die Kartenbeschriftung „Raum 5“ ist nicht die technische ID des Wohnzimmers.
+- Payload: `[[1,1,1,2,1],[4,1,1,2,1],[2,1,1,2,1]]`.
+- Nutzer hat den vollständigen Reinigungslauf live bestätigt: alle drei Räume wurden zuerst gesaugt und danach nacheinander gewischt. Damit ist die Drei-Raum-Reinigung in Modus 3 am realen Gerät erfolgreich bestätigt.
+- Küche erschien in Xiaomi Home hellblau statt kräftig blau, wurde aber trotzdem vollständig gesaugt und gewischt. Bedeutung der Farbe unbekannt.
+- Offen: Test weiterer Raumkombinationen, mehr als drei Räume und weiterer Reinigungsmodi (z. B. Saugen und Wischen gleichzeitig). Noch keine Änderung des Adapter-Builders oder neue Adapterversion.
+- Details: `docs/PROTOCOL_NOTES.md`, Abschnitt „Hardwaretest Xiaomi X20+ – Drei-Raum-Reinigung in Modus 3 erfolgreich (15.11.2026)“.
