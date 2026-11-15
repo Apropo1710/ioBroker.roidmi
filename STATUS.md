@@ -632,4 +632,4 @@ Diese Übersicht ist die maßgebliche aktuelle Testliste. Bei jedem neuen Testbe
 - Adapterversion **0.1.68** in package.json, package-lock.json und io-package.json.
 - Geplanter Hardwaretest am 16.11.2026: drei Räume mit „Saugen und Wischen gleichzeitig“. Modus 3 ist hardwarevalidiert; weitere Modi sind noch offen.
 - HomePilot-App muss nicht aktualisiert werden. Nur der ioBroker-Adapter enthält den korrigierten Payload-Builder.
-- GitHub-Actions-Build für den neuen Code-Head: ausstehend; bis zum erfolgreichen Lauf nicht installieren.
+- GitHub Actions „Test and build adapter“ für Commit `4bf65cb16967c7171deb2b9ce2607b740a675b63`: **completed / success**, Run `43743505173` (#359). Tests, Lint, TypeScript-Build und Paketierung erfolgreich. Testartefakt `iobroker-roidmi-0.1.68`, Artefakt-ID `14173631798` (nicht abgelaufen).
