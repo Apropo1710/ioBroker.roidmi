@@ -1,6 +1,6 @@
 # Roidmi Adapter – aktueller Status
 
-Stand: 2026-11-14, 02:57 MEZ
+Stand: 2026-11-15, 03:05 MEZ
 
 ## Geprüfter Main- und Feature-Branch-Stand – 15.11.2026, 03:01 MEZ
 - `main`: aktueller Branch-Head `13566589bcd87af6df1941e5da37bb9641c88377` (Dokumentationscommit); Paketversion **0.1.36**. Letzter Code-/Distribution-Commit `99d88d14421011e7449eba4cb0ac2672f6aada7c`; „Build distribution“ Run `43378078837`: **completed / success**.
