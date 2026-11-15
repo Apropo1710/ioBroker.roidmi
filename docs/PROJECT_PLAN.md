@@ -6,7 +6,9 @@
 - [ ] Read-only-Verbindung am realen Gerät testen
 - [x] Dokumentiertes MIoT-Format für Einzel- und Mehrraumreinigung als getesteten Payload-Builder abbilden
 - [ ] Tatsächlich unterstützte Properties, Actions, Raum-IDs und Fehlercodes am Gerät dokumentieren
-- [ ] Xiaomi X20+ Mehrraumreinigung in Modus 3 mit drei oder mehr Räumen validieren (Zwei-Raum-Live-Test vom 14.11.2026: fünfter Wert in beiden Raumeinträgen auf 1 erforderlich, siehe PROTOCOL_NOTES.md)
+- [x] Xiaomi X20+ Mehrraumreinigung in Modus 3 mit drei Räumen hardwarevalidiert (15.11.2026: Toilette 1, Küche 2, Wohnzimmer 4; alle drei erst gesaugt, danach gewischt; fünfter Wert jeder Raumzeile = 1, siehe PROTOCOL_NOTES.md)
+- [ ] Xiaomi X20+ Mehrraumreinigung mit mehr als drei Räumen und weiteren Raumkombinationen testen
+- [ ] Xiaomi X20+ Mehrraumreinigung in weiteren Modi (insbesondere Saugen und Wischen gleichzeitig) testen
 - [ ] Gebündelte Sieben-Property-Abfrage (1 RPC statt 7) am realen Gerät auf vollständige und korrekt zugeordnete Antworten prüfen
 - [ ] Prüfen, welche Funktionen lokal und welche nur über Cloud verfügbar sind
 
