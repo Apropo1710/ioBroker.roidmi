@@ -11,7 +11,7 @@ test("X20+ room-clean payload includes required work-mode and room selection inp
   assert.equal(action.aiid, 1);
   assert.deepEqual(action.inputs[0], { piid: 1, value: 18 });
   assert.deepEqual(JSON.parse(action.inputs[1].value), {
-    selects: [[4, 2, 1, 3, 1], [7, 1, 2, 1, 2]]
+    selects: [[4, 2, 1, 3, 1], [7, 1, 2, 1, 1]]
   });
 });
 
@@ -35,4 +35,14 @@ test("X20+ cleaning-mode update preserves water level and unrelated packed bits"
   assert.equal(mergeXiaomiCleaningMode(raw, 2), 0x30802);
   assert.equal(mergeXiaomiCleaningMode(0x20801, 1), 0x20801);
   assert.throws(() => mergeXiaomiCleaningMode(raw, 4), /cleaningMode/i);
+});
+
+
+test("X20+ three-room payload uses selection slot 1 for every room", () => {
+  const action = buildXiaomiRoomCleanAction([
+    { segmentId: 1 }, { segmentId: 4 }, { segmentId: 2 }
+  ]);
+  assert.deepEqual(JSON.parse(action.inputs[1].value), {
+    selects: [[1, 1, 1, 2, 1], [4, 1, 1, 2, 1], [2, 1, 1, 2, 1]]
+  });
 });
