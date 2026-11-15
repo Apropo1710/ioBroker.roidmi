@@ -2,12 +2,13 @@
 
 Stand: 2026-11-14, 02:57 MEZ
 
-## Geprüfter Main-Branch-Stand
-- Paketversion auf `main`: **0.1.36**. Letzter Build-/Distribution-Commit: `99d88d14421011e7449eba4cb0ac2672f6aada7c`; „Build distribution“ Run `43378078837`: **completed / success**.
-- Der zugrunde liegende Quellstand `65c1769b9d1b05da54ee2cdb7276b30af8e2982e` wurde mit CI Run `43378028113` und „Test and build adapter“ Run `43378028172` erfolgreich geprüft.
-- Der aktuelle Xiaomi-X20+-Entwicklungsstand liegt getrennt auf `feature/xiaomi-x20plus`: Paketversion **0.1.67**, letzter Code-Commit `68d3508ecb079bf81e31da5941a9f970fce69b89`, Actions #341 / Run `43449224003`: **completed / success**.
-- Die Feature-Branch-Statusdateien wurden danach dokumentarisch aktualisiert; es erfolgte keine Übernahme nach `main`.
-- `main` und `feature/xiaomi-x20plus` bleiben getrennte Entwicklungsstände; nicht vermischen.
+## Geprüfter Main- und Feature-Branch-Stand – 15.11.2026, 03:01 MEZ
+- `main`: aktueller Branch-Head `13566589bcd87af6df1941e5da37bb9641c88377` (Dokumentationscommit); Paketversion **0.1.36**. Letzter Code-/Distribution-Commit `99d88d14421011e7449eba4cb0ac2672f6aada7c`; „Build distribution“ Run `43378078837`: **completed / success**.
+- Aktiver X20+-Entwicklungsbranch `feature/xiaomi-x20plus`: aktueller Head `67ca357bfc69cd8266a5e76628fc99fd351bfaca` (Dokumentation); letzter Code-Head `68d3508ecb079bf81e31da5941a9f970fce69b89`, Paketversion **0.1.67**. Der Build für den Code-Head (Run `43449224003`) und der aktuelle Branch-Head-Lauf (Run `43630366470`) waren erfolgreich.
+- Pull Request [#3](https://github.com/Apropo1710/ioBroker.roidmi/pull/3) ist offen und Draft. Der Feature-Branch liegt 340 Commits vor und 12 hinter `main`; GitHub meldet derzeit `mergeable: false`. Keine Übernahme nach `main`, bis der Branchvergleich und die Konfliktlage bewusst geprüft wurden.
+- Die Mehrraumreinigung im Modus 3 wurde für die Auswahl zweier Räume in Xiaomi Home untersucht. Bestätigt ist die Auswahl beider Räume mit dem fünften `selects`-Wert `1`; der vollständige Reinigungslauf, drei oder mehr Räume und weitere Kombinationen sind noch nicht vollständig bestätigt.
+- `main` und `feature/xiaomi-x20plus` bleiben getrennte Entwicklungsstände; keine Versions- oder Codeübernahme durch diese Statuspflege.
+
 
 ## Historischer Detailstand – 13.11.2026
 
