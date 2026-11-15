@@ -161,3 +161,12 @@ Bis zu diesen Prüfungen bleibt dies eine dokumentierte Live-Beobachtung und noc
 - Damit ist die Drei-Raum-Ausführung in Modus 3 hardwarevalidiert. Zusammen mit dem Zwei-Raum-Test ist belegt, dass in diesen getesteten Payloads der fünfte Wert jeder Raumzeile `1` sein muss.
 - Xiaomi Home stellte die Küche in der Auswahl-/Reinigungskarte hellblau dar, während Toilette und Wohnzimmer kräftiger blau erschienen. Trotz des Farbunterschieds wurde die Küche vollständig gesaugt und gewischt. Die Bedeutung der unterschiedlichen Farbe bleibt ungeklärt; keine Interpretation als abweichender Reinigungsmodus ableiten.
 - Noch offen: weitere Raumkombinationen, mehr als drei Räume sowie andere Reinigungsmodi (insbesondere Saugen und Wischen gleichzeitig). Noch keine Änderung am Adapter-Payload-Builder vorgenommen; die Tests erfolgten über ein separates ioBroker-JavaScript-Testskript. Adapterversion bleibt `0.1.67`; kein Code-Build aus diesem Hardwaretest abgeleitet.
+
+
+## Xiaomi X20+ Mehrraum-Payload korrigiert – Version 0.1.68 (15.11.2026)
+
+- Grundlage: Live-Hardwaretests mit zwei Räumen (14.11.) und drei Räumen (15.11.) im Modus 3. Bei fortlaufendem fünften Feld `1,2` wurde nur der erste Raum ausgewählt; mit konstantem fünften Feld `1` wurden drei Räume tatsächlich vollständig erst gesaugt und anschließend gewischt.
+- `buildXiaomiRoomCleanAction` setzt deshalb den fünften Wert jeder `selects`-Zeile jetzt konstant auf `1`, unabhängig von der Position des Raums. Übrige Parameter und Validierungen bleiben unverändert.
+- Regressionstests aktualisiert und um einen expliziten Drei-Raum-Payload ergänzt.
+- **Wichtig:** Der erfolgreiche Hardwaretest gilt bisher für Modus 3 („Saugen vor Wischen“). Ob dieselbe Payload-Korrektur auch mit „Saugen und Wischen gleichzeitig“ und anderen Modi funktioniert, ist noch offen und soll nach Installation von 0.1.68 am 16.11.2026 getestet werden.
+- Version **0.1.68**. HomePilot muss für diese Adapteränderung nicht geändert werden.
