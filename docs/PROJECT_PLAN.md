@@ -57,4 +57,4 @@
 **Raumimport:** Siehe [ROOM_IMPORT.md](ROOM_IMPORT.md). Der Import ist bewusst manuell und erzeugt keine zusätzliche Roboterabfrage. Automatische Karten-/Raumerkennung sowie die reale Ausführung bleiben separate offene Punkte.
 
 
-**Live-Testnotiz 14.11.2026:** Bei der Xiaomi-X20+-Mehrraumreinigung im Modus 3 wurden Toilette (Segment 1) und Flur unten (Segment 8) getestet. Der fünfte Wert `1,2` wählte nur Toilette; `1,1` zeigte beide Räume in Xiaomi Home. Drei oder mehr Räume sind noch nicht getestet. Details: [Protokollnotizen](PROTOCOL_NOTES.md#live-test-xiaomi-x20--mehrraumreinigung-in-modus-3-14112026).
+**Live-Testnotiz 14.11.2026:** Bei der Xiaomi-X20+-Mehrraumreinigung im Modus 3 wurden Toilette (Segment 1) und Flur unten (Segment 8) getestet. Der fünfte Wert `1,2` wählte nur Toilette; `1,1` zeigte beide Räume in Xiaomi Home. Der Drei-Raum-Hardwaretest vom 15.11.2026 war erfolgreich; weitere Raumkombinationen und mehr als drei Räume sind noch offen. Details: [Protokollnotizen](PROTOCOL_NOTES.md#live-test-xiaomi-x20--mehrraumreinigung-in-modus-3-14112026).
