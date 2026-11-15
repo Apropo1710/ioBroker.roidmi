@@ -208,3 +208,11 @@ Adapterversion **0.1.29** wurde auf dem produktiven ioBroker installiert und ges
 - Küche erschien in Xiaomi Home hellblau statt kräftig blau, wurde aber trotzdem vollständig gesaugt und gewischt. Bedeutung der Farbe unbekannt.
 - Offen: Test weiterer Raumkombinationen, mehr als drei Räume und weiterer Reinigungsmodi (z. B. Saugen und Wischen gleichzeitig). Noch keine Änderung des Adapter-Builders oder neue Adapterversion.
 - Details: `docs/PROTOCOL_NOTES.md`, Abschnitt „Hardwaretest Xiaomi X20+ – Drei-Raum-Reinigung in Modus 3 erfolgreich (15.11.2026)“.
+
+
+## Adapter 0.1.68 – Mehrraum-Payload-Fix (15.11.2026)
+
+- Auf `feature/xiaomi-x20plus` geändert: `src/lib/xiaomi-room-cleaning.ts` setzt den fünften Wert jeder `selects`-Zeile konstant auf `1` statt `index + 1`.
+- Grundlage: realer X20+-Test mit Toilette (Segment 1), Wohnzimmer (4), Küche (2), Modus 3. Alle drei Räume wurden zuerst gesaugt und danach vollständig gewischt.
+- Regressionstest ergänzt; Adapterversion auf **0.1.68** erhöht.
+- Geplanter Hardwaretest am 16.11.: gleiche drei Räume mit „Saugen und Wischen gleichzeitig“. Adapter muss aktualisiert werden; HomePilot-App nicht, da nur der Adapter-Payload-Builder geändert wurde.
