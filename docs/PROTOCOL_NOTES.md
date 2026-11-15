@@ -150,3 +150,14 @@ Beide Aufrufe verwendeten dieselbe MIoT-Aktion (SIID 4 / AIID 1), dieselben übr
 - Danach den Payload-Builder gezielt anpassen und Regressionstests für Einzelraum-, Mehrraum- und die übrigen Reinigungsmodi ergänzen.
 
 Bis zu diesen Prüfungen bleibt dies eine dokumentierte Live-Beobachtung und noch keine implementierte Adapterkorrektur.
+
+
+## Hardwaretest Xiaomi X20+ – Drei-Raum-Reinigung in Modus 3 erfolgreich (15.11.2026)
+
+- Nach dem Zwei-Raum-Test vom 14.11. wurde die Mehrraumreinigung mit drei Räumen am realen Xiaomi X20+ ausgeführt.
+- Verwendete Segment-IDs laut aktuellem `x20Plus.rooms.roomsJson`: Toilette `1`, Küche `2`, Wohnzimmer `4`. Die zuvor angenommene Wohnzimmer-ID `5` war falsch; `5` ist lediglich die sichtbare Kartenbezeichnung eines unbenannten Kartensegments und nicht die Segment-ID des Wohnzimmers.
+- MIoT-Aktion weiterhin SIID 4 / AIID 1, Modus 3 („Saugen vor Wischen“). Payload-Raumzeilen: `[[1,1,1,2,1],[4,1,1,2,1],[2,1,1,2,1]]`.
+- Der Nutzer bestätigte den vollständigen realen Ablauf: Zuerst wurden alle drei Räume gesaugt, danach wurden Toilette, Küche und Wohnzimmer nacheinander gewischt. Das Wohnzimmer befand sich zuletzt im Wischvorgang; der Nutzer bestätigte ausdrücklich, dass alle drei Räume gesaugt und anschließend gewischt wurden.
+- Damit ist die Drei-Raum-Ausführung in Modus 3 hardwarevalidiert. Zusammen mit dem Zwei-Raum-Test ist belegt, dass in diesen getesteten Payloads der fünfte Wert jeder Raumzeile `1` sein muss.
+- Xiaomi Home stellte die Küche in der Auswahl-/Reinigungskarte hellblau dar, während Toilette und Wohnzimmer kräftiger blau erschienen. Trotz des Farbunterschieds wurde die Küche vollständig gesaugt und gewischt. Die Bedeutung der unterschiedlichen Farbe bleibt ungeklärt; keine Interpretation als abweichender Reinigungsmodus ableiten.
+- Noch offen: weitere Raumkombinationen, mehr als drei Räume sowie andere Reinigungsmodi (insbesondere Saugen und Wischen gleichzeitig). Noch keine Änderung am Adapter-Payload-Builder vorgenommen; die Tests erfolgten über ein separates ioBroker-JavaScript-Testskript. Adapterversion bleibt `0.1.67`; kein Code-Build aus diesem Hardwaretest abgeleitet.
