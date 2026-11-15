@@ -35,7 +35,8 @@ export function buildXiaomiRoomCleanAction(rooms: XiaomiRoomSelection[]): Xiaomi
         if (!Number.isInteger(repeat) || repeat < 1 || repeat > 3) throw new Error("repeat muss zwischen 1 und 3 liegen");
         if (!Number.isInteger(suction) || suction < 0 || suction > 3) throw new Error("suction muss zwischen 0 und 3 liegen");
         if (!Number.isInteger(water) || water < 1 || water > 3) throw new Error("water muss zwischen 1 und 3 liegen");
-        return [room.segmentId, repeat, suction, water, index + 1];
+        // Live X20+ hardware tests (14–15 Nov 2026): every room row must use slot 1.
+        return [room.segmentId, repeat, suction, water, 1];
     });
     return {
         siid: 4,
