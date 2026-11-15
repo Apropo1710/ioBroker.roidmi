@@ -58,3 +58,6 @@
 
 
 **Live-Testnotiz 14.11.2026:** Bei der Xiaomi-X20+-Mehrraumreinigung im Modus 3 wurden Toilette (Segment 1) und Flur unten (Segment 8) getestet. Der fünfte Wert `1,2` wählte nur Toilette; `1,1` zeigte beide Räume in Xiaomi Home. Der Drei-Raum-Hardwaretest vom 15.11.2026 war erfolgreich; weitere Raumkombinationen und mehr als drei Räume sind noch offen. Details: [Protokollnotizen](PROTOCOL_NOTES.md#live-test-xiaomi-x20--mehrraumreinigung-in-modus-3-14112026).
+
+
+**Adapterkorrektur 15.11.2026 / Version 0.1.68:** Der fünfte Wert jeder Raumzeile im X20+-Mehrraum-Payload wird jetzt konstant auf `1` gesetzt. Grundlage ist der erfolgreiche Zwei- und Drei-Raum-Hardwaretest in Modus 3. Regressionstest für drei Räume ergänzt. Nächster Hardwaretest: dieselbe Drei-Raum-Kombination in „Saugen und Wischen gleichzeitig“ am 16.11.2026. Andere Modi bleiben offen.
