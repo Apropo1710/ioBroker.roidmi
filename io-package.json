@@ -1,7 +1,7 @@
 {
   "common": {
     "name": "roidmi",
-    "version": "0.1.67",
+    "version": "0.1.68",
     "title": "Roidmi",
     "titleLang": {
       "en": "Roidmi",
@@ -27,6 +27,10 @@
       "xiaomiToken"
     ],
     "news": {
+      "0.1.68": {
+        "en": "Fix multi-room selection slot for Xiaomi X20+ room cleaning",
+        "de": "Mehrraum-Auswahlparameter für die Xiaomi-X20+-Raumreinigung korrigiert"
+      },
       "0.1.67": {
         "en": "Ensure selected cleaning mode is applied and verified before Xiaomi X20+ multi-room cleaning",
         "de": "Gewählten Reinigungsmodus vor der Xiaomi-X20+-Mehrraumreinigung sicher setzen und überprüfen"
