@@ -641,3 +641,10 @@ Diese Übersicht ist die maßgebliche aktuelle Testliste. Bei jedem neuen Testbe
 - Geplanter Hardwaretest am 16.11.2026: drei Räume mit „Saugen und Wischen gleichzeitig“. Modus 3 ist hardwarevalidiert; weitere Modi sind noch offen.
 - HomePilot-App muss nicht aktualisiert werden. Nur der ioBroker-Adapter enthält den korrigierten Payload-Builder.
 - GitHub Actions „Test and build adapter“ für Commit `4bf65cb16967c7171deb2b9ce2607b740a675b63`: **completed / success**, Run `43743505173` (#359). Tests, Lint, TypeScript-Build und Paketierung erfolgreich. Testartefakt `iobroker-roidmi-0.1.68`, Artefakt-ID `14173631798` (nicht abgelaufen).
+
+
+## MIoT-Timeout-Logging beruhigt (16.11.2026)
+- Bei den lokalen MIoT-Statusabfragen von Roidmi EVE Plus und Xiaomi X20+ wird ein Timeout beim ersten Versuch jetzt nur noch auf `debug` protokolliert.
+- Der automatische zweite Versuch bleibt unverändert. Scheitert auch dieser, bleibt die Warnung `retry failed` inklusive Fehlerursache und Diagnose-Trace erhalten; der Fehler wird weiterhin an die bestehende Fehlerbehandlung weitergegeben.
+- Keine Änderung an Timeout-Dauer, Abfrageintervallen, Batch-Größen, Wiederholungsanzahl oder Kommunikationsablauf.
+- Commit `b6d71d0b3d6f7a19b92921fe0bed2a03ebf14a22` auf `feature/xiaomi-x20plus`. CI/Build ausstehend.
