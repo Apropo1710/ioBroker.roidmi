@@ -389,9 +389,9 @@ class RoidmiAdapter extends Adapter {
                             })));
                         } catch (retryError) {
                             const retryMessage = retryError instanceof Error ? retryError.message : String(retryError);
-                            this.log.warn(`[miIO] ${batchLabel} retry failed: ${retryMessage}`);
                             for (const line of miioTrace) this.log.debug(`[miIO] ${batchLabel} retry trace: ${line}`);
-                            throw retryError;
+                            miioTrace.length = 0;
+                            throw new Error(`[miIO] ${batchLabel} retry failed: ${retryMessage}`);
                         }
                     }
                     if (!Array.isArray(result)) throw new Error("Unexpected MIoT property response");
@@ -884,9 +884,9 @@ class RoidmiAdapter extends Adapter {
                             })));
                         } catch (retryError) {
                             const retryMessage = retryError instanceof Error ? retryError.message : String(retryError);
-                            this.log.warn(`[miIO] ${batchLabel} retry failed: ${retryMessage}`);
                             for (const line of this.xiaomiMiioTrace) this.log.debug(`[miIO] ${batchLabel} retry trace: ${line}`);
-                            throw retryError;
+                            this.xiaomiMiioTrace.length = 0;
+                            throw new Error(`[miIO] ${batchLabel} retry failed: ${retryMessage}`);
                         }
                     }
                     if (!Array.isArray(result)) throw new Error("Unexpected Xiaomi MIoT property response");
