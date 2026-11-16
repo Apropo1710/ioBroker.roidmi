@@ -648,3 +648,10 @@ Diese Übersicht ist die maßgebliche aktuelle Testliste. Bei jedem neuen Testbe
 - Der automatische zweite Versuch bleibt unverändert. Scheitert auch dieser, bleibt die Warnung `retry failed` inklusive Fehlerursache und Diagnose-Trace erhalten; der Fehler wird weiterhin an die bestehende Fehlerbehandlung weitergegeben.
 - Keine Änderung an Timeout-Dauer, Abfrageintervallen, Batch-Größen, Wiederholungsanzahl oder Kommunikationsablauf.
 - Commit `b6d71d0b3d6f7a19b92921fe0bed2a03ebf14a22` auf `feature/xiaomi-x20plus`. CI/Build ausstehend.
+
+
+## MIoT-Fehlerprotokollierung – doppelte Warnungen vermeiden (16.11.2026)
+- Wenn der zweite MIoT-Versuch ebenfalls fehlschlägt, wird die Diagnose weiterhin einmalig im Debug ausgegeben.
+- Die Retry-Ebene erzeugt keine eigene Warnung mehr. Stattdessen wird der Batch-Kontext mit der Fehlerursache an die bestehende übergeordnete Fehlerbehandlung weitergegeben, die genau eine Warnung protokolliert.
+- Gilt für Roidmi EVE Plus und Xiaomi X20+. Timeout, Wiederholungsanzahl, Abfrageintervalle und Kommunikationsablauf bleiben unverändert.
+- Commit `53a60f2387032af832d43f0b56ca7660a95e3c6c` auf `feature/xiaomi-x20plus`. CI/Build ausstehend.
