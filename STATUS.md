@@ -3,7 +3,7 @@
 ## Verifizierter Abgleich – 16.11.2026, 03:03 MEZ
 
 - `main`: Head `13566589bcd87af6df1941e5da37bb9641c88377`, Paketversion **0.1.36**; Distribution-Run `43378078837` **completed / success**.
-- `feature/xiaomi-x20plus`: Paketversion **0.1.68**, aktueller Head `a92e4960cd9d13f39d755634edffb3d09cb1faab`. PR #3 bleibt offen und Draft, `mergeable: false`; Vergleich **355 ahead / 12 behind**. Der getestete Baum mit dem konstanten fünften `selects`-Wert `1` und Drei-Raum-Regressionstest wurde in Run #359 / `43743505173` erfolgreich geprüft. Der zugehörige Commit `4bf65cb16967c7171deb2b9ce2607b740a675b63` war selbst dokumentationsbezogen; die exakte SHA des vorangegangenen Code-Commits ist nicht eindeutig ermittelt.
+- `feature/xiaomi-x20plus`: Paketversion **0.1.68**, aktueller Feature-Branch-Head nach den Dokumentationsaktualisierungen `116a3bd843baf72ef8ed77222a3005fb1d2618e2`. PR #3 bleibt offen und Draft, `mergeable: false`; Vergleich **355 ahead / 12 behind**. Der getestete Baum mit dem konstanten fünften `selects`-Wert `1` und Drei-Raum-Regressionstest wurde in Run #359 / `43743505173` erfolgreich geprüft. Der zugehörige Commit `4bf65cb16967c7171deb2b9ce2607b740a675b63` war selbst dokumentationsbezogen; die exakte SHA des vorangegangenen Code-Commits ist nicht eindeutig ermittelt.
 - Hardware: Drei Räume in Modus 3 am 15.11. erfolgreich (erst Saugen, dann Wischen). „Saugen und Wischen gleichzeitig“ ist für den 16.11. geplant und noch offen.
 - PR #4 (diese Statusdokumentation) bleibt offen und mergeable. Keine Übernahme nach `main`; HomePilot muss für den Adapter-Payload-Fix nicht geändert werden.
 
