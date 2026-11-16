@@ -380,7 +380,7 @@ class RoidmiAdapter extends Adapter {
                     } catch (firstError) {
                         const firstMessage = firstError instanceof Error ? firstError.message : String(firstError);
                         if (!firstMessage.includes("timed out")) throw firstError;
-                        this.log.warn(`[miIO] ${batchLabel} timed out; retrying this batch once`);
+                        this.log.debug(`[miIO] ${batchLabel} timed out; retrying this batch once`);
                         for (const line of miioTrace) this.log.debug(`[miIO] ${batchLabel} first attempt: ${line}`);
                         miioTrace.length = 0;
                         try {
@@ -875,7 +875,7 @@ class RoidmiAdapter extends Adapter {
                     } catch (firstError) {
                         const firstMessage = firstError instanceof Error ? firstError.message : String(firstError);
                         if (!firstMessage.includes("timed out")) throw firstError;
-                        this.log.warn(`[miIO] ${batchLabel} timed out; retrying this batch once`);
+                        this.log.debug(`[miIO] ${batchLabel} timed out; retrying this batch once`);
                         for (const line of this.xiaomiMiioTrace) this.log.debug(`[miIO] ${batchLabel} first attempt: ${line}`);
                         this.xiaomiMiioTrace.length = 0;
                         try {
