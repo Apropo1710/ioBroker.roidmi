@@ -2,9 +2,9 @@
 
 ## Aktualitätskorrektur – 17.11.2026, 02:56 MEZ
 
-- Feature-Paketstand: **0.1.68**; aktueller Branch-Head nach der vorherigen Dokumentationspflege `29962de09d1ebaa8a738cc28e90a8a5a6d3ef8e4`. Der neue STATUS-Commit wird diesen Head weiterführen.
+- Feature-Paketstand: **0.1.68**; zuletzt geprüfter Branch-Head vor der Dokumentationspflege `29962de09d1ebaa8a738cc28e90a8a5a6d3ef8e4`. Der neue STATUS-Commit wird diesen Head weiterführen.
 - Letzte Laufzeitcode-Änderungen: `b6d71d0b3d6f` (Recovered MIoT-Timeouts auf Debug-Level) und `53a60f238703` (doppelte Warnungen nach fehlgeschlagenen MIoT-Retries unterdrücken). Run #363 / `43807209222` und Branch-Run #364 / `43807220218` waren **completed / success**.
-- PR #3 ist offen und Draft, **mergeable: false**; Vergleich zum getrennten `main`: **361 ahead / 12 behind**. Keine Übernahme.
+- PR #3 ist offen und Draft, **mergeable: false / dirty**; Vergleich zum getrennten `main`: **361 ahead / 12 behind**. Keine Übernahme.
 - Der Drei-Raum-Test in Modus 3 am 15.11. war erfolgreich (Saugen, danach Wischen). Der für den 16.11. vorgesehene Test „Saugen und Wischen gleichzeitig“ ist nicht als durchgeführt bestätigt und bleibt offen.
 - Die jüngsten Logänderungen sind CI-geprüft; ein erneuter Live-Test am X20+ nach diesen Änderungen fehlt. Hardwarebestätigung nicht aus CI ableiten.
 
