@@ -1,22 +1,13 @@
 # Roidmi Adapter – aktueller Status
 
-## Verifizierter Abgleich – 16.11.2026, 03:03 MEZ
+## Verifizierter Abgleich – 17.11.2026, 02:56 MEZ
 
-- `main`: Head `13566589bcd87af6df1941e5da37bb9641c88377`, Paketversion **0.1.36**; Distribution-Run `43378078837` **completed / success**.
-- `feature/xiaomi-x20plus`: Paketversion **0.1.68**, aktueller Feature-Branch-Head nach den Dokumentationsaktualisierungen `116a3bd843baf72ef8ed77222a3005fb1d2618e2`. PR #3 bleibt offen und Draft, `mergeable: false`; Vergleich **355 ahead / 12 behind**. Der getestete Baum mit dem konstanten fünften `selects`-Wert `1` und Drei-Raum-Regressionstest wurde in Run #359 / `43743505173` erfolgreich geprüft. Der zugehörige Commit `4bf65cb16967c7171deb2b9ce2607b740a675b63` war selbst dokumentationsbezogen; die exakte SHA des vorangegangenen Code-Commits ist nicht eindeutig ermittelt.
-- Hardware: Drei Räume in Modus 3 am 15.11. erfolgreich (erst Saugen, dann Wischen). „Saugen und Wischen gleichzeitig“ ist für den 16.11. geplant und noch offen.
-- PR #4 (diese Statusdokumentation) bleibt offen und mergeable. Keine Übernahme nach `main`; HomePilot muss für den Adapter-Payload-Fix nicht geändert werden.
-
-
-Stand: 2026-11-15, 03:05 MEZ
-
-## Geprüfter Main- und Feature-Branch-Stand – 15.11.2026, 03:01 MEZ
-- `main`: aktueller Branch-Head `13566589bcd87af6df1941e5da37bb9641c88377` (Dokumentationscommit); Paketversion **0.1.36**. Letzter Code-/Distribution-Commit `99d88d14421011e7449eba4cb0ac2672f6aada7c`; „Build distribution“ Run `43378078837`: **completed / success**.
-- Aktiver X20+-Entwicklungsbranch `feature/xiaomi-x20plus`: aktueller Head `67ca357bfc69cd8266a5e76628fc99fd351bfaca` (Dokumentation); letzter Code-Head `68d3508ecb079bf81e31da5941a9f970fce69b89`, Paketversion **0.1.67**. Der Build für den Code-Head (Run `43449224003`) und der aktuelle Branch-Head-Lauf (Run `43630366470`) waren erfolgreich.
-- Pull Request [#3](https://github.com/Apropo1710/ioBroker.roidmi/pull/3) ist offen und Draft. Der Feature-Branch liegt 340 Commits vor und 12 hinter `main`; GitHub meldet derzeit `mergeable: false`. Keine Übernahme nach `main`, bis der Branchvergleich und die Konfliktlage bewusst geprüft wurden.
-- Die Mehrraumreinigung im Modus 3 wurde für die Auswahl zweier Räume in Xiaomi Home untersucht. Bestätigt ist die Auswahl beider Räume mit dem fünften `selects`-Wert `1`; der vollständige Reinigungslauf, drei oder mehr Räume und weitere Kombinationen sind noch nicht vollständig bestätigt.
-- `main` und `feature/xiaomi-x20plus` bleiben getrennte Entwicklungsstände; keine Versions- oder Codeübernahme durch diese Statuspflege.
-
+- `main`: Head `13566589bcd87af6df1941e5da37bb9641c88377`, Paketversion **0.1.36**. Der letzte Distribution-Commit `99d88d14421011e7449eba4cb0ac2672f6aada7c` wurde mit Run `43378078837` **completed / success** gebaut.
+- `feature/xiaomi-x20plus`: Paketversion **0.1.68**. Letzte Laufzeitcode-Änderungen `b6d71d0b3d6f` und `53a60f238703`; die nachfolgenden Status-/Übergabecommits sind reine Dokumentation. Run #363 / `43807209222` und #364 / `43807220218`: **completed / success**.
+- Der Feature-Branch liegt gegenüber `main` **361 Commits voraus / 12 zurück**. PR [#3](https://github.com/Apropo1710/ioBroker.roidmi/pull/3) bleibt offen, Draft und **mergeable: false**. Keine Übernahme nach `main`.
+- Hardware: Drei Räume in Modus 3 wurden am 15.11. erfolgreich erst gesaugt und anschließend gewischt. „Saugen und Wischen gleichzeitig“ ist nicht als abgeschlossen bestätigt; weitere Raum-/Moduskombinationen bleiben offen.
+- Die MIoT-Logkorrekturen (wiederhergestellte Timeouts auf Debug-Level, doppelte Retry-Warnungen unterdrückt) sind CI-geprüft; ein erneuter Live-Test nach diesen Änderungen ist nicht dokumentiert.
+- PR [#4 – Statusdokumentation](https://github.com/Apropo1710/ioBroker.roidmi/pull/4) ist offen und mergeable/clean. Diese Aktualisierung wird auf seinem vorhandenen Head-Branch `docs/status-refresh-2026-11-15` fortgeführt; kein zweiter Dokumentations-PR wird angelegt.
 
 ## Historischer Detailstand – 13.11.2026
 
