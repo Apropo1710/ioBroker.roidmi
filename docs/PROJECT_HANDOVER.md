@@ -1,12 +1,12 @@
 # Technische Übergabe – Roidmi ioBroker Adapter
 
-## Aktualitätskorrektur – 16.11.2026, 03:03 MEZ
+## Aktualitätskorrektur – 17.11.2026, 02:56 MEZ
 
-- Aktueller Feature-Paketstand: **0.1.68**; aktueller Branch-Head `a92e4960cd9d13f39d755634edffb3d09cb1faab`.
-- Der Feature-Codebaum enthält den Fix, bei dem jede Raumzeile im X20+-`selects`-Payload den fünften Wert `1` erhält. Ein Regressionstest für drei Räume ist vorhanden. Run #359 / `43743505173` war für den Baum mit diesem Fix **completed / success**. Commit `4bf65cb16967c7171deb2b9ce2607b740a675b63` selbst änderte nur `STATUS.md`; die exakte SHA des Laufzeitcode-Commits ist nicht eindeutig isoliert.
-- Drei Räume wurden am 15.11. in Modus 3 erfolgreich erst gesaugt und anschließend gewischt. Der Hardwaretest „Saugen und Wischen gleichzeitig“ ist für den 16.11. vorgesehen und noch nicht durchgeführt.
-- PR #3 bleibt Draft und nicht mergeable; der Branch ist 355 Commits voraus und 12 zurück gegenüber `main`. Nicht mergen, bevor die Divergenz bewusst geprüft wurde.
-
+- Feature-Paketstand: **0.1.68**; aktueller Branch-Head nach der vorherigen Dokumentationspflege `29962de09d1ebaa8a738cc28e90a8a5a6d3ef8e4`. Der neue STATUS-Commit wird diesen Head weiterführen.
+- Letzte Laufzeitcode-Änderungen: `b6d71d0b3d6f` (Recovered MIoT-Timeouts auf Debug-Level) und `53a60f238703` (doppelte Warnungen nach fehlgeschlagenen MIoT-Retries unterdrücken). Run #363 / `43807209222` und Branch-Run #364 / `43807220218` waren **completed / success**.
+- PR #3 ist offen und Draft, **mergeable: false**; Vergleich zum getrennten `main`: **361 ahead / 12 behind**. Keine Übernahme.
+- Der Drei-Raum-Test in Modus 3 am 15.11. war erfolgreich (Saugen, danach Wischen). Der für den 16.11. vorgesehene Test „Saugen und Wischen gleichzeitig“ ist nicht als durchgeführt bestätigt und bleibt offen.
+- Die jüngsten Logänderungen sind CI-geprüft; ein erneuter Live-Test am X20+ nach diesen Änderungen fehlt. Hardwarebestätigung nicht aus CI ableiten.
 
 > **Aktualitätskorrektur 14.11.2026:** Maßgeblich ist `STATUS.md` auf `feature/xiaomi-x20plus`. Zuletzt geprüfter Feature-Code-Head `68d3508ecb079bf81e31da5941a9f970fce69b89`, Adapterversion 0.1.67; GitHub Actions „Test and build adapter“ #341 (Run `43449224003`) für exakt diesen Head: completed / success. Letzte Codekorrektur: DID-Regex-Validierung in `src/lib/xiaomi-cloud-map.ts`. Die Mehrraum-Reinigungsmodus-Absicherung ist enthalten, aber der zugehörige Praxistest am X20+ bleibt offen. Der getrennte Repository-`main`-Branch steht auf Version 0.1.36; sein Build-Distribution-Run `43378078837` war erfolgreich. Alte Angaben zu Branch `main`, Version 0.1.7 und damaligen Cloud-Fehlerständen sind historische Momentaufnahmen.
 
