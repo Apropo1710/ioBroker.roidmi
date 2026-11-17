@@ -2,10 +2,10 @@
 
 ## Aktueller Feature- und Teststand – 17.11.2026, 02:56 MEZ
 
-- Aktiver Entwicklungsbranch: `feature/xiaomi-x20plus`; aktueller Branch-Head `29962de09d1ebaa8a738cc28e90a8a5a6d3ef8e4` (Dokumentationscommit). Paketversion laut `package.json`: **0.1.68**.
+- Aktiver Entwicklungsbranch: `feature/xiaomi-x20plus`; zuletzt geprüfter Branch-Head vor der Dokumentationspflege `29962de09d1ebaa8a738cc28e90a8a5a6d3ef8e4` (Dokumentationscommit). Paketversion laut `package.json`: **0.1.68**.
 - Letzte Laufzeitcode-Änderungen: `b6d71d0b3d6f` (wiederhergestellte MIoT-Timeouts nur noch auf Debug-Level) und `53a60f238703` (doppelte Warnungen nach fehlgeschlagenen MIoT-Retries unterdrücken).
 - „Test and build adapter“ #363 / Run `43807209222` für den Code-Commit `53a60f238703`: **completed / success**. Lauf #364 / Run `43807220218` für den aktuellen Branch-Head `29962de09d1e`: **completed / success**.
-- PR [#3](https://github.com/Apropo1710/ioBroker.roidmi/pull/3) bleibt offen und Draft, **mergeable: false**; Vergleich zu `main`: **361 Commits voraus / 12 zurück**. Nicht mergen, bevor Divergenz und Konflikte gezielt geprüft wurden.
+- PR [#3](https://github.com/Apropo1710/ioBroker.roidmi/pull/3) bleibt offen und Draft, **mergeable: false / dirty**; Vergleich zu `main`: **361 Commits voraus / 12 zurück**. Nicht mergen, bevor Divergenz und Konflikte gezielt geprüft wurden.
 - `main` bleibt getrennt auf **0.1.36**; keine Übernahme des X20+-Branches.
 - Hardware: Drei Räume in Reinigungsmodus 3 wurden am 15.11. erfolgreich erst gesaugt und anschließend gewischt. Der zusätzlich geplante Test „Saugen und Wischen gleichzeitig“ ist nicht als abgeschlossen dokumentiert und bleibt offen; weitere Raum-/Moduskombinationen ebenfalls.
 - Die leisere MIoT-Fehlerprotokollierung ist CI-geprüft, aber ein erneuter Live-Test am X20+ nach diesen Logänderungen ist nicht belegt.
