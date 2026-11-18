@@ -1,13 +1,15 @@
 # Roidmi Adapter – aktueller Status
 
-## Verifizierter Abgleich – 17.11.2026, 02:56 MEZ
+## Verifizierter Abgleich – 18.11.2026, 03:09 MEZ
 
-- `main`: Head `13566589bcd87af6df1941e5da37bb9641c88377`, Paketversion **0.1.36**. Der letzte Distribution-Commit `99d88d14421011e7449eba4cb0ac2672f6aada7c` wurde mit Run `43378078837` **completed / success** gebaut.
-- `feature/xiaomi-x20plus`: Paketversion **0.1.68**. Letzte Laufzeitcode-Änderungen `b6d71d0b3d6f` und `53a60f238703`; die nachfolgenden Status-/Übergabecommits sind reine Dokumentation. Run #363 / `43807209222` und #364 / `43807220218`: **completed / success**.
-- Der Feature-Branch liegt gegenüber `main` **361 Commits voraus / 12 zurück**. PR [#3](https://github.com/Apropo1710/ioBroker.roidmi/pull/3) bleibt offen, Draft und **mergeable: false / dirty**; Feature-PR-Head nach den Status- und Übergabeaktualisierungen `4b77bb304955`. Keine Übernahme nach `main`.
-- Hardware: Drei Räume in Modus 3 wurden am 15.11. erfolgreich erst gesaugt und anschließend gewischt. „Saugen und Wischen gleichzeitig“ ist nicht als abgeschlossen bestätigt; weitere Raum-/Moduskombinationen bleiben offen.
-- Die MIoT-Logkorrekturen (wiederhergestellte Timeouts auf Debug-Level, doppelte Retry-Warnungen unterdrückt) sind CI-geprüft; ein erneuter Live-Test nach diesen Änderungen ist nicht dokumentiert.
-- PR [#4 – Statusdokumentation](https://github.com/Apropo1710/ioBroker.roidmi/pull/4) ist offen und mergeable/clean. Diese Aktualisierung wird auf seinem vorhandenen Head-Branch `docs/status-refresh-2026-11-15` fortgeführt; kein zweiter Dokumentations-PR wird angelegt.
+- `main`: aktueller Head `13566589bcd87af6df1941e5da37bb9641c88377`, Paketversion **0.1.36**. Laufzeit-/Distributionsstand `99d88d14421011e7449eba4cb0ac2672f6aada7c`; „Build distribution“ Run `43378078837` erfolgreich. Die zusätzliche CI-/Distribution-Verifikation auf dem nachfolgenden Statuscommit `70d8c24675ab` (Runs `43405701267`, `43405701410`, `43405771429`) war ebenfalls **completed / success**.
+- `feature/xiaomi-x20plus`: aktueller Head `4b77bb304955d085ecedd9d9f76a79b97ed99c39` (Dokumentation), Paketversion **0.1.68**. Letzte Laufzeitcode-Änderungen: `b6d71d0b3d6f` (wiederhergestellte MIoT-Timeouts nur Debug) und `53a60f238703` (doppelte Retry-Warnungen unterdrücken). Run #364 / `43807220218` für den Codebaum vor den reinen Dokumentationscommits: **completed / success**.
+- Der Feature-Branch liegt gegenüber `main` **365 Commits voraus / 12 zurück**. [PR #3](https://github.com/Apropo1710/ioBroker.roidmi/pull/3) bleibt offen, Draft und **mergeable: false / dirty**. Keine Übernahme nach `main`.
+- [PR #4 – Statusdokumentation](https://github.com/Apropo1710/ioBroker.roidmi/pull/4) bleibt offen und **mergeable: true / clean**. Diese Aktualisierung erfolgt auf dem bestehenden PR-Branch `docs/status-refresh-2026-11-15`; kein zweiter Dokumentations-PR.
+- Hardware: Drei Räume in Reinigungsmodus 3 wurden am 15.11. erfolgreich nacheinander erst gesaugt und anschließend gewischt. „Saugen und Wischen gleichzeitig“ sowie weitere Raum-/Moduskombinationen sind nicht als abgeschlossen bestätigt.
+- Die leisere MIoT-Fehlerprotokollierung ist CI-geprüft; ein erneuter Live-Test am X20+ nach diesen Logänderungen ist nicht belegt.
+- `main` und `feature/xiaomi-x20plus` bleiben getrennte Entwicklungsstände. Keine automatische Übernahme, Zusammenführung oder Branchlöschung.
+
 
 ## Historischer Detailstand – 13.11.2026
 
