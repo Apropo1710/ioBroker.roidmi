@@ -23,7 +23,7 @@ Die Entwicklungsgeschichte steht im Git-Log und in den Versionshinweisen (`io-pa
 | Fortsetzen (`resume`) | implementiert, nicht separat bestätigt |
 | Raumreinigung (einzeln/mehrere Räume, SIID 14 / AIID 1) | bestätigt |
 | Karte und Räume über Xiaomi Cloud (manuell über `control.refreshMap`) | bestätigt |
-| Raumprofile (Saugstärke/Wasser pro Raum) aus den Kartendaten lesen | bestätigt |
+| Raumprofile (Saugstärke/Wasser pro Raum) aus den Kartendaten lesen | bestätigt – geändert werden sie bewusst nur in der Xiaomi-App |
 | Zeitpläne lesen (SIID 8 / PIID 6) | bestätigt |
 | Bestehende Zeitpläne bearbeiten (`control.updateSchedule`, mit Readback) | bestätigt |
 | Automatischer Zeitplanabruf (optional, Standard aus) | implementiert |
@@ -45,12 +45,11 @@ Die Entwicklungsgeschichte steht im Git-Log und in den Versionshinweisen (`io-pa
 ## Offene Punkte
 
 1. **Sporadische MIoT-Timeouts** (beide Roboter): Handshake erfolgreich, auf den RPC kommt keine Antwort. Der automatische zweite Versuch fängt die meisten Fälle ab; vereinzelt scheitert auch er. Ursache nicht gefunden. Seit 0.1.68 wird ein erfolgreicher zweiter Versuch nur noch auf Debug-Level protokolliert; ob die Logs damit im Alltag ruhig sind, ist nicht bestätigt.
-2. **Raumprofile ändern (EVE Plus):** Der Adapter liest die Profile nur. Ein Schreibweg ist nicht implementiert; die Protokollfrage (SIID 13 / AIID 10 `area-custom`) ist ungeklärt. Keine Payloads auf Verdacht senden.
-3. **Statusbedeutungen EVE Plus:** Die Texte für Status 5/6 und Ladestatus 1/2 sind empirisch und vorläufig (siehe `docs/PROTOCOL_NOTES.md`).
-4. **Instanzstatus im Admin:** Es gibt nur `evePlus.info.connection` und `x20Plus.info.connection`, kein `info.connection` auf Instanzebene. Der Admin kann den Verbindungsstatus der Instanz deshalb nicht anzeigen.
-5. **Firmware-Stand** der Testgeräte ist nicht dokumentiert. Bitlagen (z. B. X20+-Wasserstufe) sind nur für die getesteten Geräte belegt.
-6. **Mögliche Erweiterungen** aus dem früheren Projektplan, nicht begonnen: Zonenreinigung, Reinigungsverlauf, Aufnahme ins offizielle ioBroker-Repository.
-7. **Aufteilung von `src/main.ts`** (rund 2.100 Zeilen) pro Roboter, wenn größere Erweiterungen anstehen.
+2. **Statusbedeutungen EVE Plus:** Die Texte für Status 5/6 und Ladestatus 1/2 sind empirisch und vorläufig (siehe `docs/PROTOCOL_NOTES.md`).
+3. **Instanzstatus im Admin:** Es gibt nur `evePlus.info.connection` und `x20Plus.info.connection`, kein `info.connection` auf Instanzebene. Der Admin kann den Verbindungsstatus der Instanz deshalb nicht anzeigen.
+4. **Firmware-Stand** der Testgeräte ist nicht dokumentiert. Bitlagen (z. B. X20+-Wasserstufe) sind nur für die getesteten Geräte belegt.
+5. **Mögliche Erweiterungen** aus dem früheren Projektplan, nicht begonnen: Zonenreinigung, Reinigungsverlauf, Aufnahme ins offizielle ioBroker-Repository.
+6. **Aufteilung von `src/main.ts`** (rund 2.100 Zeilen) pro Roboter, wenn größere Erweiterungen anstehen.
 
 ## Verbindliche Projektregeln
 
