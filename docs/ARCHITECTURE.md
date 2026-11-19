@@ -1,36 +1,60 @@
-# Architektur (vorläufig)
+# Architektur
 
-## Leitlinien
-- TypeScript/Node.js als Laufzeit; keine Python-Laufzeitabhängigkeit.
-- Geräteprotokoll in einer eigenen Schicht kapseln.
-- Zugangsdaten nie loggen und nie versionieren.
-- Erst Read-only validieren, danach schreibende Befehle freigeben.
-- Jede Gerätefähigkeit als `supported`, `unsupported` oder `unknown` kennzeichnen.
-- Lokale und Cloud-Funktionen nicht vermischen.
+## Überblick
 
-## Geplante Schichten
-1. ioBroker-Adapter-Lifecycle und Konfiguration
-2. Connection Manager (Timeouts, Reconnect, Backoff)
-3. MIoT/miIO Transport und Nachrichtenkodierung
-4. Gerätefähigkeiten und Mapping auf ioBroker-States
-5. optionale Karten-/Raum-/Verlaufserweiterungen
+Ein ioBroker-Adapter (TypeScript, Node.js ≥ 20, keine Python-Abhängigkeit) betreibt zwei Roboter in einer Instanz. Jeder Roboter hat eigene Zugangsdaten, einen eigenen Objektbaum (`evePlus.*`, `x20Plus.*`) und einen eigenen Poll-Timer. Ein Fehler bei einem Roboter setzt den anderen weder auf „getrennt“ noch stoppt er dessen Polling.
 
-Die konkrete Implementierung wird erst nach Validierung der realen Geräteantworten festgelegt.
+```text
+src/main.ts                     Adapter-Lifecycle, Objekte, Polling, Befehle beider Roboter
+src/lib/
+  config.ts                     Validierung der Instanzkonfiguration (IPv4, DID, Token, Intervalle)
+  object-tree-migration.ts      Umzug alter flacher Datenpunkte in evePlus.* / x20Plus.*
 
+  miio-packet.ts                miIO-Paketformat (Header, AES-Verschlüsselung, Prüfsumme)
+  miio-client.ts                lokaler UDP-RPC-Client (Handshake, Timeout, Antwortzuordnung)
+  xiaomi-cloud-map.ts           Xiaomi-Cloud-Anmeldung (inkl. 2FA), MIoT über Cloud, Kartenabruf
 
-## Performance- und Polling-Leitlinien
+  Roidmi EVE Plus
+  roidmi-actions.ts             MIoT-Aktionen (Start, Pause, Fortsetzen, Station, Stopp)
+  roidmi-settings.ts            schreibbare Einstellungen und Wertebereiche
+  roidmi-status.ts              Status- und Fehlertexte
+  roidmi-map.ts                 Parser für das Roidmi-Kartenarchiv (Räume, Raumprofile)
+  room-map.ts                   Raumkonfiguration (Import, Validierung, Persistenz)
+  room-cleaning.ts              Raumreinigungs-Aktion SIID 14 / AIID 1
+  cleaning-schedules.ts         Zeitpläne lesen (SIID 8 / PIID 6)
+  roidmi-cleaning-schedules.ts  bestehende Zeitpläne gezielt ändern und prüfen
 
-Ziel ist eine möglichst geringe Datenlatenz bei minimaler Last für Roboter und ioBroker.
+  Xiaomi X20+
+  xiaomi-x20plus-profile.ts     MIoT-Profil (Properties, Pollgruppen, Statustexte)
+  xiaomi-dreame-map.ts          Parser für die Cloud-Karte des C102GL (Räume, aktive Auswahl)
+  xiaomi-room-cleaning.ts       Raumreinigungs-Payload SIID 4 / AIID 1, Reinigungsart-Bits
+  xiaomi-room-clean-status.ts   prüft nach dem Befehl, ob die Reinigung tatsächlich startet
+  xiaomi-cleaning-schedules.ts  Zeitpläne (SIID 8 / PIID 2) lesen, schalten, bearbeiten
+```
 
-- Der Adapter bündelt aktuell alle sieben Status- und Einstellungs-Properties in einer `get_properties`-RPC. Das reduziert die Zahl der Status-RPCs pro Polling-Zyklus von sieben auf eine. Die tatsächliche Unterstützung und Antwortreihenfolge müssen am konkreten EVE Plus noch im Live-Betrieb bestätigt werden.
-- Polling standardmäßig moderat (30 Sekunden); die Frequenz muss konfigurierbar bleiben.
-- Keine überlappenden Polling-Durchläufe: der nächste Lauf wird erst nach Abschluss des vorherigen geplant.
-- Bei erfolgreicher Abfrage nur geänderte Werte mit `setStateChangedAsync` schreiben, damit unnötige Datenbank- und Event-Last vermieden wird.
-- Bei Verbindungsfehlern exponentiell zurückschalten, mit Obergrenze von fünf Minuten; nach erfolgreicher Abfrage zum normalen Intervall zurückkehren.
-- Wiederholte identische Fehler nicht in jedem Poll-Zyklus erneut protokollieren.
-- Schnelle Statuswerte (Roboterzustand, Fehler) und langsam veränderliche Werte (z. B. Wartungs-/Lebensdauerwerte) später in getrennte Polling-Gruppen mit unterschiedlichen Intervallen aufteilen.
-- Karten, Historie und umfangreiche Daten nur bei Bedarf oder bei expliziter Aktualisierung laden, nicht im normalen Status-Polling.
-- Keine unnötigen Objekte/Datenpunkte pro Poll neu anlegen.
-- Polling-Takt, Anzahl der RPC-Aufrufe und Antwortzeiten später messbar machen, ohne Tokens oder sensible Nutzdaten zu protokollieren.
+`build/` enthält das kompilierte JavaScript. Es wird nach jedem erfolgreichen CI-Lauf auf `main` automatisch neu erzeugt und committet (Workflow „Build distribution“).
 
-Die aktuelle Implementierung liest sieben Basis- und Einstellungs-Properties gebündelt mit einem RPC, schreibt nur geänderte Werte und verwendet ein nicht überlappendes Polling mit Fehler-Backoff. Die gebündelte Antwortzuordnung ist durch die Reihenfolge der angeforderten Properties definiert; die erfolgreiche CI bestätigt Build und Unit-Tests, aber noch nicht die Antwort des realen EVE Plus.
+## Kommunikation
+
+- **Lokal (Standard):** miIO über UDP 54321. Alle lokalen Transaktionen beider Roboter laufen nacheinander über eine gemeinsame Warteschlange. Der X20+ verwendet den letzten Handshake wieder; die Raumreinigung erzwingt einen frischen Handshake.
+- **Xiaomi Cloud (optional):** Anmeldung über die Instanzeinstellungen, Sitzung verschlüsselt in `evePlus.map.cloudSession` gespeichert. Genutzt für Karten/Räume beider Roboter, für die Zeitpläne des X20+ und – wenn eingeschaltet – für Steuerbefehle.
+- MIoT-Antworten werden über SIID/PIID zugeordnet, nicht über die Reihenfolge.
+
+## Polling und Last
+
+- Status wird gebündelt gelesen: EVE Plus höchstens 6 Properties pro RPC, X20+ in kleinen Gruppen (die Firmware verwirft zu große Antworten).
+- Langsam veränderliche Werte (Verbrauchsmaterial, optionale Einstellungen) werden seltener abgefragt.
+- Polls überlappen nicht. Bei einem Timeout gibt es genau einen zweiten Versuch; schlägt auch der fehl, verlängert sich das Intervall (exponentieller Backoff, max. 5 Minuten).
+- Nur geänderte Werte werden geschrieben (`setStateChangedAsync`).
+- Karten und Zeitpläne gehören nicht ins Status-Polling. Zeitpläne werden manuell oder über einen eigenen, optionalen Timer pro Roboter abgerufen.
+
+## Schreibende Aktionen
+
+- Einstellungen und Zeitpläne: aktuellen Wert lesen → nur die gewünschten Felder/Bits ändern → schreiben → gezielt zurücklesen. ioBroker-States werden erst nach bestätigtem Readback aktualisiert.
+- Gepackte Werte (X20+ SIID 4 / PIID 23) werden bitgenau geändert; andere Bits bleiben erhalten.
+- Nicht idempotente Befehle (Start, Raumreinigung) werden bei einem Timeout nicht wiederholt. Der Status meldet dann „Ausgang unbekannt“.
+
+## Sicherheit
+
+- Token, Cloud-Passwort und Cloud-Sitzung werden verschlüsselt gespeichert (`encryptedNative`, `protectedNative`) und nie protokolliert.
+- Keine Zugangsdaten oder persönlichen Karten-/Raumdaten in Git oder Tests.

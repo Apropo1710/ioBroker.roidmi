@@ -1,56 +1,69 @@
-# Room map import
+# Räume laden und reinigen
 
-The adapter creates individual room controls from an imported map description. This first implementation is deliberately manual: it does not poll the robot or Xiaomi Cloud for room data.
+Beide Roboter beziehen ihre Raumliste aus der gespeicherten Karte im Xiaomi-Konto. Dafür muss die Xiaomi-Cloud-Anmeldung in den Instanzeinstellungen einmal erfolgreich durchgeführt sein. Karten werden nur auf ausdrückliche Anforderung geladen, nie im normalen Polling.
 
-## Import format
+## Roidmi EVE Plus
 
-Write a JSON string to `roidmi.0.control.importRooms`:
+### Räume laden
+
+`roidmi.0.evePlus.control.refreshMap` auf `true` setzen. Der Adapter lädt das Kartenarchiv aus der Cloud und legt an:
+
+- `evePlus.map.roomsJson` – Raumliste
+- `evePlus.map.mapId` – Karten-ID für die Raumreinigung
+- `evePlus.map.config` – gespeicherte Konfiguration, wird beim Adapterstart wiederhergestellt
+- `evePlus.map.roomProfilesJson` – Raumprofile aus der Karte (Saugstärke, Wasser, Reihenfolge; nur lesend)
+- `evePlus.rooms.<segmentId>.name`, `.clean` und `.profile.*` je Raum
+
+Fehlt im Kartenarchiv die separate Reinigungs-`mapId`, meldet `evePlus.map.cloudStatus` das. Dann die Raumliste einmalig manuell mit der richtigen `mapId` importieren (siehe unten).
+
+### Manueller Import (Fallback)
+
+JSON nach `roidmi.0.evePlus.control.importRooms` schreiben:
 
 ```json
 {
   "mapId": 123456,
   "rooms": [
-    { "id": 1, "name": "Kitchen" },
-    { "id": 2, "name": "Living room" }
+    { "id": 1, "name": "Küche" },
+    { "id": 2, "name": "Wohnzimmer" }
   ]
 }
 ```
 
-Use the Xiaomi map ID and the segment/room IDs belonging to the currently active map. The IDs are not interchangeable with the local miIO header device ID.
+Ein erneuter Import aktualisiert die Namen und entfernt Räume, die nicht mehr enthalten sind.
 
-## Generated states
+### Reinigen
 
-- `map.config`: persisted JSON configuration, restored at adapter startup.
-- `map.mapId`: active imported map ID.
-- `map.roomsJson`: imported room list.
-- `rooms.<segmentId>.name`: readable room name.
-- `rooms.<segmentId>.clean`: write `true` to start cleaning that room.
-- `control.cleanRooms`: existing JSON command for one or multiple room IDs.
+- Einzelner Raum: `evePlus.rooms.<segmentId>.clean` auf `true` setzen.
+- Mehrere Räume in einem Auftrag: `evePlus.control.cleanRooms` mit `{"mapId":123456,"roomIds":[1,3]}`.
 
-Importing an updated list updates names and removes controls for rooms that were present in the previous imported configuration but are no longer present. A room command is one MIoT action; no additional polling is performed.
+Beides ist eine einzelne MIoT-Aktion (SIID 14 / AIID 1). Der Roboter verwendet die in der Original-App hinterlegten Raumprofile.
 
-## Optional Xiaomi Cloud discovery
+## Xiaomi X20+
 
-Xiaomi Cloud access is optional and disabled by default. It downloads the saved map archive and discovers room IDs/names. Local control and normal status polling do not depend on it. Configure the Xiaomi account username, password and region, enable the option, then write `true` to `control.refreshMap`. This is on demand only, not regular polling. The adapter obtains the current map name locally, finds the matching device in the Xiaomi account by its MIoT token and downloads the map archive. The parser extracts room IDs, names, and the map ID directly from the V60 map metadata when present. Digit-only string IDs are normalized to numbers. When a valid map ID is present, the adapter automatically persists the complete room configuration and creates the room-clean buttons. If the archive omits the map ID, rooms remain visible in `map.roomsJson` and the map ID can still be supplied once via `control.importRooms`. The adapter never guesses a map ID from the device DID, map filename, or segment IDs.
+### Räume laden
 
-The V60 reference implementation in node-xmihome also reads `mapId` from the same `/0` map archive metadata and returns `autoAreaValue` as segment IDs/names. The adapter follows that metadata-based discovery path. Room-cleaning action execution must still be tested against the physical EVE Plus and its firmware.
+`roidmi.0.x20Plus.control.refreshRooms` auf `true` setzen. Ergebnis:
 
-Xiaomi may require two-factor authentication; open `map.cloudAuthUrl` on a device using the same internet connection, complete verification, then press `control.refreshMap` again. Credentials are encrypted in ioBroker and never logged.
+- `x20Plus.rooms.roomsJson` – Raumliste mit Segment-IDs und Namen
+- `x20Plus.rooms.mapStatus`, `x20Plus.rooms.lastUpdate`
 
-## Saved schedule / room profile inspection
+Wichtig: Maßgeblich ist die **Segment-ID** aus `roomsJson`, nicht die Beschriftung auf der Karte in Xiaomi Home (z. B. „Raum 5“).
 
-- Write `true` to `roidmi.0.control.refreshTiming` to read the robot's saved schedule JSON once.
-- The result is stored in `timing.raw`; `timing.lastUpdate` records when the read succeeded.
-- This reads MIoT SIID 8 / PIID 6 and is intentionally not part of the regular polling loop. It adds no background traffic.
-- The JSON format can contain schedule start time, enabled flag, fan speed, cleaning type, weekdays, water level, and room IDs. Reading it helps inspect room-specific schedule data, but does not yet prove that the original app's per-room defaults are represented in the same structure.
-- Do not write to this property yet: setting it replaces existing schedules on the robot.
+### Reinigen
 
+JSON nach `roidmi.0.x20Plus.control.cleanRooms` schreiben:
 
-## Schedule decoding
+```json
+{ "rooms": [ { "segmentId": 1 }, { "segmentId": 4 }, { "segmentId": 2 } ] }
+```
 
-The manual `control.refreshTiming` read also updates two read-only states:
+Optional je Raum: `repeat` (1–3), `suction` (0–3), `water` (1–3).
 
-- `timing.parsed`: decoded JSON with local time, enabled state, fan speed, cleaning mode, weekdays, water level and room IDs.
-- `timing.summary`: compact human-readable summary.
+Ablauf im Adapter:
 
-The raw `timing.raw` state is retained unchanged for diagnostics. These states only decode the schedule response; they do not write to the robot, change schedules, or alter room cleaning commands. Schedule data must not be treated as proof that manual room-profile defaults use the same storage/API.
+1. Die gewünschte Reinigungsart aus `x20Plus.control.cleaningMode` wird gesetzt und zurückgelesen. Stimmt sie nicht, wird abgebrochen.
+2. Danach wird die Raumaktion gesendet (lokal, SIID 4 / AIID 1, mit frischem Handshake).
+3. Ergebnis bzw. Fehler steht in `x20Plus.control.cleanRoomsStatus`; `cleanRooms` wird nach der Verarbeitung geleert.
+
+Die Raumreinigung wird nicht automatisch wiederholt, weil ein zweiter Versand eine bereits gestartete Reinigung doppelt auslösen könnte.

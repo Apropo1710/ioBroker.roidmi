@@ -28,8 +28,8 @@
     ],
     "news": {
       "0.1.69": {
-        "en": "Remove obsolete water-level diagnostic states (x20Plus.info.mopModeReadback, x20Plus.info.mopModeCloudReadback, x20Plus.control.readMopModeCloud); create the x20Plus.timing channel; clean up release notes and documentation.",
-        "de": "Veraltete Diagnose-Datenpunkte der Wasserstufen-Analyse entfernt (x20Plus.info.mopModeReadback, x20Plus.info.mopModeCloudReadback, x20Plus.control.readMopModeCloud); Kanal x20Plus.timing wird angelegt; Versionshinweise und Dokumentation bereinigt."
+        "en": "Remove obsolete water-level diagnostic states (x20Plus.info.mopModeReadback, x20Plus.info.mopModeCloudReadback, x20Plus.control.readMopModeCloud); create the x20Plus.timing channel; clean up release notes and documentation. Default for automatic X20+ schedule sync in new instances is now off (60 minutes), matching the admin settings.",
+        "de": "Veraltete Diagnose-Datenpunkte der Wasserstufen-Analyse entfernt (x20Plus.info.mopModeReadback, x20Plus.info.mopModeCloudReadback, x20Plus.control.readMopModeCloud); Kanal x20Plus.timing wird angelegt; Versionshinweise und Dokumentation bereinigt. Automatischer X20+-Zeitplanabgleich ist bei neuen Instanzen jetzt standardmäßig aus (60 Minuten), passend zur Admin-Oberfläche."
       },
       "0.1.68": {
         "en": "Fix multi-room selection slot for Xiaomi X20+ room cleaning",
@@ -137,7 +137,7 @@
     "xiaomiToken": "",
     "scheduleAutoRefresh": false,
     "scheduleRefreshIntervalMinutes": 60,
-    "xiaomiScheduleAutoRefresh": true,
-    "xiaomiScheduleRefreshIntervalMinutes": 30
+    "xiaomiScheduleAutoRefresh": false,
+    "xiaomiScheduleRefreshIntervalMinutes": 60
   }
 }

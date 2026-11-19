@@ -1,89 +1,100 @@
 # ioBroker Roidmi Adapter
 
-Eigenständiger ioBroker-Adapter zur lokalen Steuerung und Überwachung von Roidmi-Saugrobotern, mit Schwerpunkt auf dem Roidmi EVE Plus.
+ioBroker-Adapter zur Steuerung und Überwachung von zwei Saugrobotern in einer Instanz:
 
-> **Projektstatus:** Frühe Testversion. Build und automatisierte Tests sind erfolgreich. Die Kommunikation und Steuerbefehle müssen noch am realen Roidmi EVE Plus bestätigt werden. Bitte vor der Installation ein ioBroker-Backup erstellen.
+- **Roidmi EVE Plus** (MIoT-Modell `roidmi.vacuum.v60`)
+- **Xiaomi Robot Vacuum X20+** (MIoT-Modell `xiaomi.vacuum.c102gl`)
 
-## Installation zum Testen über ioBroker Admin
+Status und Steuerung laufen lokal über miIO/MIoT (UDP 54321). Die Xiaomi Cloud ist optional und wird für Karten/Räume, die Zeitpläne des X20+ und auf Wunsch für Steuerbefehle verwendet.
 
-Der Adapter ist noch nicht im offiziellen ioBroker-Repository gelistet. Er kann für Tests direkt aus GitHub installiert werden:
+Aktueller Funktions- und Teststand: [STATUS.md](STATUS.md).
+
+> Der Adapter ist nicht im offiziellen ioBroker-Repository gelistet und wird direkt aus GitHub installiert. Vor Installation oder Update ein ioBroker-Backup erstellen.
+
+## Installation
 
 1. ioBroker Admin öffnen und zum Reiter **Adapter** wechseln.
-2. Oben in der Werkzeugleiste **Aus eigener Quelle installieren** öffnen (Octocat-Symbol).
-3. **Von GitHub** auswählen.
-4. Als Repository **Apropo1710/ioBroker.roidmi** eintragen und die Installation starten.
-5. Anschließend die neue Instanz **Roidmi** hinzufügen bzw. deren Konfiguration öffnen.
+2. **Aus eigener Quelle installieren** (Octocat-Symbol) → **Von GitHub**.
+3. Repository `Apropo1710/ioBroker.roidmi` eintragen und installieren (Branch `main`).
+4. Instanz **Roidmi** hinzufügen und konfigurieren.
 
-Die Installation aus GitHub ist eine Entwicklungsversion und erhält keine Prüfung wie ein Eintrag im Stable-Repository. Nicht auf einem produktiven System ohne aktuelles Backup installieren.
+Bei der Installation aus GitHub wird der TypeScript-Code automatisch gebaut (`prepare`-Skript).
 
 ## Konfiguration
 
-- **Robot IP address:** lokale IPv4-Adresse des Roboters.
-- **Xiaomi device DID:** numerische Xiaomi-Geräte-ID (DID).
-- **MIoT / miIO token:** 32-stelliger Token (wird in ioBroker verschlüsselt gespeichert).
-- **Polling interval:** Abfrageintervall in Sekunden, Standard 30; zulässig sind 5 bis 3600 Sekunden.
+Die Instanzeinstellungen haben drei Reiter:
 
-Ohne gültige IP-Adresse, DID und Token startet der Adapter, bleibt aber getrennt und zeigt den Grund unter `evePlus.info.connectionText` an.
+**Geräte & Verbindung**
+- Je Roboter ein Schalter zum Aktivieren sowie **IP-Adresse**, **Geräte-DID** und **MIoT-/miIO-Token** (32 Hex-Zeichen, wird verschlüsselt gespeichert).
+- **Abfrageintervall** in Sekunden (Standard 30, zulässig 5–3600).
+- Ohne gültige Daten startet der Adapter, der jeweilige Roboter bleibt aber getrennt; der Grund steht in `<roboter>.info.connectionText`.
 
-## Xiaomi X20+ – IP-Adresse, DID und Token
+**Zeitpläne**
+- Je Roboter: automatischen Abruf ein/aus und Intervall (5–1440 Minuten). Standard: aus, 60 Minuten.
+- EVE Plus liest lokal (SIID 8 / PIID 6), der X20+ über die Xiaomi Cloud (aktive Cloud-Sitzung nötig).
 
-- **IP-Adresse:** in der Geräteliste des Routers (DHCP) oder in Xiaomi Home nachsehen; für eine stabile Verbindung empfiehlt sich eine feste DHCP-Zuweisung.
-- **DID und miIO-Token:** können üblicherweise mit dem [Xiaomi Cloud Tokens Extractor](https://github.com/PiotrMachowski/Xiaomi-cloud-tokens-extractor) aus den Xiaomi-Home-Gerätedaten ermittelt werden. Bitte dessen aktuelle Anleitung lesen und die richtige Xiaomi-Konto-Region wählen. Je nach Android-/Mi-Home-Version kann ein unterstütztes Backup-/Extraktionsverfahren notwendig sein.
-- Der **Token ist ein Geheimnis** (normalerweise 32 Hex-Zeichen). Niemals in Chats, Screenshots, GitHub, Issues oder Logs veröffentlichen. Nur in der lokalen Adapterkonfiguration eintragen; ioBroker speichert ihn verschlüsselt.
-- DID und Token gehören zum jeweiligen Gerät. Beim parallelen Betrieb von Roidmi EVE Plus und Xiaomi X20+ die getrennten Felder verwenden.
+**Xiaomi Cloud** (optional)
+- Benutzername, Passwort und Region des Xiaomi-Kontos. Anmeldung in zwei Schritten: Code anfordern, dann den Code aus SMS/E-Mail eingeben.
+- Optional: **Steuerbefehle über Xiaomi Cloud senden** – Statusabfragen bleiben trotzdem lokal.
 
-## Optionale Xiaomi-Cloud-Kartenerkennung
+### IP-Adresse, DID und Token ermitteln
 
-Die Xiaomi-Cloud-Anbindung ist **optional** und standardmäßig ausgeschaltet. Sie wird ausschließlich benötigt, um die gespeicherte Karte sowie Raum-IDs und Raumnamen automatisch aus dem Xiaomi-Konto abzurufen. Ohne diese Funktion bleiben lokale Statusabfragen und die lokale Robotersteuerung nutzbar. Die Cloud wird nicht periodisch abgefragt: Der Abruf startet nur, wenn `evePlus.control.refreshMap` manuell ausgelöst wird. Xiaomi-Benutzername und Passwort werden nur bei aktivierter Funktion verwendet und in ioBroker verschlüsselt gespeichert. Je nach Xiaomi-Konto kann eine Zwei-Faktor-Bestätigung erforderlich sein.
+- **IP-Adresse:** in der Geräteliste des Routers. Eine feste DHCP-Zuweisung wird empfohlen.
+- **DID und Token:** z. B. mit dem [Xiaomi Cloud Tokens Extractor](https://github.com/PiotrMachowski/Xiaomi-cloud-tokens-extractor). Die richtige Region des Xiaomi-Kontos wählen.
+- Der Token ist ein Geheimnis: nie in Chats, Screenshots, GitHub oder Logs veröffentlichen.
 
 ## Objektbaum
 
-Die Datenpunkte sind nach Robotern getrennt:
-
 ```text
 roidmi.0
-├── info                         (Adapter-Metadaten)
 ├── evePlus
-│   ├── info
-│   ├── status
-│   ├── control
-│   ├── map
-│   ├── rooms
-│   └── timing
+│   ├── info       Verbindung, letzter Poll, Poll-Zähler
+│   ├── status     Roboterstatus, Akku, Fehler, schreibbare Einstellungen (Saugstärke, Wasser …)
+│   ├── control    Start, Pause, Fortsetzen, Station, Stopp, Wartungs-Resets, Raumreinigung, Kartenabruf, Zeitpläne
+│   ├── map        Cloud-Anmeldung, Karte, Raumliste, Raumprofile
+│   ├── rooms      ein Unterordner je Raum mit Name, Reinigungs-Button und Raumprofil
+│   └── timing     Zeitpläne (roh, dekodiert, Zusammenfassung)
 └── x20Plus
-    ├── info
-    └── status
+    ├── info       Verbindung, letzter Poll, Poll-Zähler, Rohwert der Reinigungseinstellungen
+    ├── status     Roboterstatus, Akku, Verbrauchsmaterial, Einstellungen
+    ├── control    Start, Pause, Station, Saugleistung, Reinigungsart, Wasserstufe, Teppich-Boost, Raumreinigung, Zeitpläne
+    ├── rooms      Raumliste aus der Cloud-Karte
+    └── timing     Zeitpläne (roh, dekodiert, Zusammenfassung, Status)
 ```
 
-Beim ersten Start mit der neuen Version werden bisherige Roidmi-Datenpunkte (z. B. `battery`, `control.*`, `map.*`, `rooms.*`, `timing.*`) sowie der frühere Xiaomi-Unterbaum `xiaomi.*` in die neuen Roboterordner verschoben. Dabei werden Objektdefinitionen und vorhandene Zustandswerte übernommen. Externe Skripte und Apps müssen danach die neuen IDs verwenden.
+Ältere Installationen mit flachen Datenpunkten (`battery`, `control.*`, `xiaomi.*` …) werden beim Start automatisch in diese Struktur verschoben.
 
-## Ziele
+## Raumreinigung
 
-- Lokale Verbindung zum Roidmi EVE Plus, soweit das Gerät sie unterstützt
-- Status, Akku, Ladezustand und Reinigungszustand
-- Start, Pause, Fortsetzen und Rückkehr zur Ladestation
-- Saug- und Wischparameter
-- Raum-/Zonenreinigung sowie Karten-/Verlaufsdaten, sofern verfügbar
-- Saubere Trennung zwischen lokalen und Cloud-Funktionen
+- **EVE Plus:** Räume über `evePlus.control.refreshMap` aus der Cloud laden; danach je Raum `evePlus.rooms.<id>.clean` oder mehrere Räume über `evePlus.control.cleanRooms` mit `{"mapId":123456,"roomIds":[1,3]}`.
+- **X20+:** Räume über `x20Plus.control.refreshRooms` laden; Reinigung über `x20Plus.control.cleanRooms` mit z. B. `{"rooms":[{"segmentId":1},{"segmentId":4}]}`. Die Reinigungsart aus `x20Plus.control.cleaningMode` wird vor dem Start gesetzt und geprüft.
 
-## Sicherheit und Belastung
+Details: [docs/ROOM_IMPORT.md](docs/ROOM_IMPORT.md).
 
-MIoT-/miIO-Zugangsdaten und Tokens dürfen niemals eingecheckt oder in Logs ausgegeben werden. Zugangsdaten gehören ausschließlich in die Adapterkonfiguration bzw. geschützte Laufzeitdaten.
+## Last und Sicherheit
 
-Die Statusabfrage erfolgt standardmäßig alle 30 Sekunden. Alle sieben aktuell unterstützten Status- und Einstellungswerte werden in einer gebündelten MIoT-Anfrage gelesen. Dadurch sinkt die Zahl der Status-RPCs pro Polling-Zyklus von sieben auf eine. Polling-Zyklen überlappen nicht; bei Fehlern verlängert der Adapter das Intervall automatisch. Zeitpläne beider Roboter besitzen getrennte automatische Abrufeinstellungen (Ein/Aus und 5 bis 1440 Minuten). Beim Roidmi EVE Plus ist der automatische Abruf standardmäßig ausgeschaltet (60 Minuten voreingestellt); beim Xiaomi X20+ bleibt die bisherige automatische Xiaomi-Cloud-Synchronisierung standardmäßig eingeschaltet (30 Minuten voreingestellt). Die Zeitplanabfragen laufen unabhängig vom häufigen Status-Polling. Der X20+ benötigt dafür eine aktive Xiaomi-Cloud-Sitzung.
+- Status wird gebündelt abgefragt (wenige Properties pro RPC), Polls überlappen nicht, bei Fehlern verlängert sich das Intervall automatisch.
+- Nur geänderte Werte werden in ioBroker geschrieben.
+- Karten werden nie im normalen Polling abgerufen.
+- Schreibende Aktionen auf Einstellungen und Zeitpläne werden gezielt zurückgelesen und erst danach übernommen.
+- Zugangsdaten, Tokens und Cloud-Sitzung werden verschlüsselt gespeichert und nicht protokolliert.
 
-## Entwicklungsstand
+## Dokumentation
 
-Siehe [Projektplan](docs/PROJECT_PLAN.md), [Architektur](docs/ARCHITECTURE.md), [Protokollnotizen](docs/PROTOCOL_NOTES.md) und [Raumimport](docs/ROOM_IMPORT.md).
+- [STATUS.md](STATUS.md) – aktueller Funktionsstand, offene Punkte, Projektregeln
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) – Aufbau des Codes
+- [docs/PROTOCOL_NOTES.md](docs/PROTOCOL_NOTES.md) – MIoT-Zuordnungen und Datenformate beider Roboter
+- [docs/ROOM_IMPORT.md](docs/ROOM_IMPORT.md) – Räume laden und reinigen
 
 ## Entwicklung
 
-Voraussetzung: eine von ioBroker unterstützte Node.js-Version (Node.js 20 oder neuer).
+Voraussetzung: Node.js 20 oder neuer.
 
 ```bash
 npm install
+npm run lint
 npm test
 npm run build
 ```
 
-Das `prepare`-Skript baut die TypeScript-Dateien auch bei einer Installation direkt aus dem Git-Repository. Die Gerätekommunikation und die Befehle müssen weiterhin gegen ein reales Gerät validiert werden.
+Bei jedem Push auf `main` laufen Lint, Tests und Build in GitHub Actions; anschließend werden die kompilierten Dateien in `build/` automatisch aktualisiert. Ein installierbares Testpaket lässt sich bei Bedarf manuell über den Workflow „Test and build adapter“ erzeugen.
