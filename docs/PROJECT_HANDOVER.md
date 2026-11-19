@@ -1,11 +1,23 @@
 # Technische Übergabe – Roidmi ioBroker Adapter
 
-**Stand:** 01.11.2026  
+**Historischer Detailstand:** 01.11.2026 (nicht aktueller Versions-/Branchstatus)  
 **Repository:** https://github.com/Apropo1710/ioBroker.roidmi  
 **Branch:** `main`  
 **Aktueller Build-Commit:** `fd5baf50c09cfd84bec2b2d240f774dbc8d30222`  
 **Letzte Quellcode-Korrektur:** `97783d7de8280227c1a3254cd8cc8b8bf9b2cb33`  
 **Angezeigte Adapterversion:** `0.1.7` (GitHub-Installationskennung enthält den Commit)
+
+## Aktueller Projekt- und Branchstand – 19.11.2026, 03:05 MEZ
+
+- **Main:** Paketversion **0.1.36**. Aktueller Branch-Head `13566589bcd87af6df1941e5da37bb9641c88377` (Dokumentation). Letzter Laufzeit-/Distributionsstand: Quellcommit `65c1769b9d1b05da54ee2cdb7276b30af8e2982e`, generierter Build-Commit `99d88d14421011e7449eba4cb0ac2672f6aada7c`; Distribution Run #100 erfolgreich. Die zusätzliche CI-/Distribution-Verifikation des späteren Main-Dokumentationsstands `70d8c24675ab` (CI #537, Test/Build #322, Distribution #101) war ebenfalls erfolgreich. Kein GitHub-Release unter `latest`.
+- **Xiaomi-X20+-Entwicklungsbranch:** `feature/xiaomi-x20plus`, Paketversion **0.1.68**, aktueller Head `4b77bb304955d085ecedd9d9f76a79b97ed99c39` (Dokumentation). Letzte Laufzeitkorrekturen: `b6d71d0b3d6f` (wiederhergestellte MIoT-Timeouts nur Debug) und `53a60f238703` (doppelte Retry-Warnungen unterdrücken). Test/Build Run #364 (`43807220218`) für den Codebaum bis `29962de09d1e`: erfolgreich.
+- **Branches strikt getrennt halten.** Der Feature-Branch liegt 365 Commits voraus und 12 zurück. [PR #3](https://github.com/Apropo1710/ioBroker.roidmi/pull/3) ist offen, Draft und nicht mergebar (`dirty`); keine Übernahme nach `main`. [PR #4 – Statusdokumentation](https://github.com/Apropo1710/ioBroker.roidmi/pull/4) ist der bestehende Dokumentations-PR, offen und mergebar (`clean`). Diese Handover-Aktualisierung wird auf dessen vorhandenem Head-Branch vorgenommen; kein zweiter PR und kein automatisches Merge.
+- **Hardware / offene Prüfungen:** Beim X20+ sind drei Räume in Reinigungsmodus 3 nacheinander – zuerst Saugen, danach Wischen – bestätigt. Gleichzeitiges Saugen und Wischen sowie weitere Raum-/Moduskombinationen sind nicht bestätigt. Nach den MIoT-Logkorrekturen fehlt ein erneuter Live-Test. Beim separaten Roidmi EVE Plus bleibt die optionale automatische Zeitplanaktualisierung am realen Gerät zu prüfen; sie ist standardmäßig deaktiviert.
+- Main und X20+-Feature nicht vermischen. CI-Erfolg ist kein Ersatz für Hardwaretests. Keine automatische Branchübernahme, kein Versionsbump und kein Release im Rahmen der Statuspflege.
+
+Die nachfolgenden technischen Detailabschnitte stammen aus der ursprünglichen Bestandsaufnahme vom 01.11.2026. Sie bleiben als historische Hintergrundinformation erhalten; für den aktuellen Branch-, Build-, PR- und Hardwarestatus ist der obige Abgleich zusammen mit `STATUS.md` maßgeblich. Die aktuelle X20+-Übergabe liegt zusätzlich in `docs/PROJECT_HANDOVER.md` auf `feature/xiaomi-x20plus`.
+
+---
 
 Diese Datei ist die Übergabe für einen neuen Chat. Sie beschreibt den tatsächlichen Stand und trennt bestätigte Funktionen von noch offenen Live-Tests.
 
