@@ -44,7 +44,10 @@ Die Entwicklungsgeschichte steht im Git-Log und in den Versionshinweisen (`io-pa
 
 ## Offene Punkte
 
-1. **Sporadische MIoT-Timeouts** (beide Roboter): Handshake erfolgreich, auf den RPC kommt keine Antwort. Der automatische zweite Versuch fängt die meisten Fälle ab; vereinzelt scheitert auch er. Ursache nicht gefunden. Seit 0.1.68 wird ein erfolgreicher zweiter Versuch nur noch auf Debug-Level protokolliert; ob die Logs damit im Alltag ruhig sind, ist nicht bestätigt.
+1. **Sporadische MIoT-Timeouts** (beide Roboter, unabhängig voneinander): Der automatische zweite Versuch fängt die meisten Fälle ab; vereinzelt scheitert auch er. Seit 0.1.68 wird ein erfolgreicher zweiter Versuch nur auf Debug-Level protokolliert.
+   - Nachgewiesen (X20+, 19.11.2026, Debug-Trace): Der Roboter stand den ganzen Tag untätig in der Station. Beim zweiten Versuch antwortete er nach 12 ms auf einen frischen Handshake, auf den direkt folgenden RPC kam 4 s lang kein einziges Paket zurück (der Client protokolliert auch verworfene Pakete – keine vorhanden). Rund eine Minute später blieb sogar der Handshake unbeantwortet. Der EVE Plus lief zur selben Zeit fehlerfrei.
+   - Folgerung: Die Antwort erreicht den Adapter nicht; Paketaufbau und Zeitstempel sind korrekt. Ursache liegt am X20+ bzw. seiner WLAN-Verbindung, nicht im gemeinsamen Adapter- oder Netzwerkteil.
+   - Offene Hypothesen: (A) WLAN-Strecke (Energiesparmodus, Empfang an der Station) oder (B) lokaler miIO-Dienst der Firmware zeitweise blockiert. Nächster Schritt: Dauer-Ping (`ping -D -O -i 2`) parallel laufen lassen und Aussetzer mit den Timeout-Zeitpunkten abgleichen; WLAN-An-/Abmeldungen in der Fritzbox werden seit 19.11. protokolliert.
 2. **Statusbedeutungen EVE Plus:** Die Texte für Status 5/6 und Ladestatus 1/2 sind empirisch und vorläufig (siehe `docs/PROTOCOL_NOTES.md`).
 3. **Instanzstatus im Admin:** Es gibt nur `evePlus.info.connection` und `x20Plus.info.connection`, kein `info.connection` auf Instanzebene. Der Admin kann den Verbindungsstatus der Instanz deshalb nicht anzeigen.
 4. **Firmware-Stand** der Testgeräte ist nicht dokumentiert. Bitlagen (z. B. X20+-Wasserstufe) sind nur für die getesteten Geräte belegt.
