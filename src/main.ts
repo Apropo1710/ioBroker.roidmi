@@ -93,27 +93,14 @@ class RoidmiAdapter extends Adapter {
             { id: "x20Plus.info", name: "Information" },
             { id: "x20Plus.status", name: "Status" },
             { id: "x20Plus.control", name: "Steuerung" },
-            { id: "x20Plus.rooms", name: "Xiaomi X20+ Räume" }
+            { id: "x20Plus.rooms", name: "Xiaomi X20+ Räume" },
+            { id: "x20Plus.timing", name: "Zeitpläne" }
         ];
         for (const channel of deviceChannels) {
             await this.setObjectNotExistsAsync(channel.id, {
                 type: "channel", common: { name: channel.name }, native: {}
             });
         }
-        // Create the Xiaomi mop diagnostic state during the awaited adapter startup,
-        // before the independent poller is launched. This avoids a race with startup
-        // object-tree initialization on existing installations.
-        await this.setObjectNotExistsAsync("x20Plus.info.mopModeReadback", {
-            type: "state",
-            common: {
-                name: "Raw MIoT read result for mop water level",
-                type: "string",
-                role: "json",
-                read: true,
-                write: false
-            },
-            native: {}
-        });
         await this.setObjectNotExistsAsync("evePlus.info.connection", {
             type: "state",
             common: { name: "Device connection", type: "boolean", role: "indicator.reachable", read: true, write: false },
@@ -557,9 +544,7 @@ class RoidmiAdapter extends Adapter {
             ["info.connectionText", "Xiaomi X20+ connection status", "string", "text"],
             ["info.lastPoll", "Xiaomi X20+ last successful poll", "string", "date"],
             ["info.pollCount", "Xiaomi X20+ successful poll count", "number", "value"],
-            ["info.mopModeReadback", "Raw local MIoT read result for mop water level", "string", "json"],
-            ["info.cleanSettingReadback", "Raw local MIoT read result for packed clean settings (SIID 4 / PIID 23)", "string", "json"],
-            ["info.mopModeCloudReadback", "Raw Xiaomi Cloud MIoT read result for mop water level (manual)", "string", "json"]
+            ["info.cleanSettingReadback", "Raw local MIoT read result for packed clean settings (SIID 4 / PIID 23)", "string", "json"]
         ] as const;
         for (const [id, name, type, role] of infoStates) {
             const objectId = prefix + id;
@@ -574,21 +559,6 @@ class RoidmiAdapter extends Adapter {
                 common: { name, type, role, read: true, write: false }
             });
         }
-        // Ensure the diagnostic state exists even on installations where the
-        // info channel was created by an older adapter version. Use setObjectAsync
-        // here because this is a dedicated diagnostic object whose metadata must
-        // be present before the first poll writes its raw response.
-        await this.setObjectAsync(prefix + "info.mopModeReadback", {
-            type: "state",
-            common: {
-                name: "Raw MIoT read result for mop water level",
-                type: "string",
-                role: "json",
-                read: true,
-                write: false
-            },
-            native: {}
-        });
         // Older Xiaomi poller versions created flat x20Plus.* states. Move those
         // values into the single status channel and remove the obsolete duplicates.
         const legacyXiaomiFields = [
@@ -740,6 +710,10 @@ class RoidmiAdapter extends Adapter {
             await this.subscribeStatesAsync(prefix + "control." + control.id);
         }
         await this.delObjectAsync(prefix + "info.unsupportedCommands").catch(() => undefined);
+        // Diagnostic states from the water-level investigation (removed in 0.1.69).
+        for (const obsoleteId of ["info.mopModeReadback", "info.mopModeCloudReadback", "control.readMopModeCloud"]) {
+            await this.delObjectAsync(prefix + obsoleteId).catch(() => undefined);
+        }
         await this.setObjectNotExistsAsync(prefix + "control.suction", {
             type: "state",
             common: { name: "Suction power", type: "number", role: "level", min: 0, max: 3, states: { 0: "Leise", 1: "Standard", 2: "Stark", 3: "Turbo" }, read: true, write: true },
@@ -810,19 +784,6 @@ class RoidmiAdapter extends Adapter {
             native: { siid: 4, piid: 23, mask: 0x30000, shift: 16 }
         });
         await this.subscribeStatesAsync(prefix + "control.mopMode");
-        await this.setObjectNotExistsAsync(prefix + "control.readMopModeCloud", {
-            type: "state",
-            common: {
-                name: "Read mop water level once via Xiaomi Cloud (diagnostic)",
-                type: "boolean",
-                role: "button",
-                read: false,
-                write: true,
-                def: false
-            },
-            native: {}
-        });
-        await this.subscribeStatesAsync(prefix + "control.readMopModeCloud");
 
         await this.setStateChangedAsync(prefix + "info.connection", { val: false, ack: true });
 
@@ -903,15 +864,6 @@ class RoidmiAdapter extends Adapter {
                     const [key, requestedProperty] = batchFields[index];
                     const item = responseByProperty.get(`${requestedProperty.siid}/${requestedProperty.piid}`)
                         ?? result[index] as { code?: number; value?: unknown } | undefined;
-                    // Expose the existing poll response for mopMode without issuing an extra
-                    // robot request or flooding the log. This distinguishes stale device data
-                    // from a state-update/mapping problem.
-                    if (key === "mopMode") {
-                        await this.setStateChangedAsync(prefix + "info.mopModeReadback", {
-                            val: JSON.stringify({ siid: requestedProperty.siid, piid: requestedProperty.piid, code: item?.code ?? null, value: item?.value ?? null }),
-                            ack: true
-                        });
-                    }
                     // cleaningMode already belongs to the regular fast poll. Preserve
                     // its complete packed value for diagnosis; the public control state
                     // below continues exposing only the documented low two mode bits.
@@ -1116,56 +1068,6 @@ class RoidmiAdapter extends Adapter {
         const xiaomiControlPrefix = this.namespace + ".x20Plus.control.";
         if (id.startsWith(xiaomiControlPrefix)) {
             const command = id.slice(xiaomiControlPrefix.length);
-            if (command === "readMopModeCloud") {
-                if (state.val === true) {
-                    const config = this.config as RoidmiAdapterConfig;
-                    try {
-                        if (!config.xiaomiDid) throw new Error("Xiaomi X20+ DID is missing from adapter configuration.");
-                        if (!this.cloudMapClient.hasSession()) {
-                            throw new Error("Xiaomi Cloud session is unavailable. Use the existing Xiaomi Cloud login first.");
-                        }
-                        if (this.xiaomiCommandRunning) {
-                            throw new Error("Another Xiaomi command is running; retry the manual cloud read afterwards.");
-                        }
-                        this.xiaomiCommandRunning = true;
-                        const result = await this.cloudMapClient.getProperties(
-                            config.cloudCountry || "de",
-                            config.xiaomiDid,
-                            [{ siid: 4, piid: 5 }],
-                            async () => {
-                                await this.setStateAsync("evePlus.map.cloudSession", {
-                                    val: this.encrypt(this.cloudMapClient.exportSession()), ack: true
-                                });
-                            },
-                            2
-                        );
-                        const snapshot = {
-                            source: "Xiaomi Cloud MIoT /v2/miotspec/prop/get",
-                            datasource: 2,
-                            requestedAt: new Date().toISOString(),
-                            siid: 4,
-                            piid: 5,
-                            result
-                        };
-                        await this.setStateAsync("x20Plus.info.mopModeCloudReadback", {
-                            val: JSON.stringify(snapshot),
-                            ack: true
-                        });
-                        this.log.info("Xiaomi X20+ mopMode cloud read completed: " + JSON.stringify(result));
-                    } catch (error) {
-                        const message = error instanceof Error ? error.message : "Unknown Xiaomi Cloud read error";
-                        await this.setStateAsync("x20Plus.info.mopModeCloudReadback", {
-                            val: JSON.stringify({ source: "Xiaomi Cloud MIoT", requestedAt: new Date().toISOString(), error: message }),
-                            ack: true
-                        });
-                        this.log.warn("Xiaomi X20+ mopMode cloud read failed: " + message);
-                    } finally {
-                        this.xiaomiCommandRunning = false;
-                    }
-                }
-                await this.setStateAsync("x20Plus.control.readMopModeCloud", { val: false, ack: true });
-                return;
-            }
             if (command === "updateSchedule") {
                 if (typeof state.val === "string" && state.val.trim()) {
                     const config = this.config as RoidmiAdapterConfig;
