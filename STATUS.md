@@ -1,33 +1,70 @@
-# Roidmi Adapter – aktueller Status
+# Projektstatus – ioBroker.roidmi
 
-Stand: 2026-11-14, 02:57 MEZ
+Stand: 19.11.2026 · Adapterversion **0.1.69** · Branch **`main`**
 
-## Geprüfter Main-Branch-Stand
-- Paketversion auf `main`: **0.1.36**. Letzter Build-/Distribution-Commit: `99d88d14421011e7449eba4cb0ac2672f6aada7c`; „Build distribution“ Run `43378078837`: **completed / success**.
-- Der zugrunde liegende Quellstand `65c1769b9d1b05da54ee2cdb7276b30af8e2982e` wurde mit CI Run `43378028113` und „Test and build adapter“ Run `43378028172` erfolgreich geprüft.
-- Der aktuelle Xiaomi-X20+-Entwicklungsstand liegt getrennt auf `feature/xiaomi-x20plus`: Paketversion **0.1.67**, letzter Code-Commit `68d3508ecb079bf81e31da5941a9f970fce69b89`, Actions #341 / Run `43449224003`: **completed / success**.
-- Die Feature-Branch-Statusdateien wurden danach dokumentarisch aktualisiert; es erfolgte keine Übernahme nach `main`.
-- `main` und `feature/xiaomi-x20plus` bleiben getrennte Entwicklungsstände; nicht vermischen.
+Dies ist die einzige Statusdatei des Projekts. Sie beschreibt den aktuellen Stand, nicht den Weg dorthin.
+Die Entwicklungsgeschichte steht im Git-Log und in den Versionshinweisen (`io-package.json` → `common.news`).
 
-## Historischer Detailstand – 13.11.2026
+## Kurzüberblick
 
-## Aktuelle Version
-- Adapter-Version: 0.1.36
-- Hauptbranch: `main`
-- Zielgerät: Roidmi EVE Plus
+- Ein Adapter für zwei Roboter, beide unabhängig aktivierbar und mit eigenem Polling:
+  - **Roidmi EVE Plus** (`roidmi.vacuum.v60`) unter `roidmi.0.evePlus.*`
+  - **Xiaomi Robot Vacuum X20+** (`xiaomi.vacuum.c102gl`) unter `roidmi.0.x20Plus.*`
+- Installation in ioBroker: Admin → Adapter → „Aus eigener Quelle installieren“ → GitHub → `Apropo1710/ioBroker.roidmi` (Branch `main`).
+- HomePilot (Android-App) nutzt die Datenpunkte des Adapters für Status, Steuerung, Räume und Zeitpläne.
+- Automatisierte Prüfung: `npm run lint`, `npm test`, `npm run build` laufen in der CI bei jedem Push auf `main`.
 
-## Zuletzt umgesetzt
-- Optionale automatische Aktualisierung gespeicherter Reinigungszeitpläne ergänzt.
-- In der Adapterkonfiguration kann der automatische Abruf ein- und ausgeschaltet werden.
-- Abrufintervall in Minuten konfigurierbar (5 bis 1440 Minuten, Standard 60).
-- Automatischer Abruf ist standardmäßig deaktiviert.
-- Zeitplanabfrage bleibt von der häufigen Statusabfrage getrennt und verwendet eine einzelne MIoT-`get_properties`-Anfrage.
-- Bei gleichzeitig laufendem Roboterbefehl oder Statusabruf wird ein automatischer Zeitplanabruf übersprungen; es wird keine zusätzliche Warteschlange aufgebaut.
-- Manuelles Auslösen über `control.refreshTiming` bleibt erhalten.
+## Funktionsstand Roidmi EVE Plus
 
-## Belastungsprinzip
-Statuswerte werden weiterhin gebündelt und mit dem konfigurierten Statusintervall abgefragt. Zeitpläne werden nur manuell oder bei ausdrücklich aktivierter Automatik in einem deutlich längeren Intervall gelesen. Standardmäßig entsteht keine zusätzliche Roboterlast.
+| Funktion | Stand |
+|---|---|
+| Lokale Verbindung, Status-Polling (gebündelt, max. 6 Properties pro RPC) | bestätigt |
+| Start, Pause, Rückkehr zur Station | bestätigt |
+| Fortsetzen (`resume`) | implementiert, nicht separat bestätigt |
+| Raumreinigung (einzeln/mehrere Räume, SIID 14 / AIID 1) | bestätigt |
+| Karte und Räume über Xiaomi Cloud (manuell über `control.refreshMap`) | bestätigt |
+| Raumprofile (Saugstärke/Wasser pro Raum) aus den Kartendaten lesen | bestätigt |
+| Zeitpläne lesen (SIID 8 / PIID 6) | bestätigt |
+| Bestehende Zeitpläne bearbeiten (`control.updateSchedule`, mit Readback) | bestätigt |
+| Automatischer Zeitplanabruf (optional, Standard aus) | implementiert |
 
-## Offene Hardwareprüfung
-- Das Verhalten der optionalen automatischen Zeitplanaktualisierung und des konfigurierbaren Intervalls am realen EVE Plus noch praktisch prüfen. Die Automatik bleibt standardmäßig deaktiviert; keine zusätzliche Roboterlast ohne ausdrückliche Aktivierung.
-- Der frühere CI-Pending-Punkt für Version 0.1.36 ist erledigt: CI, Adapter-Build und Distribution sind für die oben genannten Commits erfolgreich.
+## Funktionsstand Xiaomi X20+
+
+| Funktion | Stand |
+|---|---|
+| Lokale Verbindung, Status-Polling | bestätigt |
+| Start, Pause/Fortsetzen, Rückkehr zur Station | bestätigt (`stop` wurde entfernt, verhielt sich wie Pause) |
+| Saugleistung (`suction`), Reinigungsart (`cleaningMode`), Wasserstufe (`mopMode`), jeweils in beide Richtungen mit der Xiaomi-App | bestätigt |
+| Teppich-Boost (`carpetBoost`) | bestätigt |
+| Raumkarte/Räume über Xiaomi Cloud (`control.refreshRooms`) | bestätigt |
+| Raumreinigung: einzelne Räume, mehrere Räume (auch mehr als drei, verschiedene Kombinationen) | bestätigt |
+| Raumreinigung in „Saugen vor Wischen“ und „Saugen und Wischen gleichzeitig“ | bestätigt |
+| Zeitpläne lesen, automatisch abgleichen, aktivieren/deaktivieren, bestehende bearbeiten | bestätigt |
+| Kindersicherung, Fortsetzen nach dem Laden, Orten (`locate`) | implementiert, Live-Test nicht dokumentiert |
+
+## Offene Punkte
+
+1. **Sporadische MIoT-Timeouts** (beide Roboter): Handshake erfolgreich, auf den RPC kommt keine Antwort. Der automatische zweite Versuch fängt die meisten Fälle ab; vereinzelt scheitert auch er. Ursache nicht gefunden. Seit 0.1.68 wird ein erfolgreicher zweiter Versuch nur noch auf Debug-Level protokolliert; ob die Logs damit im Alltag ruhig sind, ist nicht bestätigt.
+2. **Raumprofile ändern (EVE Plus):** Der Adapter liest die Profile nur. Ein Schreibweg ist nicht implementiert; die Protokollfrage (SIID 13 / AIID 10 `area-custom`) ist ungeklärt. Keine Payloads auf Verdacht senden.
+3. **Statusbedeutungen EVE Plus:** Die Texte für Status 5/6 und Ladestatus 1/2 sind empirisch und vorläufig (siehe `docs/PROTOCOL_NOTES.md`).
+4. **Instanzstatus im Admin:** Es gibt nur `evePlus.info.connection` und `x20Plus.info.connection`, kein `info.connection` auf Instanzebene. Der Admin kann den Verbindungsstatus der Instanz deshalb nicht anzeigen.
+5. **Firmware-Stand** der Testgeräte ist nicht dokumentiert. Bitlagen (z. B. X20+-Wasserstufe) sind nur für die getesteten Geräte belegt.
+6. **Mögliche Erweiterungen** aus dem früheren Projektplan, nicht begonnen: Zonenreinigung, Reinigungsverlauf, Aufnahme ins offizielle ioBroker-Repository.
+7. **Aufteilung von `src/main.ts`** (rund 2.100 Zeilen) pro Roboter, wenn größere Erweiterungen anstehen.
+
+## Verbindliche Projektregeln
+
+- Zielgeräte sind Roidmi EVE Plus und Xiaomi X20+ – nicht mit anderen Modellen (z. B. Mova) verwechseln.
+- So wenige MIoT-RPCs wie möglich: keine zusätzlichen Poller für einzelne Datenpunkte, keine überlappenden Polls, Diagnose aus vorhandenen Antworten ableiten.
+- Nur geänderte States schreiben; langsam veränderliche Werte seltener abfragen.
+- Adapter und Original-App müssen dieselben Einstellungen sehen (keine adaptereigenen Profile oder Kopien).
+- Beide Roboter bleiben unabhängig: Ein Fehler beim einen darf den anderen nicht beeinflussen.
+- Keine Payloads auf Verdacht an ein Gerät senden; erst Ursache belegen, dann ändern. Nachgewiesenes, Hypothesen und Vermutungen klar trennen.
+- Zugangsdaten, Tokens, DIDs und Sitzungsdaten nie in Git, Issues, Screenshots oder Logs.
+- CI-Erfolg ist kein Hardware-Nachweis. Ein Punkt gilt erst nach Live-Test am Gerät als „bestätigt“.
+
+## Pflege dieser Datei
+
+- Bei jeder Änderung, die den Funktionsstand oder die offenen Punkte betrifft, diese Datei im selben Commit anpassen.
+- Keine Commit-Hashes, Run-IDs oder Uhrzeiten eintragen – die stehen im Git-Log und in GitHub Actions.
+- Keine zweite Status-, Plan- oder Übergabedatei anlegen. Technische Details gehören nach `docs/PROTOCOL_NOTES.md`.

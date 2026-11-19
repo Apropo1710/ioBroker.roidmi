@@ -1,7 +1,7 @@
 {
   "common": {
     "name": "roidmi",
-    "version": "0.1.36",
+    "version": "0.1.69",
     "title": "Roidmi",
     "titleLang": {
       "en": "Roidmi",
@@ -23,136 +23,89 @@
     "type": "household",
     "encryptedNative": [
       "token",
-      "cloudPassword"
+      "cloudPassword",
+      "xiaomiToken"
     ],
     "news": {
-      "0.1.36": {
-        "de": "Optionalen automatischen Zeitplanabruf mit einstellbarem Intervall ergänzt",
-        "en": "Add optional automatic schedule retrieval with configurable interval"
+      "0.1.69": {
+        "en": "Remove obsolete water-level diagnostic states (x20Plus.info.mopModeReadback, x20Plus.info.mopModeCloudReadback, x20Plus.control.readMopModeCloud); create the x20Plus.timing channel; clean up release notes and documentation. Default for automatic X20+ schedule sync in new instances is now off (60 minutes), matching the admin settings.",
+        "de": "Veraltete Diagnose-Datenpunkte der Wasserstufen-Analyse entfernt (x20Plus.info.mopModeReadback, x20Plus.info.mopModeCloudReadback, x20Plus.control.readMopModeCloud); Kanal x20Plus.timing wird angelegt; Versionshinweise und Dokumentation bereinigt. Automatischer X20+-Zeitplanabgleich ist bei neuen Instanzen jetzt standardmäßig aus (60 Minuten), passend zur Admin-Oberfläche."
       },
-      "0.1.4": {
-        "en": "Added local status polling diagnostics",
-        "de": "Lokale Diagnose für Statusabfragen ergänzt"
+      "0.1.68": {
+        "en": "Fix multi-room selection slot for Xiaomi X20+ room cleaning",
+        "de": "Mehrraum-Auswahlparameter für die Xiaomi-X20+-Raumreinigung korrigiert"
       },
-      "0.1.3": {
-        "en": "Updated the adapter icon with a white Roidmi robot vacuum",
-        "de": "Adaptersymbol auf einen weißen Roidmi-Saugroboter aktualisiert"
+      "0.1.67": {
+        "en": "Ensure selected cleaning mode is applied and verified before Xiaomi X20+ multi-room cleaning",
+        "de": "Gewählten Reinigungsmodus vor der Xiaomi-X20+-Mehrraumreinigung sicher setzen und überprüfen"
       },
-      "0.1.2": {
-        "en": "Added a custom Roidmi robot vacuum icon",
-        "de": "Eigenes Symbol für den Roidmi-Saugroboter hinzugefügt"
+      "0.1.66": {
+        "en": "Added independent enable/disable and interval settings for automatic EVE Plus and Xiaomi X20+ schedule refresh",
+        "de": "Getrennte Ein/Aus- und Intervall-Einstellungen für den automatischen Zeitplanabruf von EVE Plus und Xiaomi X20+ ergänzt"
       },
-      "0.1.1": {
-        "en": "Reduced status polling to one batched MIoT request",
-        "de": "Statusabfrage auf eine gebündelte MIoT-Anfrage reduziert"
+      "0.1.65": {
+        "en": "Added optional automatic Roidmi EVE Plus schedule refresh with a configurable interval",
+        "de": "Optionalen automatischen Abruf der Roidmi-EVE-Plus-Zeitpläne mit einstellbarem Intervall ergänzt"
       },
-      "0.1.0": {
-        "en": "Initial adapter foundation",
-        "de": "Erstes Adapter-Grundgerüst"
+      "0.1.64": {
+        "en": "Added guarded editing of existing Roidmi EVE Plus cleaning schedules with conflict detection and robot read-back",
+        "de": "Bestehende Reinigungszeitpläne des Roidmi EVE Plus können mit Konfliktprüfung und direkter Rückkontrolle bearbeitet werden"
       },
-      "0.1.5": {
-        "en": "Added optional on-demand Xiaomi Cloud map and room discovery",
-        "de": "Optionale Karten- und Raumerkennung über Xiaomi Cloud auf Abruf ergänzt"
+      "0.1.54": {
+        "en": "Added on-demand synchronization of Xiaomi X20+ cleaning schedules",
+        "de": "Zeitpläne des Xiaomi X20+ können auf Abruf mit Xiaomi Home synchronisiert werden"
       },
-      "0.1.6": {
-        "en": "Install faster using precompiled JavaScript",
-        "de": "Schnellere Installation durch vorcompiliertes JavaScript"
+      "0.1.51": {
+        "en": "Removed redundant Xiaomi X20+ stop control",
+        "de": "Überflüssigen Stop-Datenpunkt des Xiaomi X20+ entfernt"
       },
-      "0.1.7": {
-        "en": "Localized adapter configuration in German and English",
-        "de": "Adapter-Konfiguration auf Deutsch und Englisch lokalisiert"
+      "0.1.50": {
+        "en": "Repair experimental miIO handshake reuse and avoid an unnecessary handshake for successful consecutive RPCs.",
+        "de": "Experimentelle miIO-Handshake-Wiederverwendung repariert; bei aufeinanderfolgenden erfolgreichen RPCs entfällt der zusätzliche Handshake."
       },
-      "0.1.8": {
-        "en": "Added configuration-based Xiaomi 2FA and encrypted persistent cloud sessions",
-        "de": "Xiaomi-2FA direkt in der Adapterkonfiguration und dauerhaft verschlüsselte Cloud-Sitzungen ergänzt"
+      "0.1.49": {
+        "en": "Read and write X20+ mop water level from packed MIoT clean settings (SIID 4 / PIID 23), preserving unrelated setting bits.",
+        "de": "Wasserstufe des X20+ aus den gepackten MIoT-Reinigungseinstellungen (SIID 4 / PIID 23) lesen und schreiben; andere Einstellungsbits bleiben erhalten."
       },
-      "0.1.9": {
-        "en": "Clarified the Xiaomi two-factor sign-in flow with numbered steps and inline guidance",
-        "de": "Xiaomi-Zwei-Faktor-Anmeldung durch nummerierte Schritte und direkte Erklärungen verständlicher gestaltet"
+      "0.1.48": {
+        "en": "Verify Xiaomi X20+ suction, cleaning intensity and mop settings by reading the single MIoT property back after each manual write; synchronize control and status with the value actually reported by the robot.",
+        "de": "Saugstärke, Reinigungsintensität und Wasserstufe des Xiaomi X20+ nach manueller Änderung durch einmaliges Rücklesen der jeweiligen MIoT-Eigenschaft verifizieren; Steuerungs- und Statusdatenpunkt auf den tatsächlich gemeldeten Roboterwert setzen."
       },
-      "0.1.10": {
-        "en": "Improved Xiaomi 2FA feedback with immediate button acknowledgements and live cloud status",
-        "de": "Xiaomi-2FA-Rückmeldung mit sofortiger Button-Bestätigung und laufender Cloud-Statusanzeige verbessert"
+      "0.1.47": {
+        "en": "Remove non-functional Xiaomi X20+ locate control",
+        "de": "Nicht funktionierende Locate-Steuerung des Xiaomi X20+ entfernt"
       },
-      "0.1.11": {
-        "en": "Restored reliable Xiaomi sign-in request handling with completion feedback",
-        "de": "Zuverlässige Xiaomi-Anmeldung mit Rückmeldung nach Abschluss wiederhergestellt"
+      "0.1.46": {
+        "en": "Improve X20+ room-clean status and room filtering tests",
+        "de": "X20+-Raumreinigungsstatus und Raumfilter-Tests verbessert"
       },
-      "0.1.12": {
-        "en": "Restored the previously working Xiaomi 2FA button and background login flow",
-        "de": "Zuvor funktionierenden Xiaomi-2FA-Button und Hintergrund-Anmeldeablauf wiederhergestellt"
+      "0.1.45": {
+        "en": "Filter unnamed X20+ map segments from room selection",
+        "de": "Unbenannte X20+-Kartensegmente aus Raum-Auswahl gefiltert"
       },
-      "0.1.13": {
-        "en": "Added safe step-by-step Xiaomi 2FA diagnostics",
-        "de": "Sichere Schritt-für-Schritt-Diagnose für Xiaomi-2FA ergänzt"
+      "0.1.44": {
+        "en": "Added on-demand Xiaomi X20+ FDS room-map import",
+        "de": "Xiaomi-X20+-FDS-Raumkartenimport auf Abruf ergänzt"
       },
-      "0.1.14": {
-        "en": "Restore synchronous Xiaomi sign-in flow and matching admin callbacks",
-        "de": "Synchronen Xiaomi-Anmeldeablauf und passende Admin-Rückmeldungen wiederhergestellt"
+      "0.1.43": {
+        "en": "Use Xiaomi Cloud MIoT find action for X20+ locate",
+        "de": "Xiaomi-Cloud-MIoT-Find-Aktion für Locate beim X20+ verwenden"
       },
-      "0.1.15": {
-        "en": "Prevent adapter self-restart during Xiaomi 2FA login",
-        "de": "Adapter-Neustart während der Xiaomi-2FA-Anmeldung verhindert"
+      "0.1.42": {
+        "en": "Add device/batch-specific MIoT timeout diagnostics and one targeted status-poll retry",
+        "de": "Geräte- und Batch-spezifische MIoT-Timeoutdiagnose mit einer gezielten Wiederholung"
       },
-      "0.1.16": {
-        "en": "Improve Xiaomi 2FA ticket request parameters and detect CAPTCHA challenges",
-        "de": "Xiaomi-2FA-Codeanfrage korrigiert und CAPTCHA-Anforderungen erkannt"
+      "0.1.41": {
+        "en": "Split Roidmi EVE Plus local MIoT status polling into batches of six",
+        "de": "Lokale Roidmi-EVE-Plus-MIoT-Statusabfragen in Pakete mit sechs Eigenschaften aufgeteilt"
       },
-      "0.1.17": {
-        "en": "Fix Xiaomi 2FA ticket request with cache-busting timestamp and session reuse",
-        "de": "Xiaomi-2FA-Codeanfrage mit Zeitstempel und unveränderter Sitzung korrigiert"
+      "0.1.40": {
+        "en": "Split Xiaomi X20+ local MIoT property polling into smaller batches",
+        "de": "Lokale Xiaomi-X20+-MIoT-Abfragen in kleinere Pakete aufgeteilt"
       },
-      "0.1.18": {
-        "en": "Restore original Xiaomi two-factor request sequence",
-        "de": "Ursprünglichen Xiaomi-Zwei-Faktor-Anmeldeablauf wiederhergestellt"
-      },
-      "0.1.21": {
-        "en": "Expose safe Xiaomi verification error details and detect CAPTCHA responses",
-        "de": "Sichere Details zu Xiaomi-Verifizierungsfehlern anzeigen und CAPTCHA-Antworten erkennen"
-      },
-      "0.1.22": {
-        "en": "Add empirical readable status labels",
-        "de": "Empirische Klartext-Statusanzeigen ergänzt"
-      },
-      "0.1.23": {
-        "en": "Add readable robot fault-code diagnostics",
-        "de": "Lesbare Klartext-Diagnose für Roboterfehler ergänzt"
-      },
-      "0.1.24": {
-        "en": "Validate MIoT command responses and expose command diagnostics",
-        "de": "MIoT-Befehlsantworten prüfen und Befehlsdiagnose bereitstellen"
-      },
-      "0.1.25": {
-        "en": "Add configurable safe MIoT diagnostics",
-        "de": "Konfigurierbare, sichere MIoT-Diagnose ergänzt"
-      },
-      "0.1.26": {
-        "de": "Debug-Konfigurationsfeld vereinfacht",
-        "en": "Simplify debug configuration label"
-      },
-      "0.1.27": {
-        "de": "Redundante Debug-Checkbox entfernt; Instanz-Log-Level steuert Debug",
-        "en": "Remove redundant debug checkbox; instance log level controls debug"
-      },
-      "0.1.28": {
-        "de": "MIoT-Aktions-Timeouts als unbestätigten Ausgang kennzeichnen",
-        "en": "Report MIoT action timeouts as unconfirmed outcomes"
-      },
-      "0.1.29": {
-        "de": "Optionaler Xiaomi-Cloud-Transport für Roboteraktionen",
-        "en": "Optional Xiaomi Cloud transport for robot actions"
-      },
-      "0.1.33": {
-        "de": "Saug- und Wasserstufen mit lesbaren Auswahlwerten ergänzt",
-        "en": "Add readable enum labels for suction and water levels"
-      },
-      "0.1.35": {
-        "de": "Reinigungsoptionen auch bei unvollständiger Konfiguration anlegen",
-        "en": "Create cleaning option states before configuration validation"
-      },
-      "0.1.34": {
-        "de": "Neue schreibbare Reinigungsoptionen: doppelte Reinigung, Wischmuster und individuelle Profile",
-        "en": "Add writable cleaning options: double cleaning, mopping pattern and individual profiles"
+      "0.1.39": {
+        "en": "Added Xiaomi miIO timeout diagnostics",
+        "de": "Diagnose für Xiaomi-miIO-Timeouts ergänzt"
       }
     },
     "adminUI": {
@@ -177,7 +130,14 @@
     "cloudSession": "",
     "debugMiio": false,
     "cloudControlEnabled": false,
+    "enableRoidmi": true,
+    "enableXiaomi": false,
+    "xiaomiHost": "",
+    "xiaomiDid": "",
+    "xiaomiToken": "",
     "scheduleAutoRefresh": false,
-    "scheduleRefreshIntervalMinutes": 60
+    "scheduleRefreshIntervalMinutes": 60,
+    "xiaomiScheduleAutoRefresh": false,
+    "xiaomiScheduleRefreshIntervalMinutes": 60
   }
 }
