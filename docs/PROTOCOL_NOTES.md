@@ -65,7 +65,7 @@ Ladestatus 1 tritt angedockt bei 99 % und 100 % auf und bedeutet daher nicht sic
 - Das Cloud-Kartenarchiv (Map-Key `0`) ist gzip-komprimiert. Nach 16 Byte Präfix und dem Rasterbereich markiert `0x7f` den Beginn der JSON-Metadaten (`width`, `height`, `resolution`, `autoArea` …).
 - Raumprofile (`fanLevel`, `waterPump`, `cleanOrder`) stehen in den Kartenmetadaten und werden beim Kartenabruf gelesen. Der Roboter wendet sie auch bei einer über den Adapter gestarteten Raumreinigung an.
 - Lokales `get_map_v1` wird bewusst nicht aufgerufen (Firmware antwortete mit `-9999: user ack timeout`).
-- Raumprofile **schreiben** ist nicht implementiert. Die Spec nennt SIID 13 / AIID 10 (`area-custom`) und SIID 13 / AIID 11 (`map-area-order`); das Payload-Format ist unbekannt. python-miio unterstützt es nicht, Viomi-Formate sind nicht übertragbar. Nur nach belegtem App-Aufruf implementieren.
+- Raumprofile **schreiben** ist bewusst nicht vorgesehen: Sie werden ausschließlich in der Xiaomi-App gepflegt, der Adapter liest sie nur. (Zur Information: Die Spec nennt SIID 13 / AIID 10 `area-custom` und SIID 13 / AIID 11 `map-area-order`; das Payload-Format ist unbekannt.)
 
 ### Zeitpläne (SIID 8 / PIID 6)
 
