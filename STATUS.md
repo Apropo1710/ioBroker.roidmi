@@ -44,10 +44,11 @@ Die Entwicklungsgeschichte steht im Git-Log und in den Versionshinweisen (`io-pa
 
 ## Offene Punkte
 
-1. **Sporadische MIoT-Timeouts** (beide Roboter, unabhängig voneinander): Der automatische zweite Versuch fängt die meisten Fälle ab; vereinzelt scheitert auch er. Seit 0.1.68 wird ein erfolgreicher zweiter Versuch nur auf Debug-Level protokolliert.
-   - Nachgewiesen (X20+, 19.11.2026, Debug-Trace): Der Roboter stand den ganzen Tag untätig in der Station. Beim zweiten Versuch antwortete er nach 12 ms auf einen frischen Handshake, auf den direkt folgenden RPC kam 4 s lang kein einziges Paket zurück (der Client protokolliert auch verworfene Pakete – keine vorhanden). Rund eine Minute später blieb sogar der Handshake unbeantwortet. Der EVE Plus lief zur selben Zeit fehlerfrei.
-   - Folgerung: Die Antwort erreicht den Adapter nicht; Paketaufbau und Zeitstempel sind korrekt. Ursache liegt am X20+ bzw. seiner WLAN-Verbindung, nicht im gemeinsamen Adapter- oder Netzwerkteil.
-   - Offene Hypothesen: (A) WLAN-Strecke (Energiesparmodus, Empfang an der Station) oder (B) lokaler miIO-Dienst der Firmware zeitweise blockiert. Nächster Schritt: Dauer-Ping (`ping -D -O -i 2`) parallel laufen lassen und Aussetzer mit den Timeout-Zeitpunkten abgleichen; WLAN-An-/Abmeldungen in der Fritzbox werden seit 19.11. protokolliert.
+1. **Sporadische MIoT-Timeouts** (beide Roboter, unabhängig voneinander): Der automatische zweite Versuch fängt fast alle Fälle ab; vereinzelt scheitert auch er (20./21.11.: 3 Warnungen in rund 34 Stunden, alle X20+).
+   - Auswertung 20./21.11.2026 (Adapter-Debuglog + Dauer-Ping auf den X20+, ca. 18,5 Stunden): Der Ping verliert ohne Ausfall der WLAN-Anmeldung rund 0,4 % der Pakete, überwiegend einzeln und gehäuft in Phasen. Der X20+ hatte 24 erste Fehlversuche in rund 34 Stunden (ca. 0,3 % der Abfragen), der EVE Plus 15. Das passt in der Größenordnung zum Paketverlust.
+   - Eine Warnung (21.11., 03:03) fiel in eine Funkpause von rund 25 Sekunden, in der auch der Ping ausfiel. Eine weitere (20.11., 22:11) lag in einer Phase gehäufter Ping-Verluste.
+   - Folgerung: Ursache ist Paketverlust auf der WLAN-Strecke, kein Fehler im Adapter oder im Paketaufbau. Die Fritzbox zeigt keine Ab- oder Anmeldungen der Roboter. Ein Ping alle 2 Sekunden kann einen einzelnen verlorenen RPC nicht sicher belegen; dass der miIO-Dienst der Firmware zusätzlich gelegentlich nicht antwortet, ist nicht ausgeschlossen, aber nicht nötig, um die Zahlen zu erklären.
+   - Hebel liegen beim WLAN (Empfang an der Station, Repeater, Kanal). Im Adapter wäre nur eine andere Einstufung möglich, z. B. Warnung erst nach mehreren fehlgeschlagenen Polls in Folge.
 2. **Statusbedeutungen EVE Plus:** Die Texte für Status 5/6 und Ladestatus 1/2 sind empirisch und vorläufig (siehe `docs/PROTOCOL_NOTES.md`).
 3. **Instanzstatus im Admin:** Es gibt nur `evePlus.info.connection` und `x20Plus.info.connection`, kein `info.connection` auf Instanzebene. Der Admin kann den Verbindungsstatus der Instanz deshalb nicht anzeigen.
 4. **Firmware-Stand** der Testgeräte ist nicht dokumentiert. Bitlagen (z. B. X20+-Wasserstufe) sind nur für die getesteten Geräte belegt.
