@@ -104,3 +104,93 @@ export class OutageReporter {
         };
     }
 }
+
+/** Local calendar day (host time zone) as YYYY-MM-DD. */
+export function localDayKey(ms: number): string {
+    const date = new Date(ms);
+    const pad = (value: number): string => String(value).padStart(2, "0");
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
+
+/**
+ * The instance is connected when at least one robot is enabled and every enabled
+ * robot is reachable. Disabled robots are not part of the map.
+ */
+export function isInstanceConnected(enabledRobots: Record<string, boolean>): boolean {
+    const values = Object.values(enabledRobots);
+    return values.length > 0 && values.every(Boolean);
+}
+
+export interface ConnectionStatsSnapshot {
+    timeoutsToday: number;
+    failedPollsToday: number;
+    restartsToday: number;
+    lastRestart: string;
+}
+
+export interface ConnectionStatsSeed {
+    timeoutsToday?: { value: number; at: number };
+    failedPollsToday?: { value: number; at: number };
+    restartsToday?: { value: number; at: number };
+    lastRestart?: string;
+}
+
+/**
+ * Per-robot daily counters for connection quality. Counters reset at local midnight.
+ * Seed values are taken over only if they were written on the same local day,
+ * so an adapter restart during the day keeps the counts.
+ */
+export class ConnectionStats {
+    private day: string;
+    private timeouts: number;
+    private failedPolls: number;
+    private restarts: number;
+    private lastRestart: string;
+
+    public constructor(seed: ConnectionStatsSeed = {}, now = Date.now()) {
+        this.day = localDayKey(now);
+        const sameDay = (entry?: { value: number; at: number }): number =>
+            entry && localDayKey(entry.at) === this.day && Number.isFinite(entry.value) ? entry.value : 0;
+        this.timeouts = sameDay(seed.timeoutsToday);
+        this.failedPolls = sameDay(seed.failedPollsToday);
+        this.restarts = sameDay(seed.restartsToday);
+        this.lastRestart = seed.lastRestart ?? "";
+    }
+
+    private roll(now: number): void {
+        const day = localDayKey(now);
+        if (day === this.day) return;
+        this.day = day;
+        this.timeouts = 0;
+        this.failedPolls = 0;
+        this.restarts = 0;
+    }
+
+    /** One request that ran into a timeout (also when the retry succeeded). */
+    public recordTimeout(now = Date.now()): void {
+        this.roll(now);
+        this.timeouts++;
+    }
+
+    /** One poll that failed after its retry. */
+    public recordFailedPoll(now = Date.now()): void {
+        this.roll(now);
+        this.failedPolls++;
+    }
+
+    public recordRestart(restart: DeviceRestart, now = Date.now()): void {
+        this.roll(now);
+        this.restarts++;
+        this.lastRestart = new Date(restart.startedAt).toISOString();
+    }
+
+    public snapshot(now = Date.now()): ConnectionStatsSnapshot {
+        this.roll(now);
+        return {
+            timeoutsToday: this.timeouts,
+            failedPollsToday: this.failedPolls,
+            restartsToday: this.restarts,
+            lastRestart: this.lastRestart
+        };
+    }
+}

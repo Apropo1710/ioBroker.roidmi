@@ -1,7 +1,7 @@
 {
   "common": {
     "name": "roidmi",
-    "version": "0.1.70",
+    "version": "0.1.71",
     "title": "Roidmi",
     "titleLang": {
       "en": "Roidmi",
@@ -27,6 +27,10 @@
       "xiaomiToken"
     ],
     "news": {
+      "0.1.71": {
+        "en": "Instance-level info.connection (all enabled robots reachable) so the admin shows the connection status. New per-robot statistics: info.timeoutsToday, info.failedPollsToday, info.restartsToday, info.lastRestart (no additional requests).",
+        "de": "info.connection auf Instanzebene (alle aktivierten Roboter erreichbar), damit der Admin den Verbindungsstatus anzeigt. Neue Statistik je Roboter: info.timeoutsToday, info.failedPollsToday, info.restartsToday, info.lastRestart (ohne zusätzliche Abfragen)."
+      },
       "0.1.70": {
         "en": "Detect device restarts from the miIO handshake stamp. A short outage caused by a restart (the X20+ restarts every night) is logged as info instead of a warning; outages without restart still produce a warning, longer outages warn once and report recovery.",
         "de": "Geräteneustarts werden am Zeitstempel des miIO-Handshakes erkannt. Ein kurzer Ausfall durch einen Neustart (der X20+ startet jede Nacht neu) wird als Info statt als Warnung protokolliert; Ausfälle ohne Neustart erzeugen weiterhin eine Warnung, längere Ausfälle warnen einmal und melden die Wiederherstellung."
@@ -102,10 +106,6 @@
       "0.1.41": {
         "en": "Split Roidmi EVE Plus local MIoT status polling into batches of six",
         "de": "Lokale Roidmi-EVE-Plus-MIoT-Statusabfragen in Pakete mit sechs Eigenschaften aufgeteilt"
-      },
-      "0.1.40": {
-        "en": "Split Xiaomi X20+ local MIoT property polling into smaller batches",
-        "de": "Lokale Xiaomi-X20+-MIoT-Abfragen in kleinere Pakete aufgeteilt"
       }
     },
     "adminUI": {
@@ -139,5 +139,28 @@
     "scheduleRefreshIntervalMinutes": 60,
     "xiaomiScheduleAutoRefresh": false,
     "xiaomiScheduleRefreshIntervalMinutes": 60
-  }
+  },
+  "instanceObjects": [
+    {
+      "_id": "info",
+      "type": "channel",
+      "common": {
+        "name": "Information"
+      },
+      "native": {}
+    },
+    {
+      "_id": "info.connection",
+      "type": "state",
+      "common": {
+        "name": "All enabled robots reachable",
+        "type": "boolean",
+        "role": "indicator.connected",
+        "read": true,
+        "write": false,
+        "def": false
+      },
+      "native": {}
+    }
+  ]
 }

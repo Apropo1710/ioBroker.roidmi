@@ -47,20 +47,31 @@ Die Instanzeinstellungen haben drei Reiter:
 
 ```text
 roidmi.0
+├── info
+│   └── connection true, wenn alle aktivierten Roboter erreichbar sind (Anzeige im Admin)
 ├── evePlus
-│   ├── info       Verbindung, letzter Poll, Poll-Zähler
+│   ├── info       Verbindung, letzter Poll, Poll-Zähler, Verbindungsstatistik
 │   ├── status     Roboterstatus, Akku, Fehler, schreibbare Einstellungen (Saugstärke, Wasser …)
 │   ├── control    Start, Pause, Fortsetzen, Station, Stopp, Wartungs-Resets, Raumreinigung, Kartenabruf, Zeitpläne
 │   ├── map        Cloud-Anmeldung, Karte, Raumliste, Raumprofile
 │   ├── rooms      ein Unterordner je Raum mit Name, Reinigungs-Button und Raumprofil
 │   └── timing     Zeitpläne (roh, dekodiert, Zusammenfassung)
 └── x20Plus
-    ├── info       Verbindung, letzter Poll, Poll-Zähler, Rohwert der Reinigungseinstellungen
+    ├── info       Verbindung, letzter Poll, Poll-Zähler, Verbindungsstatistik, Rohwert der Reinigungseinstellungen
     ├── status     Roboterstatus, Akku, Verbrauchsmaterial, Einstellungen
     ├── control    Start, Pause, Station, Saugleistung, Reinigungsart, Wasserstufe, Teppich-Boost, Raumreinigung, Zeitpläne
     ├── rooms      Raumliste aus der Cloud-Karte
     └── timing     Zeitpläne (roh, dekodiert, Zusammenfassung, Status)
 ```
+
+**Verbindungsstatistik** je Roboter (zählt ohne zusätzliche Abfragen, setzt sich um Mitternacht zurück):
+
+| Datenpunkt | Bedeutung |
+|---|---|
+| `info.timeoutsToday` | Anfragen mit Zeitüberschreitung heute, auch solche, die der zweite Versuch aufgefangen hat – Maß für die WLAN-Qualität |
+| `info.failedPollsToday` | Abfragen, die heute auch im zweiten Versuch gescheitert sind |
+| `info.restartsToday` | heute erkannte Neustarts des Roboters |
+| `info.lastRestart` | Zeitpunkt des letzten erkannten Neustarts |
 
 Ältere Installationen mit flachen Datenpunkten (`battery`, `control.*`, `xiaomi.*` …) werden beim Start automatisch in diese Struktur verschoben.
 

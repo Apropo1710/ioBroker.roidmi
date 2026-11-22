@@ -9,8 +9,10 @@
  * are unreachable for about 30 seconds while doing so.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.OutageReporter = exports.RESTART_TOLERANCE_SECONDS = void 0;
+exports.ConnectionStats = exports.OutageReporter = exports.RESTART_TOLERANCE_SECONDS = void 0;
 exports.detectDeviceRestart = detectDeviceRestart;
+exports.localDayKey = localDayKey;
+exports.isInstanceConnected = isInstanceConnected;
 /** Allowed deviation between the device clock and the host clock before a restart is assumed. */
 exports.RESTART_TOLERANCE_SECONDS = 60;
 /**
@@ -85,3 +87,71 @@ class OutageReporter {
     }
 }
 exports.OutageReporter = OutageReporter;
+/** Local calendar day (host time zone) as YYYY-MM-DD. */
+function localDayKey(ms) {
+    const date = new Date(ms);
+    const pad = (value) => String(value).padStart(2, "0");
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
+/**
+ * The instance is connected when at least one robot is enabled and every enabled
+ * robot is reachable. Disabled robots are not part of the map.
+ */
+function isInstanceConnected(enabledRobots) {
+    const values = Object.values(enabledRobots);
+    return values.length > 0 && values.every(Boolean);
+}
+/**
+ * Per-robot daily counters for connection quality. Counters reset at local midnight.
+ * Seed values are taken over only if they were written on the same local day,
+ * so an adapter restart during the day keeps the counts.
+ */
+class ConnectionStats {
+    day;
+    timeouts;
+    failedPolls;
+    restarts;
+    lastRestart;
+    constructor(seed = {}, now = Date.now()) {
+        this.day = localDayKey(now);
+        const sameDay = (entry) => entry && localDayKey(entry.at) === this.day && Number.isFinite(entry.value) ? entry.value : 0;
+        this.timeouts = sameDay(seed.timeoutsToday);
+        this.failedPolls = sameDay(seed.failedPollsToday);
+        this.restarts = sameDay(seed.restartsToday);
+        this.lastRestart = seed.lastRestart ?? "";
+    }
+    roll(now) {
+        const day = localDayKey(now);
+        if (day === this.day)
+            return;
+        this.day = day;
+        this.timeouts = 0;
+        this.failedPolls = 0;
+        this.restarts = 0;
+    }
+    /** One request that ran into a timeout (also when the retry succeeded). */
+    recordTimeout(now = Date.now()) {
+        this.roll(now);
+        this.timeouts++;
+    }
+    /** One poll that failed after its retry. */
+    recordFailedPoll(now = Date.now()) {
+        this.roll(now);
+        this.failedPolls++;
+    }
+    recordRestart(restart, now = Date.now()) {
+        this.roll(now);
+        this.restarts++;
+        this.lastRestart = new Date(restart.startedAt).toISOString();
+    }
+    snapshot(now = Date.now()) {
+        this.roll(now);
+        return {
+            timeoutsToday: this.timeouts,
+            failedPollsToday: this.failedPolls,
+            restartsToday: this.restarts,
+            lastRestart: this.lastRestart
+        };
+    }
+}
+exports.ConnectionStats = ConnectionStats;

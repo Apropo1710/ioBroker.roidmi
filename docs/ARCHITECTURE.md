@@ -2,7 +2,7 @@
 
 ## Überblick
 
-Ein ioBroker-Adapter (TypeScript, Node.js ≥ 20, keine Python-Abhängigkeit) betreibt zwei Roboter in einer Instanz. Jeder Roboter hat eigene Zugangsdaten, einen eigenen Objektbaum (`evePlus.*`, `x20Plus.*`) und einen eigenen Poll-Timer. Ein Fehler bei einem Roboter setzt den anderen weder auf „getrennt“ noch stoppt er dessen Polling.
+Ein ioBroker-Adapter (TypeScript, Node.js ≥ 20, keine Python-Abhängigkeit) betreibt zwei Roboter in einer Instanz. Jeder Roboter hat eigene Zugangsdaten, einen eigenen Objektbaum (`evePlus.*`, `x20Plus.*`) und einen eigenen Poll-Timer. Ein Fehler bei einem Roboter setzt den anderen weder auf „getrennt“ noch stoppt er dessen Polling. `info.connection` auf Instanzebene ist nur dann `true`, wenn alle aktivierten Roboter erreichbar sind; deaktivierte Roboter zählen nicht.
 
 ```text
 src/main.ts                     Adapter-Lifecycle, Objekte, Polling, Befehle beider Roboter
@@ -12,7 +12,7 @@ src/lib/
 
   miio-packet.ts                miIO-Paketformat (Header, AES-Verschlüsselung, Prüfsumme)
   miio-client.ts                lokaler UDP-RPC-Client (Handshake, Timeout, Antwortzuordnung)
-  device-availability.ts        Neustart-Erkennung über den Handshake-Zähler, Einstufung von Ausfällen fürs Log
+  device-availability.ts        Neustart-Erkennung, Einstufung von Ausfällen fürs Log, Tagesstatistik, Instanzstatus
   xiaomi-cloud-map.ts           Xiaomi-Cloud-Anmeldung (inkl. 2FA), MIoT über Cloud, Kartenabruf
 
   Roidmi EVE Plus
