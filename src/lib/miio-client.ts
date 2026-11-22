@@ -1,5 +1,6 @@
 import { createSocket } from "node:dgram";
 import { buildHandshakePacket, buildMiioRequest, parseMiioHeader, parseMiioResponse } from "./miio-packet";
+import { detectDeviceRestart, type DeviceRestart, type StampObservation } from "./device-availability";
 
 export interface MiioClientOptions {
     host: string;
@@ -26,8 +27,27 @@ export class MiioClient {
     private requestId = 0;
     private lastSuccessfulRpcAt?: number;
     private cachedHandshake?: { deviceId: number; stamp: number; receivedAt: number };
+    private lastStampObservation?: StampObservation;
+    private detectedRestart?: DeviceRestart;
 
     public constructor(private readonly options: MiioClientOptions) {}
+
+    /**
+     * Returns and clears the device restart detected from fresh handshakes since the
+     * last call. Uses no extra requests; it only compares handshake stamps.
+     */
+    public consumeDetectedRestart(): DeviceRestart | undefined {
+        const restart = this.detectedRestart;
+        this.detectedRestart = undefined;
+        return restart;
+    }
+
+    private observeHandshakeStamp(stamp: number, at: number): void {
+        const current = { stamp, at };
+        const restart = detectDeviceRestart(this.lastStampObservation, current);
+        if (restart) this.detectedRestart = restart;
+        this.lastStampObservation = current;
+    }
 
     public async call(method: string, params: unknown = [], timeoutOverrideMs?: number, forceFreshHandshake = false): Promise<unknown> {
         const previous = MiioClient.requestQueue;
@@ -106,6 +126,7 @@ export class MiioClient {
                         handshakeHeader = parseMiioHeader(message);
                         if (handshakeHeader.deviceId === 0) throw new Error("Robot returned an invalid device ID");
                         this.cachedHandshake = { deviceId: handshakeHeader.deviceId, stamp: handshakeHeader.stamp, receivedAt: Date.now() };
+                        this.observeHandshakeStamp(handshakeHeader.stamp, Date.now());
                         debug("fresh handshake parsed; device ID " + handshakeHeader.deviceId + "; device stamp " + handshakeHeader.stamp);
                         sendRpc(handshakeHeader);
                         return;

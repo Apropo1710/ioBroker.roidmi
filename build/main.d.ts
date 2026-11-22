@@ -51,6 +51,7 @@ declare class RoidmiAdapter extends Adapter {
     private refreshCloudMap;
     private sendProperty;
     private sendAction;
+    private logAvailability;
     private onUnload;
 }
 export default RoidmiAdapter;

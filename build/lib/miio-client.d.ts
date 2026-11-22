@@ -1,3 +1,4 @@
+import { type DeviceRestart } from "./device-availability";
 export interface MiioClientOptions {
     host: string;
     token: string;
@@ -23,7 +24,15 @@ export declare class MiioClient {
     private requestId;
     private lastSuccessfulRpcAt?;
     private cachedHandshake?;
+    private lastStampObservation?;
+    private detectedRestart?;
     constructor(options: MiioClientOptions);
+    /**
+     * Returns and clears the device restart detected from fresh handshakes since the
+     * last call. Uses no extra requests; it only compares handshake stamps.
+     */
+    consumeDetectedRestart(): DeviceRestart | undefined;
+    private observeHandshakeStamp;
     call(method: string, params?: unknown, timeoutOverrideMs?: number, forceFreshHandshake?: boolean): Promise<unknown>;
     private callUnlocked;
 }

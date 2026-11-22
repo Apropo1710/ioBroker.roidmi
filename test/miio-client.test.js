@@ -201,3 +201,41 @@ test("forceFreshHandshake bypasses an existing cached handshake", async () => {
         server.close();
     }
 });
+
+
+test("detects a device restart from a lower handshake stamp", async () => {
+    const server = createSocket("udp4");
+    await new Promise((resolve) => server.bind(0, "127.0.0.1", resolve));
+    const port = server.address().port;
+    const client = new MiioClient({ host: "127.0.0.1", port, token, timeoutMs: 500 });
+    const stamps = [100000, 100001, 42];
+
+    server.on("message", (message, remote) => {
+        if (message.length === 32 && message[0] === 0x21 && message[1] === 0x31) {
+            const handshake = Buffer.alloc(32);
+            handshake[0] = 0x21;
+            handshake[1] = 0x31;
+            handshake.writeUInt16BE(32, 2);
+            handshake.writeUInt32BE(deviceId, 8);
+            handshake.writeUInt32BE(stamps.shift(), 12);
+            server.send(handshake, remote.port, remote.address);
+            return;
+        }
+        const request = parseMiioResponse(message, token);
+        server.send(responsePacket(request.id, ["ok"]), remote.port, remote.address);
+    });
+
+    try {
+        await client.call("get_properties", []);
+        assert.equal(client.consumeDetectedRestart(), undefined);
+        await client.call("get_properties", []);
+        assert.equal(client.consumeDetectedRestart(), undefined, "a normally advancing stamp is not a restart");
+        await client.call("get_properties", []);
+        const restart = client.consumeDetectedRestart();
+        assert.ok(restart, "restart expected after the stamp dropped");
+        assert.equal(restart.uptimeSeconds, 42);
+        assert.equal(client.consumeDetectedRestart(), undefined, "a restart is reported only once");
+    } finally {
+        server.close();
+    }
+});

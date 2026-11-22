@@ -1,5 +1,6 @@
 import { Adapter } from "@iobroker/adapter-core";
 import { MiioClient } from "./lib/miio-client";
+import { OutageReporter, type AvailabilityEvent } from "./lib/device-availability";
 import { mapLegacyStateId, LEGACY_EMPTY_FOLDERS } from "./lib/object-tree-migration";
 import { XIAOMI_X20_PLUS_PROPERTIES, XIAOMI_X20_PLUS_CONSUMABLE_PROPERTIES, XIAOMI_X20_PLUS_OPTIONAL_SETTINGS, XIAOMI_X20_PLUS_LIFETIME_PROPERTIES, XIAOMI_X20_PLUS_CONSUMABLE_POLL_INTERVAL_MS, getXiaomiX20PlusStatusText } from "./lib/xiaomi-x20plus-profile";
 import { parseRoomCleaningRequest } from "./lib/room-cleaning";
@@ -346,6 +347,7 @@ class RoidmiAdapter extends Adapter {
         }
 
         let lastMaintenancePoll = 0;
+        const eveAvailability = new OutageReporter("EVE Plus");
         const poll = async (): Promise<void> => {
             if (!this.client || this.stopping || this.commandRunning) return;
             this.commandRunning = true;
@@ -422,6 +424,7 @@ class RoidmiAdapter extends Adapter {
                 await this.setStateChangedAsync("evePlus.info.connection", { val: true, ack: true });
                 await this.setStateChangedAsync("evePlus.info.connectionText", { val: "Local miIO connection established", ack: true });
                 this.lastPollError = "";
+                this.logAvailability(eveAvailability.onPollSucceeded(this.client.consumeDetectedRestart()));
             } catch (error) {
                 const message = error instanceof Error ? error.message : "Unknown local miIO error";
                 if (message.includes("timed out") && miioTrace.length) {
@@ -431,7 +434,7 @@ class RoidmiAdapter extends Adapter {
                 }
                 await this.setStateChangedAsync("evePlus.info.connection", { val: false, ack: true });
                 await this.setStateChangedAsync("evePlus.info.connectionText", { val: message, ack: true });
-                if (message !== this.lastPollError) this.log.warn(message);
+                this.logAvailability(eveAvailability.onPollFailed(message));
                 this.lastPollError = message;
             } finally {
                 this.commandRunning = false;
@@ -814,6 +817,7 @@ class RoidmiAdapter extends Adapter {
         let lastConsumablesPoll = 0;
         let failures = 0;
         let lastError = "";
+        const x20Availability = new OutageReporter("Xiaomi X20+");
         const poll = async (): Promise<void> => {
             if (this.stopping || this.xiaomiPollRunning || this.xiaomiCommandRunning) return;
             this.xiaomiPollRunning = true;
@@ -916,6 +920,7 @@ class RoidmiAdapter extends Adapter {
                 if (includeConsumables) lastConsumablesPoll = Date.now();
                 failures = 0;
                 lastError = "";
+                this.logAvailability(x20Availability.onPollSucceeded(client.consumeDetectedRestart()));
                 await this.setStateChangedAsync(prefix + "info.connection", { val: true, ack: true });
                 await this.setStateChangedAsync(prefix + "info.connectionText", { val: "Local Xiaomi miIO connection established", ack: true });
                 await this.setStateChangedAsync(prefix + "info.lastPoll", { val: new Date().toISOString(), ack: true });
@@ -925,8 +930,8 @@ class RoidmiAdapter extends Adapter {
                 failures++;
                 await this.setStateChangedAsync(prefix + "info.connection", { val: false, ack: true });
                 await this.setStateChangedAsync(prefix + "info.connectionText", { val: message, ack: true });
+                this.logAvailability(x20Availability.onPollFailed(message));
                 if (message !== lastError) {
-                    this.log.warn("Xiaomi X20+ poll failed: " + message);
                     // Emit trace only on failure; normal successful polls remain quiet.
                     for (const traceLine of this.xiaomiMiioTrace) this.log.debug("Xiaomi miIO trace: " + traceLine);
                 }
@@ -2075,6 +2080,13 @@ class RoidmiAdapter extends Adapter {
             this.commandRunning = false;
             await this.setStateAsync(stateId, { val: resetValue, ack: true });
         }
+    }
+
+    private logAvailability(event: AvailabilityEvent): void {
+        if (event.level === "none") return;
+        if (event.level === "warn") this.log.warn(event.message);
+        else if (event.level === "info") this.log.info(event.message);
+        else this.log.debug(event.message);
     }
 
     private onUnload(callback: () => void): void {

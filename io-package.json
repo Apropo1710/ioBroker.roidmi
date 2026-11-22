@@ -1,7 +1,7 @@
 {
   "common": {
     "name": "roidmi",
-    "version": "0.1.69",
+    "version": "0.1.70",
     "title": "Roidmi",
     "titleLang": {
       "en": "Roidmi",
@@ -27,6 +27,10 @@
       "xiaomiToken"
     ],
     "news": {
+      "0.1.70": {
+        "en": "Detect device restarts from the miIO handshake stamp. A short outage caused by a restart (the X20+ restarts every night) is logged as info instead of a warning; outages without restart still produce a warning, longer outages warn once and report recovery.",
+        "de": "Geräteneustarts werden am Zeitstempel des miIO-Handshakes erkannt. Ein kurzer Ausfall durch einen Neustart (der X20+ startet jede Nacht neu) wird als Info statt als Warnung protokolliert; Ausfälle ohne Neustart erzeugen weiterhin eine Warnung, längere Ausfälle warnen einmal und melden die Wiederherstellung."
+      },
       "0.1.69": {
         "en": "Remove obsolete water-level diagnostic states (x20Plus.info.mopModeReadback, x20Plus.info.mopModeCloudReadback, x20Plus.control.readMopModeCloud); create the x20Plus.timing channel; clean up release notes and documentation. Default for automatic X20+ schedule sync in new instances is now off (60 minutes), matching the admin settings.",
         "de": "Veraltete Diagnose-Datenpunkte der Wasserstufen-Analyse entfernt (x20Plus.info.mopModeReadback, x20Plus.info.mopModeCloudReadback, x20Plus.control.readMopModeCloud); Kanal x20Plus.timing wird angelegt; Versionshinweise und Dokumentation bereinigt. Automatischer X20+-Zeitplanabgleich ist bei neuen Instanzen jetzt standardmäßig aus (60 Minuten), passend zur Admin-Oberfläche."
@@ -102,10 +106,6 @@
       "0.1.40": {
         "en": "Split Xiaomi X20+ local MIoT property polling into smaller batches",
         "de": "Lokale Xiaomi-X20+-MIoT-Abfragen in kleinere Pakete aufgeteilt"
-      },
-      "0.1.39": {
-        "en": "Added Xiaomi miIO timeout diagnostics",
-        "de": "Diagnose für Xiaomi-miIO-Timeouts ergänzt"
       }
     },
     "adminUI": {
