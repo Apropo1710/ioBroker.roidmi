@@ -1,6 +1,6 @@
 # Projektstatus – ioBroker.roidmi
 
-Stand: 22.11.2026 · Adapterversion **0.1.71** · Branch **`main`**
+Stand: 22.11.2026 · Adapterversion **0.1.72** · Branch **`main`**
 
 Dies ist die einzige Statusdatei des Projekts. Sie beschreibt den aktuellen Stand, nicht den Weg dorthin.
 Die Entwicklungsgeschichte steht im Git-Log und in den Versionshinweisen (`io-package.json` → `common.news`).
@@ -20,7 +20,7 @@ Die Entwicklungsgeschichte steht im Git-Log und in den Versionshinweisen (`io-pa
 |---|---|
 | Neustart-Erkennung über den Handshake-Zähler, Einstufung von Ausfällen im Log (0.1.70) | implementiert, Bestätigung beim nächsten nächtlichen X20+-Neustart ausstehend |
 | `info.connection` auf Instanzebene für die Admin-Anzeige (0.1.71) | implementiert |
-| Verbindungsstatistik je Roboter: `info.timeoutsToday`, `failedPollsToday`, `restartsToday`, `lastRestart` (0.1.71) | implementiert |
+| Verbindungsstatistik je Roboter über gleitende Fenster (24 h / 7 Tage): `info.timeouts…`, `failedPolls…`, `restarts…`, `lastRestart` (0.1.72) | implementiert |
 
 ## Funktionsstand Roidmi EVE Plus
 

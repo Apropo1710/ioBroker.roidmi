@@ -12,7 +12,7 @@ src/lib/
 
   miio-packet.ts                miIO-Paketformat (Header, AES-Verschlüsselung, Prüfsumme)
   miio-client.ts                lokaler UDP-RPC-Client (Handshake, Timeout, Antwortzuordnung)
-  device-availability.ts        Neustart-Erkennung, Einstufung von Ausfällen fürs Log, Tagesstatistik, Instanzstatus
+  device-availability.ts        Neustart-Erkennung, Einstufung von Ausfällen fürs Log, Verbindungsstatistik (24 h / 7 Tage), Instanzstatus
   xiaomi-cloud-map.ts           Xiaomi-Cloud-Anmeldung (inkl. 2FA), MIoT über Cloud, Kartenabruf
 
   Roidmi EVE Plus

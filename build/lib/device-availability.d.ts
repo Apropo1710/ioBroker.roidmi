@@ -50,51 +50,49 @@ export declare class OutageReporter {
     onPollFailed(message: string, now?: number): AvailabilityEvent;
     onPollSucceeded(restart: DeviceRestart | undefined, now?: number): AvailabilityEvent;
 }
-/** Local calendar day (host time zone) as YYYY-MM-DD. */
-export declare function localDayKey(ms: number): string;
 /**
  * The instance is connected when at least one robot is enabled and every enabled
  * robot is reachable. Disabled robots are not part of the map.
  */
 export declare function isInstanceConnected(enabledRobots: Record<string, boolean>): boolean;
+/** Events older than this are discarded. */
+export declare const STATS_RETENTION_MS: number;
+/** Upper bound per event list, protects the persisted JSON during long outages. */
+export declare const STATS_MAX_EVENTS = 5000;
 export interface ConnectionStatsSnapshot {
-    timeoutsToday: number;
-    failedPollsToday: number;
-    restartsToday: number;
+    timeouts24h: number;
+    timeouts7d: number;
+    failedPolls24h: number;
+    failedPolls7d: number;
+    restarts24h: number;
+    restarts7d: number;
     lastRestart: string;
 }
-export interface ConnectionStatsSeed {
-    timeoutsToday?: {
-        value: number;
-        at: number;
-    };
-    failedPollsToday?: {
-        value: number;
-        at: number;
-    };
-    restartsToday?: {
-        value: number;
-        at: number;
-    };
-    lastRestart?: string;
+export interface ConnectionStatsEvents {
+    timeouts: number[];
+    failedPolls: number[];
+    restarts: number[];
 }
 /**
- * Per-robot daily counters for connection quality. Counters reset at local midnight.
- * Seed values are taken over only if they were written on the same local day,
- * so an adapter restart during the day keeps the counts.
+ * Per-robot connection counters over rolling windows (last 24 hours, last 7 days).
+ * A rolling window always covers the evening and night before, whenever it is read.
+ * Event timestamps are kept for 7 days and can be persisted as JSON.
  */
 export declare class ConnectionStats {
-    private day;
-    private timeouts;
-    private failedPolls;
-    private restarts;
+    private readonly events;
     private lastRestart;
-    constructor(seed?: ConnectionStatsSeed, now?: number);
-    private roll;
+    constructor(seed?: {
+        events?: Partial<ConnectionStatsEvents>;
+        lastRestart?: string;
+    }, now?: number);
+    /** Parses the persisted JSON; invalid content yields empty lists. */
+    static fromJson(json: unknown, lastRestart?: string, now?: number): ConnectionStats;
+    private prune;
     /** One request that ran into a timeout (also when the retry succeeded). */
     recordTimeout(now?: number): void;
     /** One poll that failed after its retry. */
     recordFailedPoll(now?: number): void;
     recordRestart(restart: DeviceRestart, now?: number): void;
     snapshot(now?: number): ConnectionStatsSnapshot;
+    toJson(): string;
 }

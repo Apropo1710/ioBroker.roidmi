@@ -9,9 +9,8 @@
  * are unreachable for about 30 seconds while doing so.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ConnectionStats = exports.OutageReporter = exports.RESTART_TOLERANCE_SECONDS = void 0;
+exports.ConnectionStats = exports.STATS_MAX_EVENTS = exports.STATS_RETENTION_MS = exports.OutageReporter = exports.RESTART_TOLERANCE_SECONDS = void 0;
 exports.detectDeviceRestart = detectDeviceRestart;
-exports.localDayKey = localDayKey;
 exports.isInstanceConnected = isInstanceConnected;
 /** Allowed deviation between the device clock and the host clock before a restart is assumed. */
 exports.RESTART_TOLERANCE_SECONDS = 60;
@@ -87,12 +86,6 @@ class OutageReporter {
     }
 }
 exports.OutageReporter = OutageReporter;
-/** Local calendar day (host time zone) as YYYY-MM-DD. */
-function localDayKey(ms) {
-    const date = new Date(ms);
-    const pad = (value) => String(value).padStart(2, "0");
-    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
-}
 /**
  * The instance is connected when at least one robot is enabled and every enabled
  * robot is reachable. Disabled robots are not part of the map.
@@ -101,57 +94,82 @@ function isInstanceConnected(enabledRobots) {
     const values = Object.values(enabledRobots);
     return values.length > 0 && values.every(Boolean);
 }
+const HOUR_MS = 3_600_000;
+const DAY_MS = 24 * HOUR_MS;
+/** Events older than this are discarded. */
+exports.STATS_RETENTION_MS = 7 * DAY_MS;
+/** Upper bound per event list, protects the persisted JSON during long outages. */
+exports.STATS_MAX_EVENTS = 5000;
 /**
- * Per-robot daily counters for connection quality. Counters reset at local midnight.
- * Seed values are taken over only if they were written on the same local day,
- * so an adapter restart during the day keeps the counts.
+ * Per-robot connection counters over rolling windows (last 24 hours, last 7 days).
+ * A rolling window always covers the evening and night before, whenever it is read.
+ * Event timestamps are kept for 7 days and can be persisted as JSON.
  */
 class ConnectionStats {
-    day;
-    timeouts;
-    failedPolls;
-    restarts;
+    events;
     lastRestart;
     constructor(seed = {}, now = Date.now()) {
-        this.day = localDayKey(now);
-        const sameDay = (entry) => entry && localDayKey(entry.at) === this.day && Number.isFinite(entry.value) ? entry.value : 0;
-        this.timeouts = sameDay(seed.timeoutsToday);
-        this.failedPolls = sameDay(seed.failedPollsToday);
-        this.restarts = sameDay(seed.restartsToday);
+        const clean = (list) => Array.isArray(list) ? list.filter((value) => typeof value === "number" && Number.isFinite(value)) : [];
+        this.events = {
+            timeouts: clean(seed.events?.timeouts),
+            failedPolls: clean(seed.events?.failedPolls),
+            restarts: clean(seed.events?.restarts)
+        };
         this.lastRestart = seed.lastRestart ?? "";
+        this.prune(now);
     }
-    roll(now) {
-        const day = localDayKey(now);
-        if (day === this.day)
-            return;
-        this.day = day;
-        this.timeouts = 0;
-        this.failedPolls = 0;
-        this.restarts = 0;
+    /** Parses the persisted JSON; invalid content yields empty lists. */
+    static fromJson(json, lastRestart, now = Date.now()) {
+        let events;
+        if (typeof json === "string" && json) {
+            try {
+                events = JSON.parse(json);
+            }
+            catch {
+                events = undefined;
+            }
+        }
+        return new ConnectionStats({ events, lastRestart }, now);
+    }
+    prune(now) {
+        const limit = now - exports.STATS_RETENTION_MS;
+        for (const key of ["timeouts", "failedPolls", "restarts"]) {
+            let list = this.events[key].filter((at) => at > limit);
+            if (list.length > exports.STATS_MAX_EVENTS)
+                list = list.slice(list.length - exports.STATS_MAX_EVENTS);
+            this.events[key] = list;
+        }
     }
     /** One request that ran into a timeout (also when the retry succeeded). */
     recordTimeout(now = Date.now()) {
-        this.roll(now);
-        this.timeouts++;
+        this.events.timeouts.push(now);
+        this.prune(now);
     }
     /** One poll that failed after its retry. */
     recordFailedPoll(now = Date.now()) {
-        this.roll(now);
-        this.failedPolls++;
+        this.events.failedPolls.push(now);
+        this.prune(now);
     }
     recordRestart(restart, now = Date.now()) {
-        this.roll(now);
-        this.restarts++;
+        this.events.restarts.push(restart.startedAt);
         this.lastRestart = new Date(restart.startedAt).toISOString();
+        this.prune(now);
     }
     snapshot(now = Date.now()) {
-        this.roll(now);
+        this.prune(now);
+        const count = (list, windowMs) => list.filter((at) => at > now - windowMs).length;
         return {
-            timeoutsToday: this.timeouts,
-            failedPollsToday: this.failedPolls,
-            restartsToday: this.restarts,
+            timeouts24h: count(this.events.timeouts, DAY_MS),
+            timeouts7d: this.events.timeouts.length,
+            failedPolls24h: count(this.events.failedPolls, DAY_MS),
+            failedPolls7d: this.events.failedPolls.length,
+            restarts24h: count(this.events.restarts, DAY_MS),
+            restarts7d: this.events.restarts.length,
             lastRestart: this.lastRestart
         };
+    }
+    toJson() {
+        return JSON.stringify(this.events);
     }
 }
 exports.ConnectionStats = ConnectionStats;

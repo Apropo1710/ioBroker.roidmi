@@ -2208,10 +2208,14 @@ class RoidmiAdapter extends adapter_core_1.Adapter {
         await this.setStateChangedAsync("info.connection", { val: (0, device_availability_1.isInstanceConnected)(this.enabledRobotConnection), ack: true });
     }
     static CONNECTION_STATS_OBJECTS = [
-        ["timeoutsToday", "Requests timed out today (also those rescued by the retry)", "number", "value"],
-        ["failedPollsToday", "Polls failed today after the retry", "number", "value"],
-        ["restartsToday", "Device restarts detected today", "number", "value"],
-        ["lastRestart", "Last detected device restart", "string", "date"]
+        ["timeouts24h", "Requests timed out in the last 24 hours (also those rescued by the retry)", "number", "value"],
+        ["timeouts7d", "Requests timed out in the last 7 days (also those rescued by the retry)", "number", "value"],
+        ["failedPolls24h", "Polls failed after the retry in the last 24 hours", "number", "value"],
+        ["failedPolls7d", "Polls failed after the retry in the last 7 days", "number", "value"],
+        ["restarts24h", "Device restarts detected in the last 24 hours", "number", "value"],
+        ["restarts7d", "Device restarts detected in the last 7 days", "number", "value"],
+        ["lastRestart", "Last detected device restart", "string", "date"],
+        ["connectionEvents", "Internal: timestamps for the connection statistics (7 days)", "string", "json"]
     ];
     async createConnectionStatsObjects(robot) {
         for (const [id, name, type, role] of RoidmiAdapter.CONNECTION_STATS_OBJECTS) {
@@ -2221,20 +2225,15 @@ class RoidmiAdapter extends adapter_core_1.Adapter {
                 native: {}
             });
         }
+        // Daily counters of 0.1.71 were replaced by rolling windows in 0.1.72.
+        for (const obsolete of ["timeoutsToday", "failedPollsToday", "restartsToday"]) {
+            await this.delObjectAsync(`${robot}.info.${obsolete}`).catch(() => undefined);
+        }
     }
     async loadConnectionStats(robot) {
-        const read = async (id) => {
-            const state = await this.getStateAsync(`${robot}.info.${id}`);
-            return typeof state?.val === "number" ? { value: state.val, at: state.ts } : undefined;
-        };
+        const events = await this.getStateAsync(`${robot}.info.connectionEvents`);
         const lastRestart = await this.getStateAsync(`${robot}.info.lastRestart`);
-        const seed = {
-            timeoutsToday: await read("timeoutsToday"),
-            failedPollsToday: await read("failedPollsToday"),
-            restartsToday: await read("restartsToday"),
-            lastRestart: typeof lastRestart?.val === "string" ? lastRestart.val : undefined
-        };
-        return new device_availability_1.ConnectionStats(seed);
+        return device_availability_1.ConnectionStats.fromJson(events?.val, typeof lastRestart?.val === "string" ? lastRestart.val : undefined);
     }
     async writeConnectionStats(robot, stats) {
         try {
@@ -2242,6 +2241,7 @@ class RoidmiAdapter extends adapter_core_1.Adapter {
             for (const [id, value] of Object.entries(snapshot)) {
                 await this.setStateChangedAsync(`${robot}.info.${id}`, { val: value, ack: true });
             }
+            await this.setStateChangedAsync(`${robot}.info.connectionEvents`, { val: stats.toJson(), ack: true });
         }
         catch (error) {
             this.log.debug(`Could not write ${robot} connection statistics: ${error instanceof Error ? error.message : String(error)}`);
