@@ -1,6 +1,6 @@
 import { Adapter } from "@iobroker/adapter-core";
 import { MiioClient } from "./lib/miio-client";
-import { OutageReporter, ConnectionStats, isInstanceConnected, type AvailabilityEvent, type ConnectionStatsSeed } from "./lib/device-availability";
+import { OutageReporter, ConnectionStats, isInstanceConnected, type AvailabilityEvent } from "./lib/device-availability";
 import { mapLegacyStateId, LEGACY_EMPTY_FOLDERS } from "./lib/object-tree-migration";
 import { XIAOMI_X20_PLUS_PROPERTIES, XIAOMI_X20_PLUS_CONSUMABLE_PROPERTIES, XIAOMI_X20_PLUS_OPTIONAL_SETTINGS, XIAOMI_X20_PLUS_LIFETIME_PROPERTIES, XIAOMI_X20_PLUS_CONSUMABLE_POLL_INTERVAL_MS, getXiaomiX20PlusStatusText } from "./lib/xiaomi-x20plus-profile";
 import { parseRoomCleaningRequest } from "./lib/room-cleaning";
@@ -2119,10 +2119,14 @@ class RoidmiAdapter extends Adapter {
     }
 
     private static readonly CONNECTION_STATS_OBJECTS = [
-        ["timeoutsToday", "Requests timed out today (also those rescued by the retry)", "number", "value"],
-        ["failedPollsToday", "Polls failed today after the retry", "number", "value"],
-        ["restartsToday", "Device restarts detected today", "number", "value"],
-        ["lastRestart", "Last detected device restart", "string", "date"]
+        ["timeouts24h", "Requests timed out in the last 24 hours (also those rescued by the retry)", "number", "value"],
+        ["timeouts7d", "Requests timed out in the last 7 days (also those rescued by the retry)", "number", "value"],
+        ["failedPolls24h", "Polls failed after the retry in the last 24 hours", "number", "value"],
+        ["failedPolls7d", "Polls failed after the retry in the last 7 days", "number", "value"],
+        ["restarts24h", "Device restarts detected in the last 24 hours", "number", "value"],
+        ["restarts7d", "Device restarts detected in the last 7 days", "number", "value"],
+        ["lastRestart", "Last detected device restart", "string", "date"],
+        ["connectionEvents", "Internal: timestamps for the connection statistics (7 days)", "string", "json"]
     ] as const;
 
     private async createConnectionStatsObjects(robot: "evePlus" | "x20Plus"): Promise<void> {
@@ -2133,21 +2137,16 @@ class RoidmiAdapter extends Adapter {
                 native: {}
             });
         }
+        // Daily counters of 0.1.71 were replaced by rolling windows in 0.1.72.
+        for (const obsolete of ["timeoutsToday", "failedPollsToday", "restartsToday"]) {
+            await this.delObjectAsync(`${robot}.info.${obsolete}`).catch(() => undefined);
+        }
     }
 
     private async loadConnectionStats(robot: "evePlus" | "x20Plus"): Promise<ConnectionStats> {
-        const read = async (id: string): Promise<{ value: number; at: number } | undefined> => {
-            const state = await this.getStateAsync(`${robot}.info.${id}`);
-            return typeof state?.val === "number" ? { value: state.val, at: state.ts } : undefined;
-        };
+        const events = await this.getStateAsync(`${robot}.info.connectionEvents`);
         const lastRestart = await this.getStateAsync(`${robot}.info.lastRestart`);
-        const seed: ConnectionStatsSeed = {
-            timeoutsToday: await read("timeoutsToday"),
-            failedPollsToday: await read("failedPollsToday"),
-            restartsToday: await read("restartsToday"),
-            lastRestart: typeof lastRestart?.val === "string" ? lastRestart.val : undefined
-        };
-        return new ConnectionStats(seed);
+        return ConnectionStats.fromJson(events?.val, typeof lastRestart?.val === "string" ? lastRestart.val : undefined);
     }
 
     private async writeConnectionStats(robot: "evePlus" | "x20Plus", stats: ConnectionStats): Promise<void> {
@@ -2156,6 +2155,7 @@ class RoidmiAdapter extends Adapter {
             for (const [id, value] of Object.entries(snapshot)) {
                 await this.setStateChangedAsync(`${robot}.info.${id}`, { val: value, ack: true });
             }
+            await this.setStateChangedAsync(`${robot}.info.connectionEvents`, { val: stats.toJson(), ack: true });
         } catch (error) {
             this.log.debug(`Could not write ${robot} connection statistics: ${error instanceof Error ? error.message : String(error)}`);
         }

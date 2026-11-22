@@ -64,13 +64,13 @@ roidmi.0
     └── timing     Zeitpläne (roh, dekodiert, Zusammenfassung, Status)
 ```
 
-**Verbindungsstatistik** je Roboter (zählt ohne zusätzliche Abfragen, setzt sich um Mitternacht zurück):
+**Verbindungsstatistik** je Roboter (gleitende Zeitfenster, zählt ohne zusätzliche Abfragen):
 
 | Datenpunkt | Bedeutung |
 |---|---|
-| `info.timeoutsToday` | Anfragen mit Zeitüberschreitung heute, auch solche, die der zweite Versuch aufgefangen hat – Maß für die WLAN-Qualität |
-| `info.failedPollsToday` | Abfragen, die heute auch im zweiten Versuch gescheitert sind |
-| `info.restartsToday` | heute erkannte Neustarts des Roboters |
+| `info.timeouts24h` / `info.timeouts7d` | Anfragen mit Zeitüberschreitung in den letzten 24 Stunden / 7 Tagen, auch solche, die der zweite Versuch aufgefangen hat – Maß für die WLAN-Qualität |
+| `info.failedPolls24h` / `info.failedPolls7d` | Abfragen, die auch im zweiten Versuch gescheitert sind |
+| `info.restarts24h` / `info.restarts7d` | erkannte Neustarts des Roboters |
 | `info.lastRestart` | Zeitpunkt des letzten erkannten Neustarts |
 
 Ältere Installationen mit flachen Datenpunkten (`battery`, `control.*`, `xiaomi.*` …) werden beim Start automatisch in diese Struktur verschoben.

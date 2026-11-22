@@ -105,13 +105,6 @@ export class OutageReporter {
     }
 }
 
-/** Local calendar day (host time zone) as YYYY-MM-DD. */
-export function localDayKey(ms: number): string {
-    const date = new Date(ms);
-    const pad = (value: number): string => String(value).padStart(2, "0");
-    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
-}
-
 /**
  * The instance is connected when at least one robot is enabled and every enabled
  * robot is reachable. Disabled robots are not part of the map.
@@ -121,76 +114,101 @@ export function isInstanceConnected(enabledRobots: Record<string, boolean>): boo
     return values.length > 0 && values.every(Boolean);
 }
 
+const HOUR_MS = 3_600_000;
+const DAY_MS = 24 * HOUR_MS;
+/** Events older than this are discarded. */
+export const STATS_RETENTION_MS = 7 * DAY_MS;
+/** Upper bound per event list, protects the persisted JSON during long outages. */
+export const STATS_MAX_EVENTS = 5000;
+
 export interface ConnectionStatsSnapshot {
-    timeoutsToday: number;
-    failedPollsToday: number;
-    restartsToday: number;
+    timeouts24h: number;
+    timeouts7d: number;
+    failedPolls24h: number;
+    failedPolls7d: number;
+    restarts24h: number;
+    restarts7d: number;
     lastRestart: string;
 }
 
-export interface ConnectionStatsSeed {
-    timeoutsToday?: { value: number; at: number };
-    failedPollsToday?: { value: number; at: number };
-    restartsToday?: { value: number; at: number };
-    lastRestart?: string;
+export interface ConnectionStatsEvents {
+    timeouts: number[];
+    failedPolls: number[];
+    restarts: number[];
 }
 
 /**
- * Per-robot daily counters for connection quality. Counters reset at local midnight.
- * Seed values are taken over only if they were written on the same local day,
- * so an adapter restart during the day keeps the counts.
+ * Per-robot connection counters over rolling windows (last 24 hours, last 7 days).
+ * A rolling window always covers the evening and night before, whenever it is read.
+ * Event timestamps are kept for 7 days and can be persisted as JSON.
  */
 export class ConnectionStats {
-    private day: string;
-    private timeouts: number;
-    private failedPolls: number;
-    private restarts: number;
+    private readonly events: ConnectionStatsEvents;
     private lastRestart: string;
 
-    public constructor(seed: ConnectionStatsSeed = {}, now = Date.now()) {
-        this.day = localDayKey(now);
-        const sameDay = (entry?: { value: number; at: number }): number =>
-            entry && localDayKey(entry.at) === this.day && Number.isFinite(entry.value) ? entry.value : 0;
-        this.timeouts = sameDay(seed.timeoutsToday);
-        this.failedPolls = sameDay(seed.failedPollsToday);
-        this.restarts = sameDay(seed.restartsToday);
+    public constructor(seed: { events?: Partial<ConnectionStatsEvents>; lastRestart?: string } = {}, now = Date.now()) {
+        const clean = (list?: unknown): number[] =>
+            Array.isArray(list) ? list.filter((value): value is number => typeof value === "number" && Number.isFinite(value)) : [];
+        this.events = {
+            timeouts: clean(seed.events?.timeouts),
+            failedPolls: clean(seed.events?.failedPolls),
+            restarts: clean(seed.events?.restarts)
+        };
         this.lastRestart = seed.lastRestart ?? "";
+        this.prune(now);
     }
 
-    private roll(now: number): void {
-        const day = localDayKey(now);
-        if (day === this.day) return;
-        this.day = day;
-        this.timeouts = 0;
-        this.failedPolls = 0;
-        this.restarts = 0;
+    /** Parses the persisted JSON; invalid content yields empty lists. */
+    public static fromJson(json: unknown, lastRestart?: string, now = Date.now()): ConnectionStats {
+        let events: Partial<ConnectionStatsEvents> | undefined;
+        if (typeof json === "string" && json) {
+            try { events = JSON.parse(json) as Partial<ConnectionStatsEvents>; } catch { events = undefined; }
+        }
+        return new ConnectionStats({ events, lastRestart }, now);
+    }
+
+    private prune(now: number): void {
+        const limit = now - STATS_RETENTION_MS;
+        for (const key of ["timeouts", "failedPolls", "restarts"] as const) {
+            let list = this.events[key].filter((at) => at > limit);
+            if (list.length > STATS_MAX_EVENTS) list = list.slice(list.length - STATS_MAX_EVENTS);
+            this.events[key] = list;
+        }
     }
 
     /** One request that ran into a timeout (also when the retry succeeded). */
     public recordTimeout(now = Date.now()): void {
-        this.roll(now);
-        this.timeouts++;
+        this.events.timeouts.push(now);
+        this.prune(now);
     }
 
     /** One poll that failed after its retry. */
     public recordFailedPoll(now = Date.now()): void {
-        this.roll(now);
-        this.failedPolls++;
+        this.events.failedPolls.push(now);
+        this.prune(now);
     }
 
     public recordRestart(restart: DeviceRestart, now = Date.now()): void {
-        this.roll(now);
-        this.restarts++;
+        this.events.restarts.push(restart.startedAt);
         this.lastRestart = new Date(restart.startedAt).toISOString();
+        this.prune(now);
     }
 
     public snapshot(now = Date.now()): ConnectionStatsSnapshot {
-        this.roll(now);
+        this.prune(now);
+        const count = (list: number[], windowMs: number): number => list.filter((at) => at > now - windowMs).length;
         return {
-            timeoutsToday: this.timeouts,
-            failedPollsToday: this.failedPolls,
-            restartsToday: this.restarts,
+            timeouts24h: count(this.events.timeouts, DAY_MS),
+            timeouts7d: this.events.timeouts.length,
+            failedPolls24h: count(this.events.failedPolls, DAY_MS),
+            failedPolls7d: this.events.failedPolls.length,
+            restarts24h: count(this.events.restarts, DAY_MS),
+            restarts7d: this.events.restarts.length,
             lastRestart: this.lastRestart
         };
+    }
+
+    public toJson(): string {
+        return JSON.stringify(this.events);
     }
 }
