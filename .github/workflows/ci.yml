@@ -18,6 +18,14 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+      - name: Only one status file (see AGENTS.md)
+        run: |
+          bad=$(git ls-files | grep -iE '(^|/)[^/]*(status|handover|uebergabe|übergabe|plan|todo|progress)[^/]*\.(md|txt)$' | grep -vx 'STATUS.md' || true)
+          if [ -n "$bad" ]; then
+            echo "::error::Additional status/plan/handover files are not allowed. Use STATUS.md (see AGENTS.md):"
+            echo "$bad"
+            exit 1
+          fi
       - run: npm ci
       - run: npm run lint
       - run: npm run build

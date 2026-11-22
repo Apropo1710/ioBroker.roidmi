@@ -77,4 +77,5 @@ Die Entwicklungsgeschichte steht im Git-Log und in den Versionshinweisen (`io-pa
 
 - Bei jeder Änderung, die den Funktionsstand oder die offenen Punkte betrifft, diese Datei im selben Commit anpassen.
 - Keine Commit-Hashes, Run-IDs oder Uhrzeiten eintragen – die stehen im Git-Log und in GitHub Actions.
-- Keine zweite Status-, Plan- oder Übergabedatei anlegen. Technische Details gehören nach `docs/PROTOCOL_NOTES.md`.
+- Keine zweite Status-, Plan- oder Übergabedatei anlegen; die CI schlägt sonst fehl. Technische Details gehören nach `docs/PROTOCOL_NOTES.md`.
+- Arbeitsregeln für Menschen und KI-Werkzeuge stehen in `AGENTS.md` (`CLAUDE.md` verweist darauf).

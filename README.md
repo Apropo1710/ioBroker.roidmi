@@ -93,6 +93,7 @@ Details: [docs/ROOM_IMPORT.md](docs/ROOM_IMPORT.md).
 ## Dokumentation
 
 - [STATUS.md](STATUS.md) – aktueller Funktionsstand, offene Punkte, Projektregeln
+- [AGENTS.md](AGENTS.md) – Arbeitsregeln für dieses Repository (auch für KI-Werkzeuge)
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) – Aufbau des Codes
 - [docs/PROTOCOL_NOTES.md](docs/PROTOCOL_NOTES.md) – MIoT-Zuordnungen und Datenformate beider Roboter
 - [docs/ROOM_IMPORT.md](docs/ROOM_IMPORT.md) – Räume laden und reinigen
