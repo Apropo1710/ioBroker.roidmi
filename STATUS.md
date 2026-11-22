@@ -1,6 +1,6 @@
 # Projektstatus – ioBroker.roidmi
 
-Stand: 22.11.2026 · Adapterversion **0.1.70** · Branch **`main`**
+Stand: 22.11.2026 · Adapterversion **0.1.71** · Branch **`main`**
 
 Dies ist die einzige Statusdatei des Projekts. Sie beschreibt den aktuellen Stand, nicht den Weg dorthin.
 Die Entwicklungsgeschichte steht im Git-Log und in den Versionshinweisen (`io-package.json` → `common.news`).
@@ -13,6 +13,14 @@ Die Entwicklungsgeschichte steht im Git-Log und in den Versionshinweisen (`io-pa
 - Installation in ioBroker: Admin → Adapter → „Aus eigener Quelle installieren“ → GitHub → `Apropo1710/ioBroker.roidmi` (Branch `main`).
 - HomePilot (Android-App) nutzt die Datenpunkte des Adapters für Status, Steuerung, Räume und Zeitpläne.
 - Automatisierte Prüfung: `npm run lint`, `npm test`, `npm run build` laufen in der CI bei jedem Push auf `main`.
+
+## Funktionsstand übergreifend
+
+| Funktion | Stand |
+|---|---|
+| Neustart-Erkennung über den Handshake-Zähler, Einstufung von Ausfällen im Log (0.1.70) | implementiert, Bestätigung beim nächsten nächtlichen X20+-Neustart ausstehend |
+| `info.connection` auf Instanzebene für die Admin-Anzeige (0.1.71) | implementiert |
+| Verbindungsstatistik je Roboter: `info.timeoutsToday`, `failedPollsToday`, `restartsToday`, `lastRestart` (0.1.71) | implementiert |
 
 ## Funktionsstand Roidmi EVE Plus
 
@@ -50,10 +58,9 @@ Die Entwicklungsgeschichte steht im Git-Log und in den Versionshinweisen (`io-pa
    - **Seit 0.1.70** erkennt der Adapter Neustarts am Handshake-Zähler und meldet einen dadurch verursachten Ausfall als Info. Ein Ausfall ohne Neustart wird weiterhin als Warnung gemeldet, allerdings erst beim nächsten Poll; längere Ausfälle warnen einmal und melden die Wiederherstellung.
    - Offen: EVE Plus war am 21.11. von ca. 18:59 bis 19:13 nicht erreichbar, ohne Neustart und ohne Reinigung; Ursache unbekannt. Weiter beobachten, ob sich das wiederholt.
 2. **Statusbedeutungen EVE Plus:** Die Texte für Status 5/6 und Ladestatus 1/2 sind empirisch und vorläufig (siehe `docs/PROTOCOL_NOTES.md`).
-3. **Instanzstatus im Admin:** Es gibt nur `evePlus.info.connection` und `x20Plus.info.connection`, kein `info.connection` auf Instanzebene. Der Admin kann den Verbindungsstatus der Instanz deshalb nicht anzeigen.
-4. **Firmware-Stand** der Testgeräte ist nicht dokumentiert. Bitlagen (z. B. X20+-Wasserstufe) sind nur für die getesteten Geräte belegt.
-5. **Mögliche Erweiterungen** aus dem früheren Projektplan, nicht begonnen: Zonenreinigung, Reinigungsverlauf, Aufnahme ins offizielle ioBroker-Repository.
-6. **Aufteilung von `src/main.ts`** (rund 2.100 Zeilen) pro Roboter, wenn größere Erweiterungen anstehen.
+3. **Firmware-Stand** der Testgeräte ist nicht dokumentiert. Bitlagen (z. B. X20+-Wasserstufe) sind nur für die getesteten Geräte belegt.
+4. **Mögliche Erweiterungen**, nicht begonnen: Reinigungsverlauf; Umbenennung des Adapters (der Name passt seit dem X20+ nicht mehr ganz; ändert alle Datenpunkt-IDs, erfordert Neueinrichtung der Instanz und Anpassung von HomePilot), sinnvoll spätestens bei Aufnahme ins offizielle ioBroker-Repository. Zonenreinigung wird nicht benötigt.
+5. **Aufteilung von `src/main.ts`** (rund 2.100 Zeilen) pro Roboter, wenn größere Erweiterungen anstehen.
 
 ## Verbindliche Projektregeln
 

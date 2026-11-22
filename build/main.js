@@ -36,6 +36,8 @@ class RoidmiAdapter extends adapter_core_1.Adapter {
     cloudMapClient = new xiaomi_cloud_map_1.XiaomiCloudMapClient();
     roomMapConfig;
     lastKnownSettings = {};
+    /** Connection state of the enabled robots; disabled robots are not listed. */
+    enabledRobotConnection = {};
     constructor() {
         super({ name: "roidmi" });
         this.on("ready", () => void this.onReady());
@@ -65,6 +67,18 @@ class RoidmiAdapter extends adapter_core_1.Adapter {
                 type: "channel", common: { name: channel.name }, native: {}
             });
         }
+        // Instance-level connection indicator shown by the admin: true when every
+        // enabled robot is reachable.
+        await this.setObjectNotExistsAsync("info", {
+            type: "channel", common: { name: "Information" }, native: {}
+        });
+        await this.setObjectNotExistsAsync("info.connection", {
+            type: "state",
+            common: { name: "All enabled robots reachable", type: "boolean", role: "indicator.connected", read: true, write: false, def: false },
+            native: {}
+        });
+        for (const robot of ["evePlus", "x20Plus"])
+            await this.createConnectionStatsObjects(robot);
         await this.setObjectNotExistsAsync("evePlus.info.connection", {
             type: "state",
             common: { name: "Device connection", type: "boolean", role: "indicator.reachable", read: true, write: false },
@@ -102,6 +116,11 @@ class RoidmiAdapter extends adapter_core_1.Adapter {
         }
         let successfulPollCount = 0;
         const config = this.config;
+        if ((0, config_1.isRoidmiEnabled)(config))
+            this.enabledRobotConnection.evePlus = false;
+        if ((0, config_1.isXiaomiEnabled)(config))
+            this.enabledRobotConnection.x20Plus = false;
+        await this.setStateChangedAsync("info.connection", { val: false, ack: true });
         // Cloud session storage is needed even when only the Xiaomi X20+ is enabled.
         await this.setObjectNotExistsAsync("evePlus.map.cloudSession", {
             type: "state",
@@ -129,7 +148,7 @@ class RoidmiAdapter extends adapter_core_1.Adapter {
             }
         }
         const globalErrors = (0, config_1.validateConfig)(config);
-        await this.setStateChangedAsync("evePlus.info.connection", { val: false, ack: true });
+        await this.setRobotConnection("evePlus", false);
         if (globalErrors.length) {
             const message = globalErrors.join(" ");
             await this.setStateChangedAsync("evePlus.info.connectionText", { val: message, ack: true });
@@ -301,6 +320,7 @@ class RoidmiAdapter extends adapter_core_1.Adapter {
         }
         let lastMaintenancePoll = 0;
         const eveAvailability = new device_availability_1.OutageReporter("EVE Plus");
+        const eveStats = await this.loadConnectionStats("evePlus");
         const poll = async () => {
             if (!this.client || this.stopping || this.commandRunning)
                 return;
@@ -326,6 +346,7 @@ class RoidmiAdapter extends adapter_core_1.Adapter {
                         if (!firstMessage.includes("timed out"))
                             throw firstError;
                         this.log.debug(`[miIO] ${batchLabel} timed out; retrying this batch once`);
+                        eveStats.recordTimeout();
                         for (const line of miioTrace)
                             this.log.debug(`[miIO] ${batchLabel} first attempt: ${line}`);
                         miioTrace.length = 0;
@@ -336,6 +357,8 @@ class RoidmiAdapter extends adapter_core_1.Adapter {
                         }
                         catch (retryError) {
                             const retryMessage = retryError instanceof Error ? retryError.message : String(retryError);
+                            if (retryMessage.includes("timed out"))
+                                eveStats.recordTimeout();
                             for (const line of miioTrace)
                                 this.log.debug(`[miIO] ${batchLabel} retry trace: ${line}`);
                             miioTrace.length = 0;
@@ -388,10 +411,13 @@ class RoidmiAdapter extends adapter_core_1.Adapter {
                 successfulPollCount++;
                 await this.setStateChangedAsync("evePlus.info.lastPoll", { val: new Date().toISOString(), ack: true });
                 await this.setStateChangedAsync("evePlus.info.pollCount", { val: successfulPollCount, ack: true });
-                await this.setStateChangedAsync("evePlus.info.connection", { val: true, ack: true });
+                await this.setRobotConnection("evePlus", true);
                 await this.setStateChangedAsync("evePlus.info.connectionText", { val: "Local miIO connection established", ack: true });
                 this.lastPollError = "";
-                this.logAvailability(eveAvailability.onPollSucceeded(this.client.consumeDetectedRestart()));
+                const eveRestart = this.client.consumeDetectedRestart();
+                if (eveRestart)
+                    eveStats.recordRestart(eveRestart);
+                this.logAvailability(eveAvailability.onPollSucceeded(eveRestart));
             }
             catch (error) {
                 const message = error instanceof Error ? error.message : "Unknown local miIO error";
@@ -401,13 +427,15 @@ class RoidmiAdapter extends adapter_core_1.Adapter {
                         this.log.debug("[miIO timeout] " + line);
                     miioTrace.length = 0;
                 }
-                await this.setStateChangedAsync("evePlus.info.connection", { val: false, ack: true });
+                await this.setRobotConnection("evePlus", false);
                 await this.setStateChangedAsync("evePlus.info.connectionText", { val: message, ack: true });
+                eveStats.recordFailedPoll();
                 this.logAvailability(eveAvailability.onPollFailed(message));
                 this.lastPollError = message;
             }
             finally {
                 this.commandRunning = false;
+                await this.writeConnectionStats("evePlus", eveStats);
             }
         };
         const baseIntervalMs = (config.pollIntervalSeconds ?? 30) * 1000;
@@ -757,7 +785,7 @@ class RoidmiAdapter extends adapter_core_1.Adapter {
             native: { siid: 4, piid: 23, mask: 0x30000, shift: 16 }
         });
         await this.subscribeStatesAsync(prefix + "control.mopMode");
-        await this.setStateChangedAsync(prefix + "info.connection", { val: false, ack: true });
+        await this.setRobotConnection("x20Plus", false);
         const xiaomiErrors = (0, config_1.validateXiaomiConfig)(config);
         if (xiaomiErrors.length) {
             const message = xiaomiErrors.join(" ");
@@ -787,6 +815,7 @@ class RoidmiAdapter extends adapter_core_1.Adapter {
         let failures = 0;
         let lastError = "";
         const x20Availability = new device_availability_1.OutageReporter("Xiaomi X20+");
+        const x20Stats = await this.loadConnectionStats("x20Plus");
         const poll = async () => {
             if (this.stopping || this.xiaomiPollRunning || this.xiaomiCommandRunning)
                 return;
@@ -813,6 +842,7 @@ class RoidmiAdapter extends adapter_core_1.Adapter {
                         if (!firstMessage.includes("timed out"))
                             throw firstError;
                         this.log.debug(`[miIO] ${batchLabel} timed out; retrying this batch once`);
+                        x20Stats.recordTimeout();
                         for (const line of this.xiaomiMiioTrace)
                             this.log.debug(`[miIO] ${batchLabel} first attempt: ${line}`);
                         this.xiaomiMiioTrace.length = 0;
@@ -823,6 +853,8 @@ class RoidmiAdapter extends adapter_core_1.Adapter {
                         }
                         catch (retryError) {
                             const retryMessage = retryError instanceof Error ? retryError.message : String(retryError);
+                            if (retryMessage.includes("timed out"))
+                                x20Stats.recordTimeout();
                             for (const line of this.xiaomiMiioTrace)
                                 this.log.debug(`[miIO] ${batchLabel} retry trace: ${line}`);
                             this.xiaomiMiioTrace.length = 0;
@@ -898,8 +930,11 @@ class RoidmiAdapter extends adapter_core_1.Adapter {
                     lastConsumablesPoll = Date.now();
                 failures = 0;
                 lastError = "";
-                this.logAvailability(x20Availability.onPollSucceeded(client.consumeDetectedRestart()));
-                await this.setStateChangedAsync(prefix + "info.connection", { val: true, ack: true });
+                const x20Restart = client.consumeDetectedRestart();
+                if (x20Restart)
+                    x20Stats.recordRestart(x20Restart);
+                this.logAvailability(x20Availability.onPollSucceeded(x20Restart));
+                await this.setRobotConnection("x20Plus", true);
                 await this.setStateChangedAsync(prefix + "info.connectionText", { val: "Local Xiaomi miIO connection established", ack: true });
                 await this.setStateChangedAsync(prefix + "info.lastPoll", { val: new Date().toISOString(), ack: true });
                 await this.setStateChangedAsync(prefix + "info.pollCount", { val: pollCount, ack: true });
@@ -907,8 +942,9 @@ class RoidmiAdapter extends adapter_core_1.Adapter {
             catch (error) {
                 const message = error instanceof Error ? error.message : "Unknown Xiaomi miIO error";
                 failures++;
-                await this.setStateChangedAsync(prefix + "info.connection", { val: false, ack: true });
+                await this.setRobotConnection("x20Plus", false);
                 await this.setStateChangedAsync(prefix + "info.connectionText", { val: message, ack: true });
+                x20Stats.recordFailedPoll();
                 this.logAvailability(x20Availability.onPollFailed(message));
                 if (message !== lastError) {
                     // Emit trace only on failure; normal successful polls remain quiet.
@@ -919,6 +955,7 @@ class RoidmiAdapter extends adapter_core_1.Adapter {
             }
             finally {
                 this.xiaomiPollRunning = false;
+                await this.writeConnectionStats("x20Plus", x20Stats);
             }
         };
         const schedule = (delay) => {
@@ -2164,6 +2201,52 @@ class RoidmiAdapter extends adapter_core_1.Adapter {
             await this.setStateAsync(stateId, { val: resetValue, ack: true });
         }
     }
+    async setRobotConnection(robot, connected) {
+        await this.setStateChangedAsync(robot + ".info.connection", { val: connected, ack: true });
+        if (robot in this.enabledRobotConnection)
+            this.enabledRobotConnection[robot] = connected;
+        await this.setStateChangedAsync("info.connection", { val: (0, device_availability_1.isInstanceConnected)(this.enabledRobotConnection), ack: true });
+    }
+    static CONNECTION_STATS_OBJECTS = [
+        ["timeoutsToday", "Requests timed out today (also those rescued by the retry)", "number", "value"],
+        ["failedPollsToday", "Polls failed today after the retry", "number", "value"],
+        ["restartsToday", "Device restarts detected today", "number", "value"],
+        ["lastRestart", "Last detected device restart", "string", "date"]
+    ];
+    async createConnectionStatsObjects(robot) {
+        for (const [id, name, type, role] of RoidmiAdapter.CONNECTION_STATS_OBJECTS) {
+            await this.setObjectNotExistsAsync(`${robot}.info.${id}`, {
+                type: "state",
+                common: { name, type, role, read: true, write: false, def: type === "number" ? 0 : "" },
+                native: {}
+            });
+        }
+    }
+    async loadConnectionStats(robot) {
+        const read = async (id) => {
+            const state = await this.getStateAsync(`${robot}.info.${id}`);
+            return typeof state?.val === "number" ? { value: state.val, at: state.ts } : undefined;
+        };
+        const lastRestart = await this.getStateAsync(`${robot}.info.lastRestart`);
+        const seed = {
+            timeoutsToday: await read("timeoutsToday"),
+            failedPollsToday: await read("failedPollsToday"),
+            restartsToday: await read("restartsToday"),
+            lastRestart: typeof lastRestart?.val === "string" ? lastRestart.val : undefined
+        };
+        return new device_availability_1.ConnectionStats(seed);
+    }
+    async writeConnectionStats(robot, stats) {
+        try {
+            const snapshot = stats.snapshot();
+            for (const [id, value] of Object.entries(snapshot)) {
+                await this.setStateChangedAsync(`${robot}.info.${id}`, { val: value, ack: true });
+            }
+        }
+        catch (error) {
+            this.log.debug(`Could not write ${robot} connection statistics: ${error instanceof Error ? error.message : String(error)}`);
+        }
+    }
     logAvailability(event) {
         if (event.level === "none")
             return;
@@ -2186,6 +2269,7 @@ class RoidmiAdapter extends adapter_core_1.Adapter {
             clearTimeout(this.xiaomiScheduleTimer);
         this.setState("evePlus.info.connection", false, true);
         this.setState("x20Plus.info.connection", false, true);
+        this.setState("info.connection", false, true);
         callback();
     }
 }

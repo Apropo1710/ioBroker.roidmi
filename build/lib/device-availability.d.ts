@@ -50,3 +50,51 @@ export declare class OutageReporter {
     onPollFailed(message: string, now?: number): AvailabilityEvent;
     onPollSucceeded(restart: DeviceRestart | undefined, now?: number): AvailabilityEvent;
 }
+/** Local calendar day (host time zone) as YYYY-MM-DD. */
+export declare function localDayKey(ms: number): string;
+/**
+ * The instance is connected when at least one robot is enabled and every enabled
+ * robot is reachable. Disabled robots are not part of the map.
+ */
+export declare function isInstanceConnected(enabledRobots: Record<string, boolean>): boolean;
+export interface ConnectionStatsSnapshot {
+    timeoutsToday: number;
+    failedPollsToday: number;
+    restartsToday: number;
+    lastRestart: string;
+}
+export interface ConnectionStatsSeed {
+    timeoutsToday?: {
+        value: number;
+        at: number;
+    };
+    failedPollsToday?: {
+        value: number;
+        at: number;
+    };
+    restartsToday?: {
+        value: number;
+        at: number;
+    };
+    lastRestart?: string;
+}
+/**
+ * Per-robot daily counters for connection quality. Counters reset at local midnight.
+ * Seed values are taken over only if they were written on the same local day,
+ * so an adapter restart during the day keeps the counts.
+ */
+export declare class ConnectionStats {
+    private day;
+    private timeouts;
+    private failedPolls;
+    private restarts;
+    private lastRestart;
+    constructor(seed?: ConnectionStatsSeed, now?: number);
+    private roll;
+    /** One request that ran into a timeout (also when the retry succeeded). */
+    recordTimeout(now?: number): void;
+    /** One poll that failed after its retry. */
+    recordFailedPoll(now?: number): void;
+    recordRestart(restart: DeviceRestart, now?: number): void;
+    snapshot(now?: number): ConnectionStatsSnapshot;
+}

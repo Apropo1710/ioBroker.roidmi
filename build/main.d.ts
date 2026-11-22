@@ -17,6 +17,8 @@ declare class RoidmiAdapter extends Adapter {
     private readonly cloudMapClient;
     private roomMapConfig?;
     private readonly lastKnownSettings;
+    /** Connection state of the enabled robots; disabled robots are not listed. */
+    private readonly enabledRobotConnection;
     constructor();
     private onReady;
     /**
@@ -51,6 +53,11 @@ declare class RoidmiAdapter extends Adapter {
     private refreshCloudMap;
     private sendProperty;
     private sendAction;
+    private setRobotConnection;
+    private static readonly CONNECTION_STATS_OBJECTS;
+    private createConnectionStatsObjects;
+    private loadConnectionStats;
+    private writeConnectionStats;
     private logAvailability;
     private onUnload;
 }

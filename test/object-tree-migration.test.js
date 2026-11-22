@@ -8,7 +8,9 @@ test("legacy Roidmi paths map under evePlus", () => {
   assert.equal(mapLegacyStateId("map.cloudSession"), "evePlus.map.cloudSession");
   assert.equal(mapLegacyStateId("rooms.room1"), "evePlus.rooms.room1");
   assert.equal(mapLegacyStateId("timing.schedule"), "evePlus.timing.schedule");
-  assert.equal(mapLegacyStateId("info.connection"), "evePlus.info.connection");
+  // root info.connection is the instance-level indicator since 0.1.71 and is not migrated
+  assert.equal(mapLegacyStateId("info.connection"), undefined);
+  assert.equal(mapLegacyStateId("info.lastPoll"), "evePlus.info.lastPoll");
 });
 
 test("legacy Xiaomi paths map into the current x20Plus tree", () => {

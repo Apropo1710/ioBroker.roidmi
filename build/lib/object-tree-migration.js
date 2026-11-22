@@ -27,6 +27,10 @@ function mapLegacyStateId(oldId) {
         return "evePlus.rooms." + oldId.slice("rooms.".length);
     if (oldId.startsWith("timing."))
         return "evePlus.timing." + oldId.slice("timing.".length);
+    // Since 0.1.71 the root info.connection is the instance-level connection
+    // indicator (all enabled robots reachable). It must stay where it is.
+    if (oldId === "info.connection")
+        return undefined;
     if (oldId.startsWith("info."))
         return "evePlus." + oldId;
     if (LEGACY_STATUS_IDS.has(oldId))
