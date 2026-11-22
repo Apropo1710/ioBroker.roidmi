@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.MiioClient = void 0;
 const node_dgram_1 = require("node:dgram");
 const miio_packet_1 = require("./miio-packet");
+const device_availability_1 = require("./device-availability");
 /** Minimal one-shot local miIO UDP RPC client. Never logs or exposes the token. */
 class MiioClient {
     options;
@@ -12,8 +13,26 @@ class MiioClient {
     requestId = 0;
     lastSuccessfulRpcAt;
     cachedHandshake;
+    lastStampObservation;
+    detectedRestart;
     constructor(options) {
         this.options = options;
+    }
+    /**
+     * Returns and clears the device restart detected from fresh handshakes since the
+     * last call. Uses no extra requests; it only compares handshake stamps.
+     */
+    consumeDetectedRestart() {
+        const restart = this.detectedRestart;
+        this.detectedRestart = undefined;
+        return restart;
+    }
+    observeHandshakeStamp(stamp, at) {
+        const current = { stamp, at };
+        const restart = (0, device_availability_1.detectDeviceRestart)(this.lastStampObservation, current);
+        if (restart)
+            this.detectedRestart = restart;
+        this.lastStampObservation = current;
     }
     async call(method, params = [], timeoutOverrideMs, forceFreshHandshake = false) {
         const previous = MiioClient.requestQueue;
@@ -99,6 +118,7 @@ class MiioClient {
                         if (handshakeHeader.deviceId === 0)
                             throw new Error("Robot returned an invalid device ID");
                         this.cachedHandshake = { deviceId: handshakeHeader.deviceId, stamp: handshakeHeader.stamp, receivedAt: Date.now() };
+                        this.observeHandshakeStamp(handshakeHeader.stamp, Date.now());
                         debug("fresh handshake parsed; device ID " + handshakeHeader.deviceId + "; device stamp " + handshakeHeader.stamp);
                         sendRpc(handshakeHeader);
                         return;

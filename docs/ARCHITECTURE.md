@@ -12,6 +12,7 @@ src/lib/
 
   miio-packet.ts                miIO-Paketformat (Header, AES-Verschlüsselung, Prüfsumme)
   miio-client.ts                lokaler UDP-RPC-Client (Handshake, Timeout, Antwortzuordnung)
+  device-availability.ts        Neustart-Erkennung über den Handshake-Zähler, Einstufung von Ausfällen fürs Log
   xiaomi-cloud-map.ts           Xiaomi-Cloud-Anmeldung (inkl. 2FA), MIoT über Cloud, Kartenabruf
 
   Roidmi EVE Plus
@@ -45,6 +46,7 @@ src/lib/
 - Status wird gebündelt gelesen: EVE Plus höchstens 6 Properties pro RPC, X20+ in kleinen Gruppen (die Firmware verwirft zu große Antworten).
 - Langsam veränderliche Werte (Verbrauchsmaterial, optionale Einstellungen) werden seltener abgefragt.
 - Polls überlappen nicht. Bei einem Timeout gibt es genau einen zweiten Versuch; schlägt auch der fehl, verlängert sich das Intervall (exponentieller Backoff, max. 5 Minuten).
+- Meldung von Ausfällen: Ein einzelner fehlgeschlagener Poll wird erst beim nächsten Poll eingestuft. Hat das Gerät inzwischen neu gestartet, gibt es eine Info; sonst eine Warnung. Scheitert auch der nächste Poll, wird einmal gewarnt und die Wiederherstellung als Info gemeldet.
 - Nur geänderte Werte werden geschrieben (`setStateChangedAsync`).
 - Karten und Zeitpläne gehören nicht ins Status-Polling. Zeitpläne werden manuell oder über einen eigenen, optionalen Timer pro Roboter abgerufen.
 
