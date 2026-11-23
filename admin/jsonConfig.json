@@ -2,20 +2,266 @@
   "type": "tabs",
   "i18n": true,
   "items": {
-    "connection": {
+    "account": {
       "type": "panel",
       "label": {
-        "de": "Geräte & Verbindung",
-        "en": "Devices & connection"
+        "de": "1. Xiaomi-Konto",
+        "en": "1. Xiaomi account"
       },
       "items": {
+        "_setupHeader": {
+          "type": "header",
+          "text": {
+            "de": "Einrichtung in drei Schritten",
+            "en": "Setup in three steps"
+          },
+          "size": 4,
+          "sm": 12,
+          "newLine": true
+        },
+        "_setupStep1": {
+          "type": "staticText",
+          "text": {
+            "de": "1. Hier mit dem Xiaomi-Konto anmelden. Das ist nur einmal nötig, die Sitzung wird gespeichert.",
+            "en": "1. Sign in with the Xiaomi account here. This is needed only once; the session is stored."
+          },
+          "sm": 12,
+          "newLine": true
+        },
+        "_setupStep2": {
+          "type": "staticText",
+          "text": {
+            "de": "2. Im Reiter „2. Roboter“ den Roboter aktivieren, seine IP-Adresse eintragen und „Token und DID aus der Xiaomi-Cloud holen“ klicken.",
+            "en": "2. On the tab “2. Robots”, enable the robot, enter its IP address and click “Get token and DID from Xiaomi Cloud”."
+          },
+          "sm": 12,
+          "newLine": true
+        },
+        "_setupStep3": {
+          "type": "staticText",
+          "text": {
+            "de": "3. Speichern. Zeitpläne und weitere Optionen stehen im Reiter „3. Optionen“.",
+            "en": "3. Save. Schedules and further options are on the tab “3. Options”."
+          },
+          "sm": 12,
+          "newLine": true
+        },
+        "_accountHeader": {
+          "type": "header",
+          "text": {
+            "de": "Anmeldung",
+            "en": "Sign-in"
+          },
+          "size": 5,
+          "sm": 12,
+          "newLine": true
+        },
+        "cloudUsername": {
+          "type": "text",
+          "label": {
+            "de": "Xiaomi-Konto – E-Mail, Telefonnummer oder Konto-ID",
+            "en": "Xiaomi account – e-mail, phone number or account ID"
+          },
+          "help": {
+            "de": "Dasselbe Konto wie in der Xiaomi-Home- bzw. Roidmi-App.",
+            "en": "The same account as in the Xiaomi Home or Roidmi app."
+          },
+          "sm": 12,
+          "newLine": true,
+          "md": 6
+        },
+        "cloudPassword": {
+          "type": "password",
+          "label": {
+            "de": "Xiaomi-Konto – Passwort",
+            "en": "Xiaomi account – password"
+          },
+          "help": {
+            "de": "Wird von ioBroker verschlüsselt gespeichert.",
+            "en": "Stored encrypted by ioBroker."
+          },
+          "sm": 12,
+          "md": 6
+        },
+        "cloudCountry": {
+          "type": "select",
+          "label": {
+            "de": "Server-Region des Kontos",
+            "en": "Account server region"
+          },
+          "default": "de",
+          "options": [
+            {
+              "label": {
+                "de": "Europa (de)",
+                "en": "Europe (de)"
+              },
+              "value": "de"
+            },
+            {
+              "label": {
+                "de": "China (cn)",
+                "en": "China (cn)"
+              },
+              "value": "cn"
+            },
+            {
+              "label": {
+                "de": "USA (us)",
+                "en": "USA (us)"
+              },
+              "value": "us"
+            },
+            {
+              "label": {
+                "de": "Russland (ru)",
+                "en": "Russia (ru)"
+              },
+              "value": "ru"
+            },
+            {
+              "label": {
+                "de": "Singapur (sg)",
+                "en": "Singapore (sg)"
+              },
+              "value": "sg"
+            },
+            {
+              "label": {
+                "de": "Indien (in)",
+                "en": "India (in)"
+              },
+              "value": "in"
+            },
+            {
+              "label": {
+                "de": "Taiwan (tw)",
+                "en": "Taiwan (tw)"
+              },
+              "value": "tw"
+            },
+            {
+              "label": {
+                "de": "i2",
+                "en": "i2"
+              },
+              "value": "i2"
+            }
+          ],
+          "help": {
+            "de": "Wie in der App unter Profil › Einstellungen › Region; für Deutschland meist Europa.",
+            "en": "As shown in the app under profile › settings › region; for Germany usually Europe."
+          },
+          "sm": 12,
+          "newLine": true,
+          "md": 6
+        },
+        "cloudStartLogin": {
+          "type": "sendTo",
+          "command": "cloudStartLogin",
+          "label": {
+            "de": "Code anfordern",
+            "en": "Request code"
+          },
+          "jsonData": "{\"username\":\"${data.cloudUsername}\",\"password\":\"${data.cloudPassword}\",\"country\":\"${data.cloudCountry}\",\"token\":\"${data.token}\"}",
+          "showProcess": true,
+          "icon": "auth",
+          "result": {
+            "de": "Erledigt – Meldung unten unter „Status“ beachten.",
+            "en": "Done – see the status message below."
+          },
+          "help": {
+            "de": "Xiaomi schickt einen Bestätigungscode per E-Mail oder SMS. Ist das Konto auf diesem Gerät schon bekannt, meldet der Adapter direkt die erfolgreiche Anmeldung.",
+            "en": "Xiaomi sends a verification code by e-mail or SMS. If the account is already trusted, the adapter reports a successful sign-in right away."
+          },
+          "variant": "contained",
+          "controlStyle": {
+            "minHeight": "44px",
+            "fontWeight": 600
+          },
+          "timeout": 60000,
+          "sm": 12,
+          "newLine": true
+        },
+        "_cloudVerificationCode": {
+          "type": "password",
+          "label": {
+            "de": "Bestätigungscode aus E-Mail oder SMS",
+            "en": "Verification code from e-mail or SMS"
+          },
+          "help": {
+            "de": "Wird nicht gespeichert.",
+            "en": "Not stored."
+          },
+          "sm": 12,
+          "newLine": true,
+          "md": 6
+        },
+        "cloudSubmitCode": {
+          "type": "sendTo",
+          "command": "cloudSubmitCode",
+          "label": {
+            "de": "Code prüfen und anmelden",
+            "en": "Verify code and sign in"
+          },
+          "jsonData": "{\"username\":\"${data.cloudUsername}\",\"password\":\"${data.cloudPassword}\",\"country\":\"${data.cloudCountry}\",\"token\":\"${data.token}\",\"code\":\"${data._cloudVerificationCode}\"}",
+          "showProcess": true,
+          "icon": "auth",
+          "result": {
+            "de": "Bestätigung abgeschlossen.",
+            "en": "Verification completed."
+          },
+          "help": {
+            "de": "Schließt die Anmeldung ab. Die Sitzung wird gespeichert; danach weiter im Reiter „2. Roboter“.",
+            "en": "Completes sign-in. The session is stored; continue on the tab “2. Robots”."
+          },
+          "variant": "contained",
+          "controlStyle": {
+            "minHeight": "44px",
+            "fontWeight": 600
+          },
+          "timeout": 60000,
+          "sm": 12,
+          "newLine": true
+        },
+        "cloudStatus": {
+          "type": "state",
+          "label": {
+            "de": "Status",
+            "en": "Status"
+          },
+          "oid": "evePlus.map.cloudStatus",
+          "sm": 12,
+          "newLine": true
+        }
+      }
+    },
+    "robots": {
+      "type": "panel",
+      "label": {
+        "de": "2. Roboter",
+        "en": "2. Robots"
+      },
+      "items": {
+        "_eveHeader": {
+          "type": "header",
+          "text": {
+            "de": "Roidmi EVE Plus",
+            "en": "Roidmi EVE Plus"
+          },
+          "size": 5,
+          "sm": 12,
+          "newLine": true
+        },
         "enableRoidmi": {
           "type": "checkbox",
           "label": {
             "de": "Roidmi EVE Plus aktivieren",
             "en": "Enable Roidmi EVE Plus"
           },
-          "default": true
+          "default": true,
+          "sm": 12,
+          "newLine": true
         },
         "host": {
           "type": "text",
@@ -25,40 +271,21 @@
           },
           "default": "",
           "help": {
-            "de": "Lokale IPv4-Adresse des Roidmi EVE Plus.",
-            "en": "Local IPv4 address of the Roidmi EVE Plus."
-          }
-        },
-        "did": {
-          "type": "text",
-          "label": {
-            "de": "Roidmi EVE Plus – Geräte-DID",
-            "en": "Roidmi EVE Plus – device DID"
+            "de": "Lokale IPv4-Adresse, siehe Geräteliste des Routers. Am besten fest zuweisen.",
+            "en": "Local IPv4 address, see the router's device list. Preferably a fixed assignment."
           },
-          "default": "",
-          "help": {
-            "de": "Numerische Geräte-ID. Wird über „Token aus der Xiaomi-Cloud holen“ automatisch ergänzt, wenn die IP-Adresse stimmt.",
-            "en": "Numeric device ID. Filled in automatically by “Get token from Xiaomi Cloud” when the IP address is correct."
-          }
-        },
-        "token": {
-          "type": "password",
-          "label": {
-            "de": "Roidmi EVE Plus – MIoT-/miIO-Token",
-            "en": "Roidmi EVE Plus – MIoT / miIO token"
-          },
-          "help": {
-            "de": "Wird von ioBroker verschlüsselt gespeichert. Geheim halten. Am einfachsten über den Knopf darunter holen.",
-            "en": "Stored encrypted by ioBroker. Keep it secret. Easiest via the button below."
-          }
+          "sm": 12,
+          "newLine": true,
+          "hidden": "!data.enableRoidmi",
+          "md": 6
         },
         "tokenFromCloud": {
           "type": "sendTo",
           "command": "cloudFetchToken",
           "useNative": true,
           "label": {
-            "de": "Token aus der Xiaomi-Cloud holen",
-            "en": "Get token from Xiaomi Cloud"
+            "de": "Token und DID aus der Xiaomi-Cloud holen",
+            "en": "Get token and DID from Xiaomi Cloud"
           },
           "jsonData": "{\"robot\":\"evePlus\",\"did\":\"${data.did}\",\"host\":\"${data.host}\",\"country\":\"${data.cloudCountry}\"}",
           "showProcess": true,
@@ -68,19 +295,52 @@
             "en": "Token (and DID) filled in. Save to apply."
           },
           "help": {
-            "de": "Für die Ersteinrichtung und nach einem WLAN-Wechsel (Xiaomi vergibt dann meist einen neuen Token). Voraussetzung: einmalige Anmeldung im Reiter „Xiaomi Cloud“ (Schritt 1 und 2, Xiaomi schickt dabei einen Code per E-Mail oder SMS). Der Knopf holt den aktuellen Token und trägt ihn oben ein; ist noch keine DID eingetragen, findet er den Roboter über die IP-Adresse und ergänzt die DID. Danach speichern.",
-            "en": "For first setup and after a WLAN change (Xiaomi then usually issues a new token). Requires a one-time sign-in on the tab “Xiaomi Cloud” (steps 1 and 2; Xiaomi sends a code by e-mail or SMS). The button reads the current token and fills it in above; if no DID is set yet, it finds the robot by its IP address and fills in the DID as well. Then save."
-          }
-        },
-        "pollIntervalSeconds": {
-          "type": "number",
-          "label": {
-            "de": "Abfrageintervall (Sekunden)",
-            "en": "Polling interval (seconds)"
+            "de": "Setzt die Anmeldung im Reiter „1. Xiaomi-Konto“ voraus. Findet den Roboter über die IP-Adresse (oder die DID) und trägt Token und DID unten ein. Danach speichern. Auch nach einem WLAN-Wechsel des Roboters nötig, weil Xiaomi dann einen neuen Token vergibt.",
+            "en": "Requires the sign-in on the tab “1. Xiaomi account”. Finds the robot by its IP address (or DID) and fills in token and DID below. Then save. Also needed after the robot's WLAN was changed, because Xiaomi then issues a new token."
           },
-          "min": 5,
-          "max": 3600,
-          "default": 30
+          "sm": 12,
+          "newLine": true,
+          "hidden": "!data.enableRoidmi"
+        },
+        "did": {
+          "type": "text",
+          "label": {
+            "de": "Roidmi EVE Plus – Geräte-DID",
+            "en": "Roidmi EVE Plus – device DID"
+          },
+          "default": "",
+          "help": {
+            "de": "Wird vom Knopf oben eingetragen.",
+            "en": "Filled in by the button above."
+          },
+          "sm": 12,
+          "newLine": true,
+          "hidden": "!data.enableRoidmi",
+          "md": 6
+        },
+        "token": {
+          "type": "password",
+          "label": {
+            "de": "Roidmi EVE Plus – MIoT-/miIO-Token",
+            "en": "Roidmi EVE Plus – MIoT / miIO token"
+          },
+          "help": {
+            "de": "Wird vom Knopf oben eingetragen und von ioBroker verschlüsselt gespeichert. Geheim halten.",
+            "en": "Filled in by the button above and stored encrypted by ioBroker. Keep it secret."
+          },
+          "hidden": "!data.enableRoidmi",
+          "sm": 12,
+          "md": 6
+        },
+        "_x20Header": {
+          "type": "header",
+          "text": {
+            "de": "Xiaomi X20+",
+            "en": "Xiaomi X20+"
+          },
+          "size": 5,
+          "sm": 12,
+          "newLine": true
         },
         "enableXiaomi": {
           "type": "checkbox",
@@ -88,7 +348,9 @@
             "de": "Xiaomi X20+ aktivieren",
             "en": "Enable Xiaomi X20+"
           },
-          "default": false
+          "default": false,
+          "sm": 12,
+          "newLine": true
         },
         "xiaomiHost": {
           "type": "text",
@@ -98,40 +360,21 @@
           },
           "default": "",
           "help": {
-            "de": "Lokale IPv4-Adresse des Xiaomi X20+.",
-            "en": "Local IPv4 address of Xiaomi X20+."
-          }
-        },
-        "xiaomiDid": {
-          "type": "text",
-          "label": {
-            "de": "Xiaomi X20+ – Geräte-DID",
-            "en": "Xiaomi X20+ – device DID"
+            "de": "Lokale IPv4-Adresse, siehe Geräteliste des Routers. Am besten fest zuweisen.",
+            "en": "Local IPv4 address, see the router's device list. Preferably a fixed assignment."
           },
-          "default": "",
-          "help": {
-            "de": "Numerische Geräte-ID. Wird über „Token aus der Xiaomi-Cloud holen“ automatisch ergänzt, wenn die IP-Adresse stimmt.",
-            "en": "Numeric device ID. Filled in automatically by “Get token from Xiaomi Cloud” when the IP address is correct."
-          }
-        },
-        "xiaomiToken": {
-          "type": "password",
-          "label": {
-            "de": "Xiaomi X20+ – MIoT-/miIO-Token",
-            "en": "Xiaomi X20+ – MIoT / miIO token"
-          },
-          "help": {
-            "de": "Wird von ioBroker verschlüsselt gespeichert. Geheim halten. Am einfachsten über den Knopf darunter holen.",
-            "en": "Stored encrypted by ioBroker. Keep it secret. Easiest via the button below."
-          }
+          "sm": 12,
+          "newLine": true,
+          "hidden": "!data.enableXiaomi",
+          "md": 6
         },
         "xiaomiTokenFromCloud": {
           "type": "sendTo",
           "command": "cloudFetchToken",
           "useNative": true,
           "label": {
-            "de": "Token aus der Xiaomi-Cloud holen",
-            "en": "Get token from Xiaomi Cloud"
+            "de": "Token und DID aus der Xiaomi-Cloud holen",
+            "en": "Get token and DID from Xiaomi Cloud"
           },
           "jsonData": "{\"robot\":\"x20Plus\",\"did\":\"${data.xiaomiDid}\",\"host\":\"${data.xiaomiHost}\",\"country\":\"${data.cloudCountry}\"}",
           "showProcess": true,
@@ -141,17 +384,73 @@
             "en": "Token (and DID) filled in. Save to apply."
           },
           "help": {
-            "de": "Für die Ersteinrichtung und nach einem WLAN-Wechsel (Xiaomi vergibt dann meist einen neuen Token). Voraussetzung: einmalige Anmeldung im Reiter „Xiaomi Cloud“ (Schritt 1 und 2, Xiaomi schickt dabei einen Code per E-Mail oder SMS). Der Knopf holt den aktuellen Token und trägt ihn oben ein; ist noch keine DID eingetragen, findet er den Roboter über die IP-Adresse und ergänzt die DID. Danach speichern.",
-            "en": "For first setup and after a WLAN change (Xiaomi then usually issues a new token). Requires a one-time sign-in on the tab “Xiaomi Cloud” (steps 1 and 2; Xiaomi sends a code by e-mail or SMS). The button reads the current token and fills it in above; if no DID is set yet, it finds the robot by its IP address and fills in the DID as well. Then save."
-          }
+            "de": "Setzt die Anmeldung im Reiter „1. Xiaomi-Konto“ voraus. Findet den Roboter über die IP-Adresse (oder die DID) und trägt Token und DID unten ein. Danach speichern. Auch nach einem WLAN-Wechsel des Roboters nötig, weil Xiaomi dann einen neuen Token vergibt.",
+            "en": "Requires the sign-in on the tab “1. Xiaomi account”. Finds the robot by its IP address (or DID) and fills in token and DID below. Then save. Also needed after the robot's WLAN was changed, because Xiaomi then issues a new token."
+          },
+          "sm": 12,
+          "newLine": true,
+          "hidden": "!data.enableXiaomi"
+        },
+        "xiaomiDid": {
+          "type": "text",
+          "label": {
+            "de": "Xiaomi X20+ – Geräte-DID",
+            "en": "Xiaomi X20+ – device DID"
+          },
+          "default": "",
+          "help": {
+            "de": "Wird vom Knopf oben eingetragen.",
+            "en": "Filled in by the button above."
+          },
+          "sm": 12,
+          "newLine": true,
+          "hidden": "!data.enableXiaomi",
+          "md": 6
+        },
+        "xiaomiToken": {
+          "type": "password",
+          "label": {
+            "de": "Xiaomi X20+ – MIoT-/miIO-Token",
+            "en": "Xiaomi X20+ – MIoT / miIO token"
+          },
+          "help": {
+            "de": "Wird vom Knopf oben eingetragen und von ioBroker verschlüsselt gespeichert. Geheim halten.",
+            "en": "Filled in by the button above and stored encrypted by ioBroker. Keep it secret."
+          },
+          "hidden": "!data.enableXiaomi",
+          "sm": 12,
+          "md": 6
+        },
+        "_pollHeader": {
+          "type": "header",
+          "text": {
+            "de": "Abfrage",
+            "en": "Polling"
+          },
+          "size": 5,
+          "sm": 12,
+          "newLine": true
+        },
+        "pollIntervalSeconds": {
+          "type": "number",
+          "label": {
+            "de": "Abfrageintervall (Sekunden)",
+            "en": "Polling interval (seconds)"
+          },
+          "min": 5,
+          "max": 3600,
+          "default": 30,
+          "sm": 12,
+          "newLine": true,
+          "md": 6
         }
       }
     },
-    "schedules": {
+    "options": {
       "type": "panel",
       "label": {
-        "de": "Zeitpläne",
-        "en": "Schedules"
+        "de": "3. Optionen",
+        "en": "3. Options"
       },
       "items": {
         "scheduleHeading": {
@@ -160,7 +459,9 @@
             "de": "Zeitpläne automatisch abrufen",
             "en": "Automatically retrieve schedules"
           },
-          "size": 3
+          "size": 5,
+          "sm": 12,
+          "newLine": true
         },
         "scheduleAutoRefresh": {
           "type": "checkbox",
@@ -213,144 +514,44 @@
             "de": "Zeit zwischen automatischen Abrufen (5 bis 1440 Minuten).",
             "en": "Time between automatic refreshes (5 to 1440 minutes)."
           }
-        }
-      }
-    },
-    "cloud": {
-      "type": "panel",
-      "label": {
-        "de": "Xiaomi Cloud",
-        "en": "Xiaomi Cloud"
-      },
-      "items": {
+        },
+        "_cloudOptHeader": {
+          "type": "header",
+          "text": {
+            "de": "Xiaomi-Cloud-Funktionen",
+            "en": "Xiaomi Cloud features"
+          },
+          "size": 5,
+          "sm": 12,
+          "newLine": true
+        },
         "cloudEnabled": {
           "type": "checkbox",
           "label": {
-            "de": "Optional: Xiaomi-Cloud-Kartenabruf aktivieren",
-            "en": "Optional: Enable Xiaomi Cloud map retrieval"
+            "de": "Roidmi EVE Plus – Karte und Räume aus der Xiaomi-Cloud laden",
+            "en": "Roidmi EVE Plus – load map and rooms from Xiaomi Cloud"
           },
           "default": false,
           "help": {
-            "de": "Nur erforderlich, um gespeicherte Karten sowie Raumnamen und Raum-IDs automatisch herunterzuladen. Die lokale Robotersteuerung und Statusabfrage funktionieren auch ohne diese Option. Die Cloud wird nur beim Auslösen von control.refreshMap verwendet.",
-            "en": "Only needed to automatically download saved maps and room names/IDs. Local robot control and status polling work without this option. Cloud access is only used when control.refreshMap is pressed."
-          }
-        },
-        "cloudUsername": {
-          "type": "text",
-          "label": {
-            "de": "Xiaomi-Konto – Benutzername (optional)",
-            "en": "Xiaomi account username (optional)"
+            "de": "Erlaubt evePlus.control.refreshMap. Die lokale Steuerung funktioniert auch ohne.",
+            "en": "Enables evePlus.control.refreshMap. Local control works without it."
           },
-          "help": {
-            "de": "Für den Abruf von Token und DID, Karten, Räumen und Zeitplänen.",
-            "en": "Used to fetch tokens and DIDs, maps, rooms and schedules."
-          }
-        },
-        "cloudPassword": {
-          "type": "password",
-          "label": {
-            "de": "Xiaomi-Konto – Passwort (optional)",
-            "en": "Xiaomi account password (optional)"
-          },
-          "help": {
-            "de": "Wird von ioBroker verschlüsselt gespeichert. Teile es niemals im Chat oder in Protokollen.",
-            "en": "Stored encrypted by ioBroker. Never share it in chat or logs."
-          }
-        },
-        "cloudCountry": {
-          "type": "text",
-          "label": {
-            "de": "Xiaomi-Cloud-Region",
-            "en": "Xiaomi Cloud region"
-          },
-          "default": "de",
-          "help": {
-            "de": "Zweistelliger Regionscode des Kontos, z. B. de, fr, it, es oder cn.",
-            "en": "Two-letter account region, e.g. de, fr, it, es or cn."
-          }
-        },
-        "cloudStartLogin": {
-          "type": "sendTo",
-          "command": "cloudStartLogin",
-          "label": {
-            "de": "1. Schritt: Anmeldung starten und Code anfordern",
-            "en": "Step 1: Start sign-in and request code"
-          },
-          "jsonData": "{\"username\":\"${data.cloudUsername}\",\"password\":\"${data.cloudPassword}\",\"country\":\"${data.cloudCountry}\",\"token\":\"${data.token}\"}",
-          "showProcess": true,
-          "icon": "auth",
-          "result": {
-            "de": "Anmeldung gestartet. Falls Xiaomi einen Code sendet, unten eingeben.",
-            "en": "Login started. If Xiaomi sends a code, enter it below."
-          },
-          "help": {
-            "de": "Zuerst hier klicken. Xiaomi schickt dann einen Bestätigungscode per E-Mail oder SMS; ihn unten eintragen und Schritt 2 ausführen. Die Sitzung wird gespeichert, die Anmeldung ist nur einmal nötig (wieder, falls Xiaomi die Sitzung beendet). Ein Roboter-Token ist dafür nicht nötig.",
-            "en": "Click here first. Xiaomi then sends a verification code by e-mail or SMS; enter it below and run step 2. The session is stored, so sign-in is needed only once (again if Xiaomi ends the session). No robot token is needed for this."
-          },
-          "variant": "contained",
-          "controlStyle": {
-            "minHeight": "44px",
-            "fontWeight": 600
-          },
-          "timeout": 60000
-        },
-        "_cloudVerificationCode": {
-          "type": "password",
-          "label": {
-            "de": "Bestätigungscode aus SMS oder E-Mail",
-            "en": "Verification code from SMS or email"
-          },
-          "help": {
-            "de": "Den von Xiaomi erhaltenen Code hier eingeben. Danach direkt darunter auf „2. Schritt: Code prüfen und anmelden“ klicken. Der Code wird nicht als Datenpunkt gespeichert.",
-            "en": "Enter the code received from Xiaomi here. Then click “Step 2: Verify code and sign in” directly below. The code is not stored as a datapoint."
-          }
-        },
-        "cloudSubmitCode": {
-          "type": "sendTo",
-          "command": "cloudSubmitCode",
-          "label": {
-            "de": "2. Schritt: Bestätigungscode prüfen und anmelden",
-            "en": "Step 2: Verify code and sign in"
-          },
-          "jsonData": "{\"username\":\"${data.cloudUsername}\",\"password\":\"${data.cloudPassword}\",\"country\":\"${data.cloudCountry}\",\"token\":\"${data.token}\",\"code\":\"${data._cloudVerificationCode}\"}",
-          "showProcess": true,
-          "icon": "auth",
-          "result": {
-            "de": "Bestätigung abgeschlossen.",
-            "en": "Verification completed."
-          },
-          "help": {
-            "de": "Erst anklicken, nachdem du den Bestätigungscode oben eingetragen hast. Damit wird die Anmeldung abgeschlossen und die Cloud-Sitzung gespeichert.",
-            "en": "Click only after entering the verification code above. This completes sign-in and saves the cloud session."
-          },
-          "variant": "contained",
-          "controlStyle": {
-            "minHeight": "44px",
-            "fontWeight": 600
-          },
-          "timeout": 60000
-        },
-        "cloudStatus": {
-          "type": "state",
-          "label": {
-            "de": "Aktueller Xiaomi-Cloud-Status",
-            "en": "Current Xiaomi Cloud status"
-          },
-          "oid": "map.cloudStatus",
           "sm": 12,
           "newLine": true
         },
         "cloudControlEnabled": {
           "type": "checkbox",
           "label": {
-            "de": "Steuerbefehle über Xiaomi Cloud senden",
-            "en": "Send control commands via Xiaomi Cloud"
+            "de": "Roidmi EVE Plus – Steuerbefehle über die Xiaomi-Cloud senden",
+            "en": "Roidmi EVE Plus – send control commands via Xiaomi Cloud"
           },
           "default": false,
           "help": {
-            "de": "Nur aktivieren, wenn die Xiaomi-Cloud-Anmeldung erfolgreich ist. Steuerbefehle werden dann über die Cloud statt lokal gesendet. Statusabfragen bleiben lokal.",
-            "en": "Enable only after Xiaomi Cloud login succeeds. Commands will use cloud transport instead of LAN; status polling remains local."
-          }
+            "de": "Nur bei Problemen mit der lokalen Steuerung. Statusabfragen bleiben lokal.",
+            "en": "Only if local control has problems. Status polling remains local."
+          },
+          "sm": 12,
+          "newLine": true
         }
       }
     }

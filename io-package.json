@@ -1,7 +1,7 @@
 {
   "common": {
     "name": "roidmi",
-    "version": "0.1.75",
+    "version": "0.1.76",
     "title": "Roidmi",
     "titleLang": {
       "en": "Roidmi",
@@ -27,6 +27,10 @@
       "xiaomiToken"
     ],
     "news": {
+      "0.1.76": {
+        "en": "Settings page guides through the setup: 1. Xiaomi account, 2. robots, 3. options; region as selection; cloud status is shown again",
+        "de": "Einstellungsseite führt durch die Einrichtung: 1. Xiaomi-Konto, 2. Roboter, 3. Optionen; Region als Auswahl; Cloud-Status wird wieder angezeigt"
+      },
       "0.1.75": {
         "en": "First setup without token: Xiaomi Cloud sign-in no longer needs a robot token; the token button also finds the robot by IP and fills in the DID",
         "de": "Ersteinrichtung ohne Token: Die Xiaomi-Cloud-Anmeldung braucht keinen Roboter-Token mehr; der Token-Knopf findet den Roboter auch über die IP-Adresse und ergänzt die DID"
@@ -102,10 +106,6 @@
       "0.1.46": {
         "en": "Improve X20+ room-clean status and room filtering tests",
         "de": "X20+-Raumreinigungsstatus und Raumfilter-Tests verbessert"
-      },
-      "0.1.45": {
-        "en": "Filter unnamed X20+ map segments from room selection",
-        "de": "Unbenannte X20+-Kartensegmente aus Raum-Auswahl gefiltert"
       }
     },
     "adminUI": {

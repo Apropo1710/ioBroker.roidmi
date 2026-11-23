@@ -1937,7 +1937,7 @@ class RoidmiAdapter extends Adapter {
             await this.persistCloudSession();
             const config = this.config as RoidmiAdapterConfig;
             if (!credentials.token || !this.client || !config.cloudEnabled) {
-                const text = "Bei der Xiaomi-Cloud angemeldet. Token und DID jetzt im Reiter „Geräte & Verbindung“ holen.";
+                const text = "Bei der Xiaomi-Cloud angemeldet. Weiter im Reiter „2. Roboter“: IP-Adresse eintragen und Token und DID holen.";
                 await this.setStateAsync("evePlus.map.cloudStatus", { val: text, ack: true });
                 this.sendTo(obj.from, obj.command, { text, ok: true }, obj.callback);
                 return;
@@ -2181,7 +2181,7 @@ class RoidmiAdapter extends Adapter {
             this.sendTo(obj.from, obj.command, { native: { [tokenKey]: found.token, [didKey]: found.did } }, obj.callback);
         } catch (error) {
             const message = error instanceof Error ? error.message : String(error);
-            const hint = this.cloudMapClient.hasSession() ? "" : " Sign in to the Xiaomi Cloud first (tab Xiaomi Cloud).";
+            const hint = this.cloudMapClient.hasSession() ? "" : " Sign in first on the tab \"1. Xiaomi account\" (1. Xiaomi-Konto).";
             this.sendTo(obj.from, obj.command, { error: message + hint }, obj.callback);
         }
     }
