@@ -22,27 +22,27 @@ Bei der Installation aus GitHub wird der TypeScript-Code automatisch gebaut (`pr
 
 ## Konfiguration
 
-Die Instanzeinstellungen haben drei Reiter:
+Die Instanzeinstellungen führen in drei Reitern durch die Einrichtung:
 
-**Geräte & Verbindung**
-- Je Roboter ein Schalter zum Aktivieren sowie **IP-Adresse**, **Geräte-DID** und **MIoT-/miIO-Token** (32 Hex-Zeichen, wird verschlüsselt gespeichert).
+**1. Xiaomi-Konto**
+- Anmeldung mit dem Konto aus der Xiaomi-Home- bzw. Roidmi-App: Benutzername, Passwort und Server-Region (für Deutschland meist Europa).
+- „Code anfordern“: Xiaomi schickt einen Bestätigungscode per E-Mail oder SMS. Ihn eintragen und „Code prüfen und anmelden“ klicken.
+- Die Sitzung wird gespeichert; die Anmeldung ist nur einmal nötig (wieder, falls Xiaomi die Sitzung beendet). Ein Roboter-Token ist dafür nicht nötig.
+
+**2. Roboter**
+- Je Roboter: aktivieren, **IP-Adresse** eintragen (siehe Geräteliste des Routers, am besten fest zuweisen) und **„Token und DID aus der Xiaomi-Cloud holen“** klicken. Der Adapter findet den Roboter über die IP-Adresse und trägt Token und DID ein. Danach speichern.
 - **Abfrageintervall** in Sekunden (Standard 30, zulässig 5–3600).
 - Ohne gültige Daten startet der Adapter, der jeweilige Roboter bleibt aber getrennt; der Grund steht in `<roboter>.info.connectionText`.
 
-**Zeitpläne**
-- Je Roboter: automatischen Abruf ein/aus und Intervall (5–1440 Minuten). Standard: aus, 60 Minuten.
-- EVE Plus liest lokal (SIID 8 / PIID 6), der X20+ über die Xiaomi Cloud (aktive Cloud-Sitzung nötig).
+**3. Optionen**
+- Zeitpläne je Roboter automatisch abrufen (Intervall 5–1440 Minuten, Standard: aus, 60 Minuten). Der EVE Plus liest lokal (SIID 8 / PIID 6), der X20+ über die Xiaomi-Cloud.
+- EVE Plus: Karte und Räume aus der Xiaomi-Cloud laden (`evePlus.control.refreshMap`) und optional Steuerbefehle über die Cloud senden; Statusabfragen bleiben lokal.
 
-**Xiaomi Cloud** (optional)
-- Benutzername, Passwort und Region des Xiaomi-Kontos. Anmeldung in zwei Schritten: Code anfordern, dann den Code aus SMS/E-Mail eingeben. Kein Roboter-Token nötig; die Anmeldung dient auch zum Holen von Token und DID.
-- Optional: **Steuerbefehle über Xiaomi Cloud senden** – Statusabfragen bleiben trotzdem lokal.
+### Token und DID
 
-### IP-Adresse, DID und Token ermitteln
-
-- **IP-Adresse:** in der Geräteliste des Routers. Eine feste DHCP-Zuweisung wird empfohlen.
-- **DID und Token:** über den Adapter selbst. Zuerst im Reiter „Xiaomi Cloud“ Benutzername, Passwort und Region eintragen und anmelden (Schritt 1 fordert den Code an, Xiaomi schickt ihn per E-Mail oder SMS; Schritt 2 prüft ihn). Die Sitzung wird gespeichert, die Anmeldung ist nur einmal nötig. Dann im Reiter „Geräte & Verbindung“ die IP-Adresse eintragen und **„Token aus der Xiaomi-Cloud holen“** klicken: Der Adapter trägt Token und, falls noch leer, die DID ein. Danach speichern. Alternativ funktioniert weiterhin der [Xiaomi Cloud Tokens Extractor](https://github.com/PiotrMachowski/Xiaomi-cloud-tokens-extractor).
+- Token und DID holt der Adapter wie oben beschrieben selbst. Alternativ funktioniert weiterhin der [Xiaomi Cloud Tokens Extractor](https://github.com/PiotrMachowski/Xiaomi-cloud-tokens-extractor).
 - Der Token ist ein Geheimnis: nie in Chats, Screenshots, GitHub oder Logs veröffentlichen.
-- **Nach einem WLAN-Wechsel** des Roboters (in der Xiaomi- bzw. Roidmi-App) vergibt Xiaomi meist einen neuen Token. Der Roboter beantwortet dann nur noch den Handshake, nicht die Anfragen. Abhilfe wie oben: **„Token aus der Xiaomi-Cloud holen“** und speichern. Alternativ, etwa aus einem Skript: `<roboter>.control.refreshToken` drücken; dann speichert der Adapter den Token selbst und startet neu, das Ergebnis steht in `<roboter>.control.refreshTokenStatus`.
+- **Nach einem WLAN-Wechsel** des Roboters (in der Xiaomi- bzw. Roidmi-App) vergibt Xiaomi meist einen neuen Token. Der Roboter beantwortet dann nur noch den Handshake, nicht die Anfragen. Abhilfe: im Reiter „2. Roboter“ erneut **„Token und DID aus der Xiaomi-Cloud holen“** und speichern. Alternativ, etwa aus einem Skript: `<roboter>.control.refreshToken` drücken; dann speichert der Adapter den Token selbst und startet neu, das Ergebnis steht in `<roboter>.control.refreshTokenStatus`.
 
 ## Objektbaum
 
