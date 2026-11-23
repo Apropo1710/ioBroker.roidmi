@@ -1,6 +1,6 @@
 # Projektstatus – ioBroker.roidmi
 
-Stand: 23.11.2026 · Adapterversion **0.1.76** · Branch **`main`**
+Stand: 23.11.2026 · Adapterversion **0.1.77** · Branch **`main`**
 
 Dies ist die einzige Statusdatei des Projekts. Sie beschreibt den aktuellen Stand, nicht den Weg dorthin.
 Die Entwicklungsgeschichte steht im Git-Log und in den Versionshinweisen (`io-package.json` → `common.news`).

@@ -26,7 +26,12 @@
             "en": "1. Sign in with the Xiaomi account here. This is needed only once; the session is stored."
           },
           "sm": 12,
-          "newLine": true
+          "newLine": true,
+          "style": {
+            "fontSize": "16px",
+            "lineHeight": "1.6",
+            "color": "inherit"
+          }
         },
         "_setupStep2": {
           "type": "staticText",
@@ -35,7 +40,12 @@
             "en": "2. On the tab “2. Robots”, enable the robot, enter its IP address and click “Get token and DID from Xiaomi Cloud”."
           },
           "sm": 12,
-          "newLine": true
+          "newLine": true,
+          "style": {
+            "fontSize": "16px",
+            "lineHeight": "1.6",
+            "color": "inherit"
+          }
         },
         "_setupStep3": {
           "type": "staticText",
@@ -44,7 +54,12 @@
             "en": "3. Save. Schedules and further options are on the tab “3. Options”."
           },
           "sm": 12,
-          "newLine": true
+          "newLine": true,
+          "style": {
+            "fontSize": "16px",
+            "lineHeight": "1.6",
+            "color": "inherit"
+          }
         },
         "_accountHeader": {
           "type": "header",
