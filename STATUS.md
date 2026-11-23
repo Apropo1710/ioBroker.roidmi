@@ -1,6 +1,6 @@
 # Projektstatus – ioBroker.roidmi
 
-Stand: 22.11.2026 · Adapterversion **0.1.73** · Branch **`main`**
+Stand: 22.11.2026 · Adapterversion **0.1.74** · Branch **`main`**
 
 Dies ist die einzige Statusdatei des Projekts. Sie beschreibt den aktuellen Stand, nicht den Weg dorthin.
 Die Entwicklungsgeschichte steht im Git-Log und in den Versionshinweisen (`io-package.json` → `common.news`).
@@ -20,7 +20,7 @@ Die Entwicklungsgeschichte steht im Git-Log und in den Versionshinweisen (`io-pa
 |---|---|
 | Neustart-Erkennung über den Handshake-Zähler, Einstufung von Ausfällen im Log (0.1.70) | bestätigt (X20+-Neustart 23.11. als Info gemeldet; EVE-Plus-Ausfall ohne Neustart als Warnung) |
 | `info.connection` auf Instanzebene für die Admin-Anzeige (0.1.71) | bestätigt |
-| Token nach WLAN-Wechsel aus der Xiaomi-Cloud übernehmen: `<roboter>.control.refreshToken` (0.1.73) | implementiert, Test am Gerät ausstehend |
+| Token nach WLAN-Wechsel aus der Xiaomi-Cloud übernehmen: Knopf in den Instanzeinstellungen (0.1.74) oder `<roboter>.control.refreshToken` (0.1.73) | implementiert, Test am Gerät ausstehend |
 | Verbindungsstatistik je Roboter über gleitende Fenster (24 h / 7 Tage): `info.timeouts…`, `failedPolls…`, `restarts…`, `lastRestart` (0.1.72) | bestätigt; ein Ausfall durch Neustart zählt auch bei `failedPolls` und `timeouts` mit |
 
 ## Funktionsstand Roidmi EVE Plus

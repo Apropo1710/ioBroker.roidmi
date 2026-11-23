@@ -42,7 +42,7 @@ Die Instanzeinstellungen haben drei Reiter:
 - **IP-Adresse:** in der Geräteliste des Routers. Eine feste DHCP-Zuweisung wird empfohlen.
 - **DID und Token:** z. B. mit dem [Xiaomi Cloud Tokens Extractor](https://github.com/PiotrMachowski/Xiaomi-cloud-tokens-extractor). Die richtige Region des Xiaomi-Kontos wählen.
 - Der Token ist ein Geheimnis: nie in Chats, Screenshots, GitHub oder Logs veröffentlichen.
-- **Nach einem WLAN-Wechsel** des Roboters (in der Xiaomi- bzw. Roidmi-App) vergibt Xiaomi meist einen neuen Token. Der Roboter beantwortet dann nur noch den Handshake, nicht die Anfragen. Abhilfe: `<roboter>.control.refreshToken` drücken. Der Adapter liest den aktuellen Token über die Xiaomi-Cloud-Anmeldung aus, speichert ihn verschlüsselt in der Instanzkonfiguration und startet neu. Das Ergebnis steht in `<roboter>.control.refreshTokenStatus`.
+- **Nach einem WLAN-Wechsel** des Roboters (in der Xiaomi- bzw. Roidmi-App) vergibt Xiaomi meist einen neuen Token. Der Roboter beantwortet dann nur noch den Handshake, nicht die Anfragen. Abhilfe in den Instanzeinstellungen: neben dem Token **„Token aus der Xiaomi-Cloud holen“** klicken und speichern. Der Adapter liest den aktuellen Token anhand der DID über die Xiaomi-Cloud-Anmeldung aus. Alternativ, etwa aus einem Skript: `<roboter>.control.refreshToken` drücken; dann speichert der Adapter den Token selbst und startet neu, das Ergebnis steht in `<roboter>.control.refreshTokenStatus`.
 
 ## Objektbaum
 
