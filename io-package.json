@@ -1,7 +1,7 @@
 {
   "common": {
     "name": "roidmi",
-    "version": "0.1.73",
+    "version": "0.1.74",
     "title": "Roidmi",
     "titleLang": {
       "en": "Roidmi",
@@ -27,6 +27,10 @@
       "xiaomiToken"
     ],
     "news": {
+      "0.1.74": {
+        "en": "Instance settings: button \"Get token from Xiaomi Cloud\" next to each robot token. It fills in the current token; save to apply.",
+        "de": "Instanzeinstellungen: Knopf „Token aus der Xiaomi-Cloud holen“ neben dem Token jedes Roboters. Er trägt den aktuellen Token ein; zum Übernehmen speichern."
+      },
       "0.1.73": {
         "en": "New buttons evePlus/x20Plus.control.refreshToken: take over the current token from the Xiaomi Cloud after the robot's WLAN was reconfigured (the adapter restarts). Outage warnings point to this when the device answers the handshake but not the request.",
         "de": "Neue Knöpfe evePlus/x20Plus.control.refreshToken: übernehmen nach einer WLAN-Neueinrichtung des Roboters den aktuellen Token aus der Xiaomi-Cloud (der Adapter startet neu). Ausfallwarnungen weisen darauf hin, wenn das Gerät den Handshake beantwortet, die Anfrage aber nicht."
@@ -102,10 +106,6 @@
       "0.1.44": {
         "en": "Added on-demand Xiaomi X20+ FDS room-map import",
         "de": "Xiaomi-X20+-FDS-Raumkartenimport auf Abruf ergänzt"
-      },
-      "0.1.43": {
-        "en": "Use Xiaomi Cloud MIoT find action for X20+ locate",
-        "de": "Xiaomi-Cloud-MIoT-Find-Aktion für Locate beim X20+ verwenden"
       }
     },
     "adminUI": {

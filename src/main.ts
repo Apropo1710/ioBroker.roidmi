@@ -14,7 +14,7 @@ import { getRoidmiSetting } from "./lib/roidmi-settings";
 import { parseCleaningSchedules } from "./lib/cleaning-schedules";
 import { areRoidmiScheduleSnapshotsEqual, updateRoidmiCleaningSchedule, verifyRoidmiCleaningScheduleUpdate, RoidmiCleaningScheduleUpdate } from "./lib/roidmi-cleaning-schedules";
 import { parseXiaomiCleaningSchedules, setXiaomiCleaningScheduleEnabled, verifyXiaomiCleaningScheduleUpdate, updateXiaomiCleaningSchedule, verifyXiaomiCleaningScheduleDetailsUpdate, XiaomiCleaningScheduleUpdate } from "./lib/xiaomi-cleaning-schedules";
-import { XiaomiCloudMapClient } from "./lib/xiaomi-cloud-map";
+import { XiaomiCloudMapClient, type CloudDeviceToken } from "./lib/xiaomi-cloud-map";
 import { RoidmiMapMetadata } from "./lib/roidmi-map";
 import { getVacuumStateText, getChargingStateText, getRoidmiErrorText } from "./lib/roidmi-status";
 
@@ -1908,6 +1908,10 @@ class RoidmiAdapter extends Adapter {
     }
 
     private async onMessage(obj: ioBroker.Message): Promise<void> {
+        if (obj?.command === "cloudFetchToken") {
+            await this.handleCloudFetchToken(obj);
+            return;
+        }
         if (!obj || (obj.command !== "cloudStartLogin" && obj.command !== "cloudSubmitCode")) return;
         const payload = (obj.message && typeof obj.message === "object" ? obj.message : {}) as Record<string, unknown>;
         const credentials = {
@@ -2125,6 +2129,36 @@ class RoidmiAdapter extends Adapter {
         }
     }
 
+    /** Current token of the device with this DID from the Xiaomi Cloud device list. */
+    private async lookupCloudToken(did: string, country: string): Promise<CloudDeviceToken> {
+        if (!/^\d{1,20}$/.test(did)) throw new Error("No valid DID configured for this robot.");
+        const tokens = await this.cloudMapClient.fetchDeviceTokens(country, [did], async () => this.persistCloudSession());
+        const found = tokens.get(did);
+        if (!found) throw new Error("Robot (configured DID) not found in the Xiaomi Cloud device list of this account and region.");
+        return found;
+    }
+
+    /**
+     * Admin button "take over token from Xiaomi Cloud": answers with the token as native value,
+     * so the admin form fills the token field; the user saves to apply it.
+     */
+    private async handleCloudFetchToken(obj: ioBroker.Message): Promise<void> {
+        const payload = (obj.message && typeof obj.message === "object" ? obj.message : {}) as Record<string, unknown>;
+        const robot = payload.robot === "x20Plus" ? "x20Plus" : "evePlus";
+        const tokenKey = robot === "evePlus" ? "token" : "xiaomiToken";
+        const did = typeof payload.did === "string" ? payload.did.trim() : "";
+        const country = typeof payload.country === "string" && payload.country.trim() ? payload.country.trim() : "de";
+        try {
+            const found = await this.lookupCloudToken(did, country);
+            this.log.info(`${robot === "evePlus" ? "EVE Plus" : "Xiaomi X20+"}: current token read from the Xiaomi Cloud for the settings page.`);
+            this.sendTo(obj.from, obj.command, { native: { [tokenKey]: found.token } }, obj.callback);
+        } catch (error) {
+            const message = error instanceof Error ? error.message : String(error);
+            const hint = this.cloudMapClient.hasSession() ? "" : " Sign in to the Xiaomi Cloud first (tab Xiaomi Cloud).";
+            this.sendTo(obj.from, obj.command, { error: message + hint }, obj.callback);
+        }
+    }
+
     private async createTokenRefreshObjects(robot: "evePlus" | "x20Plus"): Promise<void> {
         await this.setObjectNotExistsAsync(`${robot}.control.refreshToken`, {
             type: "state",
@@ -2156,10 +2190,7 @@ class RoidmiAdapter extends Adapter {
             else this.log.info(`${label} token refresh: ${text}`);
         };
         try {
-            if (!did) throw new Error("No DID configured for this robot.");
-            const tokens = await this.cloudMapClient.fetchDeviceTokens(config.cloudCountry || "de", [did], async () => this.persistCloudSession());
-            const found = tokens.get(did);
-            if (!found) throw new Error("Robot (configured DID) not found in the Xiaomi Cloud device list of this account and region.");
+            const found = await this.lookupCloudToken(did, config.cloudCountry || "de");
             const ipNote = found.localIp && configuredHost && found.localIp !== configuredHost
                 ? ` Note: the cloud reports IP ${found.localIp}, configured is ${configuredHost}.`
                 : "";

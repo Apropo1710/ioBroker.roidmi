@@ -1985,6 +1985,10 @@ class RoidmiAdapter extends adapter_core_1.Adapter {
         }
     }
     async onMessage(obj) {
+        if (obj?.command === "cloudFetchToken") {
+            await this.handleCloudFetchToken(obj);
+            return;
+        }
         if (!obj || (obj.command !== "cloudStartLogin" && obj.command !== "cloudSubmitCode"))
             return;
         const payload = (obj.message && typeof obj.message === "object" ? obj.message : {});
@@ -2213,6 +2217,37 @@ class RoidmiAdapter extends adapter_core_1.Adapter {
             await this.setStateAsync(stateId, { val: resetValue, ack: true });
         }
     }
+    /** Current token of the device with this DID from the Xiaomi Cloud device list. */
+    async lookupCloudToken(did, country) {
+        if (!/^\d{1,20}$/.test(did))
+            throw new Error("No valid DID configured for this robot.");
+        const tokens = await this.cloudMapClient.fetchDeviceTokens(country, [did], async () => this.persistCloudSession());
+        const found = tokens.get(did);
+        if (!found)
+            throw new Error("Robot (configured DID) not found in the Xiaomi Cloud device list of this account and region.");
+        return found;
+    }
+    /**
+     * Admin button "take over token from Xiaomi Cloud": answers with the token as native value,
+     * so the admin form fills the token field; the user saves to apply it.
+     */
+    async handleCloudFetchToken(obj) {
+        const payload = (obj.message && typeof obj.message === "object" ? obj.message : {});
+        const robot = payload.robot === "x20Plus" ? "x20Plus" : "evePlus";
+        const tokenKey = robot === "evePlus" ? "token" : "xiaomiToken";
+        const did = typeof payload.did === "string" ? payload.did.trim() : "";
+        const country = typeof payload.country === "string" && payload.country.trim() ? payload.country.trim() : "de";
+        try {
+            const found = await this.lookupCloudToken(did, country);
+            this.log.info(`${robot === "evePlus" ? "EVE Plus" : "Xiaomi X20+"}: current token read from the Xiaomi Cloud for the settings page.`);
+            this.sendTo(obj.from, obj.command, { native: { [tokenKey]: found.token } }, obj.callback);
+        }
+        catch (error) {
+            const message = error instanceof Error ? error.message : String(error);
+            const hint = this.cloudMapClient.hasSession() ? "" : " Sign in to the Xiaomi Cloud first (tab Xiaomi Cloud).";
+            this.sendTo(obj.from, obj.command, { error: message + hint }, obj.callback);
+        }
+    }
     async createTokenRefreshObjects(robot) {
         await this.setObjectNotExistsAsync(`${robot}.control.refreshToken`, {
             type: "state",
@@ -2245,12 +2280,7 @@ class RoidmiAdapter extends adapter_core_1.Adapter {
                 this.log.info(`${label} token refresh: ${text}`);
         };
         try {
-            if (!did)
-                throw new Error("No DID configured for this robot.");
-            const tokens = await this.cloudMapClient.fetchDeviceTokens(config.cloudCountry || "de", [did], async () => this.persistCloudSession());
-            const found = tokens.get(did);
-            if (!found)
-                throw new Error("Robot (configured DID) not found in the Xiaomi Cloud device list of this account and region.");
+            const found = await this.lookupCloudToken(did, config.cloudCountry || "de");
             const ipNote = found.localIp && configuredHost && found.localIp !== configuredHost
                 ? ` Note: the cloud reports IP ${found.localIp}, configured is ${configuredHost}.`
                 : "";

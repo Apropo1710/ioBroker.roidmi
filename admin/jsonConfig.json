@@ -52,6 +52,26 @@
             "en": "Stored encrypted by ioBroker. Keep it secret and never share it."
           }
         },
+        "tokenFromCloud": {
+          "type": "sendTo",
+          "command": "cloudFetchToken",
+          "useNative": true,
+          "label": {
+            "de": "Token aus der Xiaomi-Cloud holen",
+            "en": "Get token from Xiaomi Cloud"
+          },
+          "jsonData": "{\"robot\":\"evePlus\",\"did\":\"${data.did}\",\"country\":\"${data.cloudCountry}\"}",
+          "showProcess": true,
+          "icon": "auth",
+          "result": {
+            "de": "Token eingetragen. Zum Übernehmen speichern.",
+            "en": "Token filled in. Save to apply."
+          },
+          "help": {
+            "de": "Nach einem WLAN-Wechsel des Roboters vergibt Xiaomi meist einen neuen Token. Dieser Knopf holt den aktuellen Token über die Xiaomi-Cloud-Anmeldung (Reiter Xiaomi Cloud) anhand der DID und trägt ihn oben ein. Danach speichern.",
+            "en": "After the robot's WLAN was reconfigured, Xiaomi usually issues a new token. This button reads the current token via the Xiaomi Cloud sign-in (tab Xiaomi Cloud) by DID and fills it in above. Then save."
+          }
+        },
         "pollIntervalSeconds": {
           "type": "number",
           "label": {
@@ -103,6 +123,26 @@
           "help": {
             "de": "Wird von ioBroker verschlüsselt gespeichert. Geheim halten und niemals weitergeben. Separater Token für den Xiaomi X20+.",
             "en": "Stored encrypted by ioBroker. Keep it secret and never share it. Separate token for Xiaomi X20+."
+          }
+        },
+        "xiaomiTokenFromCloud": {
+          "type": "sendTo",
+          "command": "cloudFetchToken",
+          "useNative": true,
+          "label": {
+            "de": "Token aus der Xiaomi-Cloud holen",
+            "en": "Get token from Xiaomi Cloud"
+          },
+          "jsonData": "{\"robot\":\"x20Plus\",\"did\":\"${data.xiaomiDid}\",\"country\":\"${data.cloudCountry}\"}",
+          "showProcess": true,
+          "icon": "auth",
+          "result": {
+            "de": "Token eingetragen. Zum Übernehmen speichern.",
+            "en": "Token filled in. Save to apply."
+          },
+          "help": {
+            "de": "Nach einem WLAN-Wechsel des Roboters vergibt Xiaomi meist einen neuen Token. Dieser Knopf holt den aktuellen Token über die Xiaomi-Cloud-Anmeldung (Reiter Xiaomi Cloud) anhand der DID und trägt ihn oben ein. Danach speichern.",
+            "en": "After the robot's WLAN was reconfigured, Xiaomi usually issues a new token. This button reads the current token via the Xiaomi Cloud sign-in (tab Xiaomi Cloud) by DID and fills it in above. Then save."
           }
         }
       }
