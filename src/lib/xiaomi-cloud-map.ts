@@ -175,6 +175,15 @@ export class XiaomiCloudMapClient {
         throw new Error("Xiaomi X20+ map history contains no decodable live frame.");
     }
 
+    /** Read the current miIO tokens of the given devices from the Xiaomi Cloud device list (explicit request only). */
+    public async fetchDeviceTokens(country: string, dids: string[], onSessionChanged?: () => Promise<void>): Promise<Map<string, CloudDeviceToken>> {
+        if (!this.hasSession()) throw new Error("Xiaomi Cloud session is unavailable; sign in first.");
+        const base = `https://${country === "cn" ? "" : country + "."}api.io.mi.com/app`;
+        const devices = await this.api(base + "/home/device_list", { data: '{"getVirtualModel":false,"getHuamiDevices":0}' }, onSessionChanged);
+        if (!Array.isArray(devices?.result?.list)) throw new Error("Xiaomi Cloud did not return a device list.");
+        return pickDeviceTokens(devices.result.list, dids);
+    }
+
     /** Fetch the C102GL saved room map from Xiaomi FDS. This is explicit/manual and never part of polling. */
     public async fetchXiaomiRooms(country: string, did: string, onSessionChanged?: () => Promise<void>): Promise<Array<{ segmentId: number; name: string; roomId?: string }>> {
         if (!this.hasSession()) throw new Error("Xiaomi Cloud session is unavailable; sign in via the EVE Plus cloud map first.");
@@ -490,4 +499,34 @@ export class XiaomiCloudMapClient {
         try{return JSON.parse(text.replace(/^&&&START&&&/,""));}
         catch{throw new Error("Xiaomi account returned an invalid login response");}
     }
+}
+
+export interface CloudDeviceToken {
+    did: string;
+    token: string;
+    model: string;
+    localIp: string;
+}
+
+/**
+ * Picks the current miIO token for each requested DID from a Xiaomi Cloud
+ * home/device_list result. Entries without a valid 32-hex token are ignored.
+ */
+export function pickDeviceTokens(list: unknown, dids: string[]): Map<string, CloudDeviceToken> {
+    const result = new Map<string, CloudDeviceToken>();
+    if (!Array.isArray(list)) return result;
+    for (const entry of list) {
+        if (!entry || typeof entry !== "object") continue;
+        const record = entry as Record<string, unknown>;
+        const did = String(record.did ?? "");
+        const token = typeof record.token === "string" ? record.token.toLowerCase() : "";
+        if (!dids.includes(did) || !/^[0-9a-f]{32}$/.test(token)) continue;
+        result.set(did, {
+            did,
+            token,
+            model: typeof record.model === "string" ? record.model : "",
+            localIp: typeof record.localip === "string" ? record.localip : ""
+        });
+    }
+    return result;
 }

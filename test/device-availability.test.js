@@ -94,3 +94,18 @@ test("connection stats survive an adapter restart via JSON", () => {
     assert.equal(snap.lastRestart, "2026-11-23T02:42:20.000Z");
     assert.equal(ConnectionStats.fromJson("not json", undefined, now).snapshot(now).timeouts7d, 0);
 });
+
+const { answersHandshakeOnly, tokenHint, HANDSHAKE_ONLY_MARK } = require("../build/lib/device-availability.js");
+
+test("handshake-only failures are recognised and produce a token hint", () => {
+    const tokenProblem = [
+        "+8ms received handshake packet (32 bytes)",
+        "+8ms fresh handshake parsed; device ID 1; device stamp 201",
+        "+4008ms timeout while waiting for RPC response (request ID 4343)"
+    ];
+    const radioGap = ["+0ms sending handshake packet (32 bytes)", "+4001ms timeout while waiting for handshake"];
+    assert.equal(answersHandshakeOnly(tokenProblem), true);
+    assert.equal(answersHandshakeOnly(radioGap), false);
+    assert.match(tokenHint("x20Plus", `retry failed: timed out (${HANDSHAKE_ONLY_MARK})`), /x20Plus\.control\.refreshToken/);
+    assert.equal(tokenHint("evePlus", "retry failed: timed out"), "");
+});

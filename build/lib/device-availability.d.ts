@@ -96,3 +96,13 @@ export declare class ConnectionStats {
     snapshot(now?: number): ConnectionStatsSnapshot;
     toJson(): string;
 }
+/** Marker appended to a retry error when the device answered the handshake but not the request. */
+export declare const HANDSHAKE_ONLY_MARK = "device answered the handshake but not the request";
+/**
+ * True if a miIO trace shows a successful handshake followed by a timeout of the
+ * encrypted request. Typical cause besides radio loss: the token changed, e.g.
+ * after the robot's WLAN was reconfigured in the vendor app.
+ */
+export declare function answersHandshakeOnly(trace: readonly string[]): boolean;
+/** Log hint for persistent handshake-only failures. */
+export declare function tokenHint(robot: "evePlus" | "x20Plus", message: string): string;

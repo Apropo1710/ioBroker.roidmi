@@ -1,6 +1,6 @@
 import { Adapter } from "@iobroker/adapter-core";
 import { MiioClient } from "./lib/miio-client";
-import { OutageReporter, ConnectionStats, isInstanceConnected, type AvailabilityEvent } from "./lib/device-availability";
+import { OutageReporter, ConnectionStats, isInstanceConnected, answersHandshakeOnly, tokenHint, HANDSHAKE_ONLY_MARK, type AvailabilityEvent } from "./lib/device-availability";
 import { mapLegacyStateId, LEGACY_EMPTY_FOLDERS } from "./lib/object-tree-migration";
 import { XIAOMI_X20_PLUS_PROPERTIES, XIAOMI_X20_PLUS_CONSUMABLE_PROPERTIES, XIAOMI_X20_PLUS_OPTIONAL_SETTINGS, XIAOMI_X20_PLUS_LIFETIME_PROPERTIES, XIAOMI_X20_PLUS_CONSUMABLE_POLL_INTERVAL_MS, getXiaomiX20PlusStatusText } from "./lib/xiaomi-x20plus-profile";
 import { parseRoomCleaningRequest } from "./lib/room-cleaning";
@@ -114,7 +114,10 @@ class RoidmiAdapter extends Adapter {
             common: { name: "All enabled robots reachable", type: "boolean", role: "indicator.connected", read: true, write: false, def: false },
             native: {}
         });
-        for (const robot of ["evePlus", "x20Plus"] as const) await this.createConnectionStatsObjects(robot);
+        for (const robot of ["evePlus", "x20Plus"] as const) {
+            await this.createConnectionStatsObjects(robot);
+            await this.createTokenRefreshObjects(robot);
+        }
         await this.setObjectNotExistsAsync("evePlus.info.connection", {
             type: "state",
             common: { name: "Device connection", type: "boolean", role: "indicator.reachable", read: true, write: false },
@@ -397,9 +400,10 @@ class RoidmiAdapter extends Adapter {
                         } catch (retryError) {
                             const retryMessage = retryError instanceof Error ? retryError.message : String(retryError);
                             if (retryMessage.includes("timed out")) eveStats.recordTimeout();
+                            const handshakeOnly = answersHandshakeOnly(miioTrace);
                             for (const line of miioTrace) this.log.debug(`[miIO] ${batchLabel} retry trace: ${line}`);
                             miioTrace.length = 0;
-                            throw new Error(`[miIO] ${batchLabel} retry failed: ${retryMessage}`);
+                            throw new Error(`[miIO] ${batchLabel} retry failed: ${retryMessage}${handshakeOnly ? ` (${HANDSHAKE_ONLY_MARK})` : ""}`);
                         }
                     }
                     if (!Array.isArray(result)) throw new Error("Unexpected MIoT property response");
@@ -456,7 +460,7 @@ class RoidmiAdapter extends Adapter {
                 await this.setRobotConnection("evePlus", false);
                 await this.setStateChangedAsync("evePlus.info.connectionText", { val: message, ack: true });
                 eveStats.recordFailedPoll();
-                this.logAvailability(eveAvailability.onPollFailed(message));
+                this.logAvailability(eveAvailability.onPollFailed(message + tokenHint("evePlus", message)));
                 this.lastPollError = message;
             } finally {
                 this.commandRunning = false;
@@ -875,9 +879,10 @@ class RoidmiAdapter extends Adapter {
                         } catch (retryError) {
                             const retryMessage = retryError instanceof Error ? retryError.message : String(retryError);
                             if (retryMessage.includes("timed out")) x20Stats.recordTimeout();
+                            const handshakeOnly = answersHandshakeOnly(this.xiaomiMiioTrace);
                             for (const line of this.xiaomiMiioTrace) this.log.debug(`[miIO] ${batchLabel} retry trace: ${line}`);
                             this.xiaomiMiioTrace.length = 0;
-                            throw new Error(`[miIO] ${batchLabel} retry failed: ${retryMessage}`);
+                            throw new Error(`[miIO] ${batchLabel} retry failed: ${retryMessage}${handshakeOnly ? ` (${HANDSHAKE_ONLY_MARK})` : ""}`);
                         }
                     }
                     if (!Array.isArray(result)) throw new Error("Unexpected Xiaomi MIoT property response");
@@ -959,7 +964,7 @@ class RoidmiAdapter extends Adapter {
                 await this.setRobotConnection("x20Plus", false);
                 await this.setStateChangedAsync(prefix + "info.connectionText", { val: message, ack: true });
                 x20Stats.recordFailedPoll();
-                this.logAvailability(x20Availability.onPollFailed(message));
+                this.logAvailability(x20Availability.onPollFailed(message + tokenHint("x20Plus", message)));
                 if (message !== lastError) {
                     // Emit trace only on failure; normal successful polls remain quiet.
                     for (const traceLine of this.xiaomiMiioTrace) this.log.debug("Xiaomi miIO trace: " + traceLine);
@@ -1099,6 +1104,14 @@ class RoidmiAdapter extends Adapter {
 
     private async onStateChange(id: string, state: ioBroker.State | null | undefined): Promise<void> {
         if (!state || state.ack) return;
+
+        for (const robot of ["evePlus", "x20Plus"] as const) {
+            if (id === `${this.namespace}.${robot}.control.refreshToken`) {
+                if (state.val === true) await this.refreshTokenFromCloud(robot);
+                await this.setStateAsync(`${robot}.control.refreshToken`, { val: false, ack: true });
+                return;
+            }
+        }
 
         const xiaomiControlPrefix = this.namespace + ".x20Plus.control.";
         if (id.startsWith(xiaomiControlPrefix)) {
@@ -2109,6 +2122,56 @@ class RoidmiAdapter extends Adapter {
         } finally {
             this.commandRunning = false;
             await this.setStateAsync(stateId, { val: resetValue, ack: true });
+        }
+    }
+
+    private async createTokenRefreshObjects(robot: "evePlus" | "x20Plus"): Promise<void> {
+        await this.setObjectNotExistsAsync(`${robot}.control.refreshToken`, {
+            type: "state",
+            common: { name: "Take over the current token from the Xiaomi Cloud (after a WLAN change)", type: "boolean", role: "button", read: false, write: true, def: false },
+            native: {}
+        });
+        await this.setObjectNotExistsAsync(`${robot}.control.refreshTokenStatus`, {
+            type: "state",
+            common: { name: "Result of the last token refresh", type: "string", role: "text", read: true, write: false, def: "" },
+            native: {}
+        });
+        await this.subscribeStatesAsync(`${robot}.control.refreshToken`);
+    }
+
+    /**
+     * Reads the robot's current miIO token from the Xiaomi Cloud device list (matched by DID)
+     * and stores it encrypted in the instance configuration. Changing the configuration makes
+     * js-controller restart the adapter, which then uses the new token. The token is never logged.
+     */
+    private async refreshTokenFromCloud(robot: "evePlus" | "x20Plus"): Promise<void> {
+        const config = this.config as RoidmiAdapterConfig;
+        const label = robot === "evePlus" ? "EVE Plus" : "Xiaomi X20+";
+        const did = String((robot === "evePlus" ? config.did : config.xiaomiDid) ?? "").trim();
+        const tokenKey = robot === "evePlus" ? "token" : "xiaomiToken";
+        const configuredHost = String((robot === "evePlus" ? config.host : config.xiaomiHost) ?? "").trim();
+        const report = async (text: string, level: "info" | "warn"): Promise<void> => {
+            await this.setStateAsync(`${robot}.control.refreshTokenStatus`, { val: text, ack: true });
+            if (level === "warn") this.log.warn(`${label} token refresh: ${text}`);
+            else this.log.info(`${label} token refresh: ${text}`);
+        };
+        try {
+            if (!did) throw new Error("No DID configured for this robot.");
+            const tokens = await this.cloudMapClient.fetchDeviceTokens(config.cloudCountry || "de", [did], async () => this.persistCloudSession());
+            const found = tokens.get(did);
+            if (!found) throw new Error("Robot (configured DID) not found in the Xiaomi Cloud device list of this account and region.");
+            const ipNote = found.localIp && configuredHost && found.localIp !== configuredHost
+                ? ` Note: the cloud reports IP ${found.localIp}, configured is ${configuredHost}.`
+                : "";
+            const current = String((config as unknown as Record<string, unknown>)[tokenKey] ?? "").toLowerCase();
+            if (found.token === current) {
+                await report(`Token unchanged; the configured token is current.${ipNote}`, "info");
+                return;
+            }
+            await report(`New token taken over from the Xiaomi Cloud; the adapter restarts now.${ipNote}`, "info");
+            await this.extendForeignObjectAsync(`system.adapter.${this.namespace}`, { native: { [tokenKey]: this.encrypt(found.token) } });
+        } catch (error) {
+            await report(`Failed: ${error instanceof Error ? error.message : String(error)}`, "warn");
         }
     }
 

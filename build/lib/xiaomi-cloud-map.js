@@ -34,6 +34,7 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.XiaomiCloudMapClient = void 0;
+exports.pickDeviceTokens = pickDeviceTokens;
 const node_crypto_1 = require("node:crypto");
 const roidmi_map_1 = require("./roidmi-map");
 class CookieStore {
@@ -216,6 +217,16 @@ class XiaomiCloudMapClient {
             return { timestamp: Number(entry.time) * 1000, segmentIds: parseXiaomiLiveMapSelection(payload) };
         }
         throw new Error("Xiaomi X20+ map history contains no decodable live frame.");
+    }
+    /** Read the current miIO tokens of the given devices from the Xiaomi Cloud device list (explicit request only). */
+    async fetchDeviceTokens(country, dids, onSessionChanged) {
+        if (!this.hasSession())
+            throw new Error("Xiaomi Cloud session is unavailable; sign in first.");
+        const base = `https://${country === "cn" ? "" : country + "."}api.io.mi.com/app`;
+        const devices = await this.api(base + "/home/device_list", { data: '{"getVirtualModel":false,"getHuamiDevices":0}' }, onSessionChanged);
+        if (!Array.isArray(devices?.result?.list))
+            throw new Error("Xiaomi Cloud did not return a device list.");
+        return pickDeviceTokens(devices.result.list, dids);
     }
     /** Fetch the C102GL saved room map from Xiaomi FDS. This is explicit/manual and never part of polling. */
     async fetchXiaomiRooms(country, did, onSessionChanged) {
@@ -565,3 +576,28 @@ class XiaomiCloudMapClient {
     }
 }
 exports.XiaomiCloudMapClient = XiaomiCloudMapClient;
+/**
+ * Picks the current miIO token for each requested DID from a Xiaomi Cloud
+ * home/device_list result. Entries without a valid 32-hex token are ignored.
+ */
+function pickDeviceTokens(list, dids) {
+    const result = new Map();
+    if (!Array.isArray(list))
+        return result;
+    for (const entry of list) {
+        if (!entry || typeof entry !== "object")
+            continue;
+        const record = entry;
+        const did = String(record.did ?? "");
+        const token = typeof record.token === "string" ? record.token.toLowerCase() : "";
+        if (!dids.includes(did) || !/^[0-9a-f]{32}$/.test(token))
+            continue;
+        result.set(did, {
+            did,
+            token,
+            model: typeof record.model === "string" ? record.model : "",
+            localIp: typeof record.localip === "string" ? record.localip : ""
+        });
+    }
+    return result;
+}
