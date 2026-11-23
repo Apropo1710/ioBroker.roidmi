@@ -9,9 +9,11 @@
  * are unreachable for about 30 seconds while doing so.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ConnectionStats = exports.STATS_MAX_EVENTS = exports.STATS_RETENTION_MS = exports.OutageReporter = exports.RESTART_TOLERANCE_SECONDS = void 0;
+exports.HANDSHAKE_ONLY_MARK = exports.ConnectionStats = exports.STATS_MAX_EVENTS = exports.STATS_RETENTION_MS = exports.OutageReporter = exports.RESTART_TOLERANCE_SECONDS = void 0;
 exports.detectDeviceRestart = detectDeviceRestart;
 exports.isInstanceConnected = isInstanceConnected;
+exports.answersHandshakeOnly = answersHandshakeOnly;
+exports.tokenHint = tokenHint;
 /** Allowed deviation between the device clock and the host clock before a restart is assumed. */
 exports.RESTART_TOLERANCE_SECONDS = 60;
 /**
@@ -173,3 +175,20 @@ class ConnectionStats {
     }
 }
 exports.ConnectionStats = ConnectionStats;
+/** Marker appended to a retry error when the device answered the handshake but not the request. */
+exports.HANDSHAKE_ONLY_MARK = "device answered the handshake but not the request";
+/**
+ * True if a miIO trace shows a successful handshake followed by a timeout of the
+ * encrypted request. Typical cause besides radio loss: the token changed, e.g.
+ * after the robot's WLAN was reconfigured in the vendor app.
+ */
+function answersHandshakeOnly(trace) {
+    return trace.some((line) => line.includes("fresh handshake parsed")) &&
+        trace.some((line) => line.includes("timeout while waiting for RPC response"));
+}
+/** Log hint for persistent handshake-only failures. */
+function tokenHint(robot, message) {
+    return message.includes(exports.HANDSHAKE_ONLY_MARK)
+        ? ` – if the robot's WLAN was reconfigured, its token has probably changed: press ${robot}.control.refreshToken`
+        : "";
+}

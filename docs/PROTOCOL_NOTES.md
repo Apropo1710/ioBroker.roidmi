@@ -10,6 +10,7 @@ Technische Referenz für beide Roboter: MIoT-Zuordnungen, Datenformate und am Ge
 - MIoT-Antworten werden über `siid`/`piid` zugeordnet, nicht über die Reihenfolge.
 - Xiaomi Cloud, MIoT-Lesen: `datasource: 1` bevorzugt den Server-Cache und kann veraltet sein; `datasource: 2` fragt das Gerät direkt. Für Prüfungen nach dem Schreiben wird immer `datasource: 2` verwendet.
 - Cloud-Fehler `-704220025` bedeutet „action arguments count mismatch“.
+- Nach einer WLAN-Neueinrichtung über die App (bei beiden Robotern ohne Zurücksetzen möglich) erhält das Gerät einen neuen miIO-Token; DID und Einstellungen bleiben erhalten. Mit dem alten Token beantwortet es weiterhin den Handshake, verwirft aber die verschlüsselten Anfragen stillschweigend. Der aktuelle Token steht in der Cloud-Geräteliste (`/home/device_list`, Feld `token`, Zuordnung über `did`).
 - Der Zeitstempel (`stamp`) in der Handshake-Antwort zählt die Sekunden seit dem Start des Geräts. Fällt er bei einem frischen Handshake deutlich unter den vorherigen Wert plus die vergangene Zeit (Toleranz 60 s), hat das Gerät neu gestartet. Der X20+ startet jede Nacht zwischen etwa 3 und 5 Uhr neu und ist dabei rund 30 s nicht erreichbar; der EVE Plus startet gelegentlich und kündigt das per Sprachausgabe an.
 
 ## Roidmi EVE Plus (`roidmi.vacuum.v60`)

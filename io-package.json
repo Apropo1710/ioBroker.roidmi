@@ -1,7 +1,7 @@
 {
   "common": {
     "name": "roidmi",
-    "version": "0.1.72",
+    "version": "0.1.73",
     "title": "Roidmi",
     "titleLang": {
       "en": "Roidmi",
@@ -27,6 +27,10 @@
       "xiaomiToken"
     ],
     "news": {
+      "0.1.73": {
+        "en": "New buttons evePlus/x20Plus.control.refreshToken: take over the current token from the Xiaomi Cloud after the robot's WLAN was reconfigured (the adapter restarts). Outage warnings point to this when the device answers the handshake but not the request.",
+        "de": "Neue Knöpfe evePlus/x20Plus.control.refreshToken: übernehmen nach einer WLAN-Neueinrichtung des Roboters den aktuellen Token aus der Xiaomi-Cloud (der Adapter startet neu). Ausfallwarnungen weisen darauf hin, wenn das Gerät den Handshake beantwortet, die Anfrage aber nicht."
+      },
       "0.1.72": {
         "en": "Connection statistics now use rolling windows instead of daily counters: info.timeouts24h/7d, info.failedPolls24h/7d, info.restarts24h/7d. The daily states of 0.1.71 are removed.",
         "de": "Verbindungsstatistik mit gleitenden Zeitfenstern statt Tageszählern: info.timeouts24h/7d, info.failedPolls24h/7d, info.restarts24h/7d. Die Tageswerte aus 0.1.71 werden entfernt."
@@ -102,10 +106,6 @@
       "0.1.43": {
         "en": "Use Xiaomi Cloud MIoT find action for X20+ locate",
         "de": "Xiaomi-Cloud-MIoT-Find-Aktion für Locate beim X20+ verwenden"
-      },
-      "0.1.42": {
-        "en": "Add device/batch-specific MIoT timeout diagnostics and one targeted status-poll retry",
-        "de": "Geräte- und Batch-spezifische MIoT-Timeoutdiagnose mit einer gezielten Wiederholung"
       }
     },
     "adminUI": {

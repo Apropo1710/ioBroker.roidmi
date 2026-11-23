@@ -212,3 +212,23 @@ export class ConnectionStats {
         return JSON.stringify(this.events);
     }
 }
+
+/** Marker appended to a retry error when the device answered the handshake but not the request. */
+export const HANDSHAKE_ONLY_MARK = "device answered the handshake but not the request";
+
+/**
+ * True if a miIO trace shows a successful handshake followed by a timeout of the
+ * encrypted request. Typical cause besides radio loss: the token changed, e.g.
+ * after the robot's WLAN was reconfigured in the vendor app.
+ */
+export function answersHandshakeOnly(trace: readonly string[]): boolean {
+    return trace.some((line) => line.includes("fresh handshake parsed")) &&
+        trace.some((line) => line.includes("timeout while waiting for RPC response"));
+}
+
+/** Log hint for persistent handshake-only failures. */
+export function tokenHint(robot: "evePlus" | "x20Plus", message: string): string {
+    return message.includes(HANDSHAKE_ONLY_MARK)
+        ? ` – if the robot's WLAN was reconfigured, its token has probably changed: press ${robot}.control.refreshToken`
+        : "";
+}

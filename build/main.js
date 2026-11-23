@@ -77,8 +77,10 @@ class RoidmiAdapter extends adapter_core_1.Adapter {
             common: { name: "All enabled robots reachable", type: "boolean", role: "indicator.connected", read: true, write: false, def: false },
             native: {}
         });
-        for (const robot of ["evePlus", "x20Plus"])
+        for (const robot of ["evePlus", "x20Plus"]) {
             await this.createConnectionStatsObjects(robot);
+            await this.createTokenRefreshObjects(robot);
+        }
         await this.setObjectNotExistsAsync("evePlus.info.connection", {
             type: "state",
             common: { name: "Device connection", type: "boolean", role: "indicator.reachable", read: true, write: false },
@@ -359,10 +361,11 @@ class RoidmiAdapter extends adapter_core_1.Adapter {
                             const retryMessage = retryError instanceof Error ? retryError.message : String(retryError);
                             if (retryMessage.includes("timed out"))
                                 eveStats.recordTimeout();
+                            const handshakeOnly = (0, device_availability_1.answersHandshakeOnly)(miioTrace);
                             for (const line of miioTrace)
                                 this.log.debug(`[miIO] ${batchLabel} retry trace: ${line}`);
                             miioTrace.length = 0;
-                            throw new Error(`[miIO] ${batchLabel} retry failed: ${retryMessage}`);
+                            throw new Error(`[miIO] ${batchLabel} retry failed: ${retryMessage}${handshakeOnly ? ` (${device_availability_1.HANDSHAKE_ONLY_MARK})` : ""}`);
                         }
                     }
                     if (!Array.isArray(result))
@@ -430,7 +433,7 @@ class RoidmiAdapter extends adapter_core_1.Adapter {
                 await this.setRobotConnection("evePlus", false);
                 await this.setStateChangedAsync("evePlus.info.connectionText", { val: message, ack: true });
                 eveStats.recordFailedPoll();
-                this.logAvailability(eveAvailability.onPollFailed(message));
+                this.logAvailability(eveAvailability.onPollFailed(message + (0, device_availability_1.tokenHint)("evePlus", message)));
                 this.lastPollError = message;
             }
             finally {
@@ -855,10 +858,11 @@ class RoidmiAdapter extends adapter_core_1.Adapter {
                             const retryMessage = retryError instanceof Error ? retryError.message : String(retryError);
                             if (retryMessage.includes("timed out"))
                                 x20Stats.recordTimeout();
+                            const handshakeOnly = (0, device_availability_1.answersHandshakeOnly)(this.xiaomiMiioTrace);
                             for (const line of this.xiaomiMiioTrace)
                                 this.log.debug(`[miIO] ${batchLabel} retry trace: ${line}`);
                             this.xiaomiMiioTrace.length = 0;
-                            throw new Error(`[miIO] ${batchLabel} retry failed: ${retryMessage}`);
+                            throw new Error(`[miIO] ${batchLabel} retry failed: ${retryMessage}${handshakeOnly ? ` (${device_availability_1.HANDSHAKE_ONLY_MARK})` : ""}`);
                         }
                     }
                     if (!Array.isArray(result))
@@ -945,7 +949,7 @@ class RoidmiAdapter extends adapter_core_1.Adapter {
                 await this.setRobotConnection("x20Plus", false);
                 await this.setStateChangedAsync(prefix + "info.connectionText", { val: message, ack: true });
                 x20Stats.recordFailedPoll();
-                this.logAvailability(x20Availability.onPollFailed(message));
+                this.logAvailability(x20Availability.onPollFailed(message + (0, device_availability_1.tokenHint)("x20Plus", message)));
                 if (message !== lastError) {
                     // Emit trace only on failure; normal successful polls remain quiet.
                     for (const traceLine of this.xiaomiMiioTrace)
@@ -1088,6 +1092,14 @@ class RoidmiAdapter extends adapter_core_1.Adapter {
     async onStateChange(id, state) {
         if (!state || state.ack)
             return;
+        for (const robot of ["evePlus", "x20Plus"]) {
+            if (id === `${this.namespace}.${robot}.control.refreshToken`) {
+                if (state.val === true)
+                    await this.refreshTokenFromCloud(robot);
+                await this.setStateAsync(`${robot}.control.refreshToken`, { val: false, ack: true });
+                return;
+            }
+        }
         const xiaomiControlPrefix = this.namespace + ".x20Plus.control.";
         if (id.startsWith(xiaomiControlPrefix)) {
             const command = id.slice(xiaomiControlPrefix.length);
@@ -2199,6 +2211,59 @@ class RoidmiAdapter extends adapter_core_1.Adapter {
         finally {
             this.commandRunning = false;
             await this.setStateAsync(stateId, { val: resetValue, ack: true });
+        }
+    }
+    async createTokenRefreshObjects(robot) {
+        await this.setObjectNotExistsAsync(`${robot}.control.refreshToken`, {
+            type: "state",
+            common: { name: "Take over the current token from the Xiaomi Cloud (after a WLAN change)", type: "boolean", role: "button", read: false, write: true, def: false },
+            native: {}
+        });
+        await this.setObjectNotExistsAsync(`${robot}.control.refreshTokenStatus`, {
+            type: "state",
+            common: { name: "Result of the last token refresh", type: "string", role: "text", read: true, write: false, def: "" },
+            native: {}
+        });
+        await this.subscribeStatesAsync(`${robot}.control.refreshToken`);
+    }
+    /**
+     * Reads the robot's current miIO token from the Xiaomi Cloud device list (matched by DID)
+     * and stores it encrypted in the instance configuration. Changing the configuration makes
+     * js-controller restart the adapter, which then uses the new token. The token is never logged.
+     */
+    async refreshTokenFromCloud(robot) {
+        const config = this.config;
+        const label = robot === "evePlus" ? "EVE Plus" : "Xiaomi X20+";
+        const did = String((robot === "evePlus" ? config.did : config.xiaomiDid) ?? "").trim();
+        const tokenKey = robot === "evePlus" ? "token" : "xiaomiToken";
+        const configuredHost = String((robot === "evePlus" ? config.host : config.xiaomiHost) ?? "").trim();
+        const report = async (text, level) => {
+            await this.setStateAsync(`${robot}.control.refreshTokenStatus`, { val: text, ack: true });
+            if (level === "warn")
+                this.log.warn(`${label} token refresh: ${text}`);
+            else
+                this.log.info(`${label} token refresh: ${text}`);
+        };
+        try {
+            if (!did)
+                throw new Error("No DID configured for this robot.");
+            const tokens = await this.cloudMapClient.fetchDeviceTokens(config.cloudCountry || "de", [did], async () => this.persistCloudSession());
+            const found = tokens.get(did);
+            if (!found)
+                throw new Error("Robot (configured DID) not found in the Xiaomi Cloud device list of this account and region.");
+            const ipNote = found.localIp && configuredHost && found.localIp !== configuredHost
+                ? ` Note: the cloud reports IP ${found.localIp}, configured is ${configuredHost}.`
+                : "";
+            const current = String(config[tokenKey] ?? "").toLowerCase();
+            if (found.token === current) {
+                await report(`Token unchanged; the configured token is current.${ipNote}`, "info");
+                return;
+            }
+            await report(`New token taken over from the Xiaomi Cloud; the adapter restarts now.${ipNote}`, "info");
+            await this.extendForeignObjectAsync(`system.adapter.${this.namespace}`, { native: { [tokenKey]: this.encrypt(found.token) } });
+        }
+        catch (error) {
+            await report(`Failed: ${error instanceof Error ? error.message : String(error)}`, "warn");
         }
     }
     async setRobotConnection(robot, connected) {

@@ -53,6 +53,13 @@ declare class RoidmiAdapter extends Adapter {
     private refreshCloudMap;
     private sendProperty;
     private sendAction;
+    private createTokenRefreshObjects;
+    /**
+     * Reads the robot's current miIO token from the Xiaomi Cloud device list (matched by DID)
+     * and stores it encrypted in the instance configuration. Changing the configuration makes
+     * js-controller restart the adapter, which then uses the new token. The token is never logged.
+     */
+    private refreshTokenFromCloud;
     private setRobotConnection;
     private static readonly CONNECTION_STATS_OBJECTS;
     private createConnectionStatsObjects;

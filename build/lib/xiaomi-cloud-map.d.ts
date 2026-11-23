@@ -51,6 +51,8 @@ export declare class XiaomiCloudMapClient {
         timestamp: number;
         segmentIds: number[];
     }>;
+    /** Read the current miIO tokens of the given devices from the Xiaomi Cloud device list (explicit request only). */
+    fetchDeviceTokens(country: string, dids: string[], onSessionChanged?: () => Promise<void>): Promise<Map<string, CloudDeviceToken>>;
     /** Fetch the C102GL saved room map from Xiaomi FDS. This is explicit/manual and never part of polling. */
     fetchXiaomiRooms(country: string, did: string, onSessionChanged?: () => Promise<void>): Promise<Array<{
         segmentId: number;
@@ -71,3 +73,14 @@ export declare class XiaomiCloudMapClient {
     private request;
     private json;
 }
+export interface CloudDeviceToken {
+    did: string;
+    token: string;
+    model: string;
+    localIp: string;
+}
+/**
+ * Picks the current miIO token for each requested DID from a Xiaomi Cloud
+ * home/device_list result. Entries without a valid 32-hex token are ignored.
+ */
+export declare function pickDeviceTokens(list: unknown, dids: string[]): Map<string, CloudDeviceToken>;
