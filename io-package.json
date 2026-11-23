@@ -1,7 +1,7 @@
 {
   "common": {
     "name": "roidmi",
-    "version": "0.1.76",
+    "version": "0.1.77",
     "title": "Roidmi",
     "titleLang": {
       "en": "Roidmi",
@@ -27,6 +27,10 @@
       "xiaomiToken"
     ],
     "news": {
+      "0.1.77": {
+        "en": "Larger text for the setup guide in the settings",
+        "de": "Größere Schrift für die Einrichtungsanleitung in den Einstellungen"
+      },
       "0.1.76": {
         "en": "Settings page guides through the setup: 1. Xiaomi account, 2. robots, 3. options; region as selection; cloud status is shown again",
         "de": "Einstellungsseite führt durch die Einrichtung: 1. Xiaomi-Konto, 2. Roboter, 3. Optionen; Region als Auswahl; Cloud-Status wird wieder angezeigt"
@@ -102,10 +106,6 @@
       "0.1.47": {
         "en": "Remove non-functional Xiaomi X20+ locate control",
         "de": "Nicht funktionierende Locate-Steuerung des Xiaomi X20+ entfernt"
-      },
-      "0.1.46": {
-        "en": "Improve X20+ room-clean status and room filtering tests",
-        "de": "X20+-Raumreinigungsstatus und Raumfilter-Tests verbessert"
       }
     },
     "adminUI": {
