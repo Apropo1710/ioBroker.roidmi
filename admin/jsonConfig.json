@@ -37,8 +37,8 @@
           },
           "default": "",
           "help": {
-            "de": "Numerische Geräte-ID (DID) aus den Xiaomi-Gerätedetails oder den MIoT-Protokollen. Für MIoT-Anfragen erforderlich.",
-            "en": "Numeric device ID (DID) from Xiaomi device details or MIoT logs. Required for MIoT requests."
+            "de": "Numerische Geräte-ID. Wird über „Token aus der Xiaomi-Cloud holen“ automatisch ergänzt, wenn die IP-Adresse stimmt.",
+            "en": "Numeric device ID. Filled in automatically by “Get token from Xiaomi Cloud” when the IP address is correct."
           }
         },
         "token": {
@@ -48,8 +48,8 @@
             "en": "Roidmi EVE Plus – MIoT / miIO token"
           },
           "help": {
-            "de": "Wird von ioBroker verschlüsselt gespeichert. Geheim halten und niemals weitergeben.",
-            "en": "Stored encrypted by ioBroker. Keep it secret and never share it."
+            "de": "Wird von ioBroker verschlüsselt gespeichert. Geheim halten. Am einfachsten über den Knopf darunter holen.",
+            "en": "Stored encrypted by ioBroker. Keep it secret. Easiest via the button below."
           }
         },
         "tokenFromCloud": {
@@ -60,16 +60,16 @@
             "de": "Token aus der Xiaomi-Cloud holen",
             "en": "Get token from Xiaomi Cloud"
           },
-          "jsonData": "{\"robot\":\"evePlus\",\"did\":\"${data.did}\",\"country\":\"${data.cloudCountry}\"}",
+          "jsonData": "{\"robot\":\"evePlus\",\"did\":\"${data.did}\",\"host\":\"${data.host}\",\"country\":\"${data.cloudCountry}\"}",
           "showProcess": true,
           "icon": "auth",
           "result": {
-            "de": "Token eingetragen. Zum Übernehmen speichern.",
-            "en": "Token filled in. Save to apply."
+            "de": "Token (und DID) eingetragen. Zum Übernehmen speichern.",
+            "en": "Token (and DID) filled in. Save to apply."
           },
           "help": {
-            "de": "Nach einem WLAN-Wechsel des Roboters vergibt Xiaomi meist einen neuen Token. Dieser Knopf holt den aktuellen Token über die Xiaomi-Cloud-Anmeldung (Reiter Xiaomi Cloud) anhand der DID und trägt ihn oben ein. Danach speichern.",
-            "en": "After the robot's WLAN was reconfigured, Xiaomi usually issues a new token. This button reads the current token via the Xiaomi Cloud sign-in (tab Xiaomi Cloud) by DID and fills it in above. Then save."
+            "de": "Für die Ersteinrichtung und nach einem WLAN-Wechsel (Xiaomi vergibt dann meist einen neuen Token). Voraussetzung: einmalige Anmeldung im Reiter „Xiaomi Cloud“ (Schritt 1 und 2, Xiaomi schickt dabei einen Code per E-Mail oder SMS). Der Knopf holt den aktuellen Token und trägt ihn oben ein; ist noch keine DID eingetragen, findet er den Roboter über die IP-Adresse und ergänzt die DID. Danach speichern.",
+            "en": "For first setup and after a WLAN change (Xiaomi then usually issues a new token). Requires a one-time sign-in on the tab “Xiaomi Cloud” (steps 1 and 2; Xiaomi sends a code by e-mail or SMS). The button reads the current token and fills it in above; if no DID is set yet, it finds the robot by its IP address and fills in the DID as well. Then save."
           }
         },
         "pollIntervalSeconds": {
@@ -110,8 +110,8 @@
           },
           "default": "",
           "help": {
-            "de": "Numerische Geräte-ID (DID) aus den Xiaomi-Home-Gerätedaten. Für MIoT-Anfragen erforderlich. Ermittlung z. B. mit Xiaomi Cloud Tokens Extractor.",
-            "en": "Numeric device ID (DID) from Xiaomi Home device data. Required for MIoT requests. Can be obtained using Xiaomi Cloud Tokens Extractor."
+            "de": "Numerische Geräte-ID. Wird über „Token aus der Xiaomi-Cloud holen“ automatisch ergänzt, wenn die IP-Adresse stimmt.",
+            "en": "Numeric device ID. Filled in automatically by “Get token from Xiaomi Cloud” when the IP address is correct."
           }
         },
         "xiaomiToken": {
@@ -121,8 +121,8 @@
             "en": "Xiaomi X20+ – MIoT / miIO token"
           },
           "help": {
-            "de": "Wird von ioBroker verschlüsselt gespeichert. Geheim halten und niemals weitergeben. Separater Token für den Xiaomi X20+.",
-            "en": "Stored encrypted by ioBroker. Keep it secret and never share it. Separate token for Xiaomi X20+."
+            "de": "Wird von ioBroker verschlüsselt gespeichert. Geheim halten. Am einfachsten über den Knopf darunter holen.",
+            "en": "Stored encrypted by ioBroker. Keep it secret. Easiest via the button below."
           }
         },
         "xiaomiTokenFromCloud": {
@@ -133,16 +133,16 @@
             "de": "Token aus der Xiaomi-Cloud holen",
             "en": "Get token from Xiaomi Cloud"
           },
-          "jsonData": "{\"robot\":\"x20Plus\",\"did\":\"${data.xiaomiDid}\",\"country\":\"${data.cloudCountry}\"}",
+          "jsonData": "{\"robot\":\"x20Plus\",\"did\":\"${data.xiaomiDid}\",\"host\":\"${data.xiaomiHost}\",\"country\":\"${data.cloudCountry}\"}",
           "showProcess": true,
           "icon": "auth",
           "result": {
-            "de": "Token eingetragen. Zum Übernehmen speichern.",
-            "en": "Token filled in. Save to apply."
+            "de": "Token (und DID) eingetragen. Zum Übernehmen speichern.",
+            "en": "Token (and DID) filled in. Save to apply."
           },
           "help": {
-            "de": "Nach einem WLAN-Wechsel des Roboters vergibt Xiaomi meist einen neuen Token. Dieser Knopf holt den aktuellen Token über die Xiaomi-Cloud-Anmeldung (Reiter Xiaomi Cloud) anhand der DID und trägt ihn oben ein. Danach speichern.",
-            "en": "After the robot's WLAN was reconfigured, Xiaomi usually issues a new token. This button reads the current token via the Xiaomi Cloud sign-in (tab Xiaomi Cloud) by DID and fills it in above. Then save."
+            "de": "Für die Ersteinrichtung und nach einem WLAN-Wechsel (Xiaomi vergibt dann meist einen neuen Token). Voraussetzung: einmalige Anmeldung im Reiter „Xiaomi Cloud“ (Schritt 1 und 2, Xiaomi schickt dabei einen Code per E-Mail oder SMS). Der Knopf holt den aktuellen Token und trägt ihn oben ein; ist noch keine DID eingetragen, findet er den Roboter über die IP-Adresse und ergänzt die DID. Danach speichern.",
+            "en": "For first setup and after a WLAN change (Xiaomi then usually issues a new token). Requires a one-time sign-in on the tab “Xiaomi Cloud” (steps 1 and 2; Xiaomi sends a code by e-mail or SMS). The button reads the current token and fills it in above; if no DID is set yet, it finds the robot by its IP address and fills in the DID as well. Then save."
           }
         }
       }
@@ -242,8 +242,8 @@
             "en": "Xiaomi account username (optional)"
           },
           "help": {
-            "de": "Wird nur für den optionalen Kartenabruf über die Xiaomi Cloud verwendet.",
-            "en": "Only used for optional Xiaomi Cloud map retrieval."
+            "de": "Für den Abruf von Token und DID, Karten, Räumen und Zeitplänen.",
+            "en": "Used to fetch tokens and DIDs, maps, rooms and schedules."
           }
         },
         "cloudPassword": {
@@ -284,8 +284,8 @@
             "en": "Login started. If Xiaomi sends a code, enter it below."
           },
           "help": {
-            "de": "Zuerst hier klicken. Xiaomi sendet anschließend einen Bestätigungscode per SMS oder E-Mail. Erst danach den Code unten eingeben und Schritt 2 ausführen.",
-            "en": "Click here first. Xiaomi will then send a verification code by SMS or email. Only after that, enter the code below and complete step 2."
+            "de": "Zuerst hier klicken. Xiaomi schickt dann einen Bestätigungscode per E-Mail oder SMS; ihn unten eintragen und Schritt 2 ausführen. Die Sitzung wird gespeichert, die Anmeldung ist nur einmal nötig (wieder, falls Xiaomi die Sitzung beendet). Ein Roboter-Token ist dafür nicht nötig.",
+            "en": "Click here first. Xiaomi then sends a verification code by e-mail or SMS; enter it below and run step 2. The session is stored, so sign-in is needed only once (again if Xiaomi ends the session). No robot token is needed for this."
           },
           "variant": "contained",
           "controlStyle": {

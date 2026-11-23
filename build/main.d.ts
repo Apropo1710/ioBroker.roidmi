@@ -53,8 +53,11 @@ declare class RoidmiAdapter extends Adapter {
     private refreshCloudMap;
     private sendProperty;
     private sendAction;
-    /** Current token of the device with this DID from the Xiaomi Cloud device list. */
-    private lookupCloudToken;
+    /**
+     * The robot's current entry in the Xiaomi Cloud device list: matched by DID, or by the
+     * configured IP address when no DID is set yet (first setup).
+     */
+    private lookupCloudDevice;
     /**
      * Admin button "take over token from Xiaomi Cloud": answers with the token as native value,
      * so the admin form fills the token field; the user saves to apply it.

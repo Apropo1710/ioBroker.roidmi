@@ -14,7 +14,7 @@ import { getRoidmiSetting } from "./lib/roidmi-settings";
 import { parseCleaningSchedules } from "./lib/cleaning-schedules";
 import { areRoidmiScheduleSnapshotsEqual, updateRoidmiCleaningSchedule, verifyRoidmiCleaningScheduleUpdate, RoidmiCleaningScheduleUpdate } from "./lib/roidmi-cleaning-schedules";
 import { parseXiaomiCleaningSchedules, setXiaomiCleaningScheduleEnabled, verifyXiaomiCleaningScheduleUpdate, updateXiaomiCleaningSchedule, verifyXiaomiCleaningScheduleDetailsUpdate, XiaomiCleaningScheduleUpdate } from "./lib/xiaomi-cleaning-schedules";
-import { XiaomiCloudMapClient, type CloudDeviceToken } from "./lib/xiaomi-cloud-map";
+import { XiaomiCloudMapClient, findCloudDevice, type CloudDeviceToken } from "./lib/xiaomi-cloud-map";
 import { RoidmiMapMetadata } from "./lib/roidmi-map";
 import { getVacuumStateText, getChargingStateText, getRoidmiErrorText } from "./lib/roidmi-status";
 
@@ -1926,17 +1926,36 @@ class RoidmiAdapter extends Adapter {
                 // Do not update system.adapter.<instance> during login: changing native config restarts this adapter.
                 this.cloudMapClient.clearSession();
             }
-            if (!credentials.username || !credentials.password || !credentials.token) {
-                throw new Error("Bitte Xiaomi-Benutzername, Passwort und Roboter-Token in der Adapterkonfiguration eintragen.");
+            if (!credentials.username || !credentials.password) {
+                throw new Error("Bitte Xiaomi-Benutzername und Passwort in der Adapterkonfiguration eintragen.");
             }
             if (obj.command === "cloudSubmitCode" && !code) throw new Error("Bitte zuerst den Xiaomi-Bestätigungscode eingeben.");
-            await this.refreshCloudMap(code, credentials);
+            // Sign-in needs no robot token, so a first setup can fetch token and DID afterwards.
+            await this.cloudMapClient.signIn(credentials, code, (message) => {
+                void this.setStateAsync("evePlus.map.cloudStatus", { val: message, ack: true });
+            }, async () => this.persistCloudSession());
+            await this.persistCloudSession();
+            const config = this.config as RoidmiAdapterConfig;
+            if (!credentials.token || !this.client || !config.cloudEnabled) {
+                const text = "Bei der Xiaomi-Cloud angemeldet. Token und DID jetzt im Reiter „Geräte & Verbindung“ holen.";
+                await this.setStateAsync("evePlus.map.cloudStatus", { val: text, ack: true });
+                this.sendTo(obj.from, obj.command, { text, ok: true }, obj.callback);
+                return;
+            }
+            await this.refreshCloudMap(undefined, credentials);
             const state = await this.getStateAsync("evePlus.map.cloudStatus");
-            const message = typeof state?.val === "string" ? state.val : "Xiaomi-Cloud-Anfrage abgeschlossen.";
-            this.sendTo(obj.from, obj.command, { text: message, ok: !/fehlgeschlagen|abgelehnt|fehlt|ungültig/i.test(message) }, obj.callback);
+            const status = typeof state?.val === "string" ? state.val : "Xiaomi-Cloud-Anfrage abgeschlossen.";
+            this.sendTo(obj.from, obj.command, { text: "Bei der Xiaomi-Cloud angemeldet. Kartenabruf: " + status, ok: true }, obj.callback);
         } catch (error) {
-            const message = error instanceof Error ? error.message : "Xiaomi-Cloud-Anmeldung fehlgeschlagen.";
-            this.sendTo(obj.from, obj.command, { text: message, ok: false }, obj.callback);
+            const raw = error instanceof Error ? error.message : "Xiaomi-Cloud-Anmeldung fehlgeschlagen.";
+            if (raw.startsWith("XIAOMI_2FA_CODE:")) {
+                const text = raw.slice("XIAOMI_2FA_CODE:".length);
+                await this.setStateAsync("evePlus.map.cloudStatus", { val: text, ack: true });
+                this.sendTo(obj.from, obj.command, { text, ok: true }, obj.callback);
+                return;
+            }
+            await this.setStateAsync("evePlus.map.cloudStatus", { val: raw, ack: true });
+            this.sendTo(obj.from, obj.command, { text: raw, ok: false }, obj.callback);
         }
     }
 
@@ -2129,13 +2148,19 @@ class RoidmiAdapter extends Adapter {
         }
     }
 
-    /** Current token of the device with this DID from the Xiaomi Cloud device list. */
-    private async lookupCloudToken(did: string, country: string): Promise<CloudDeviceToken> {
-        if (!/^\d{1,20}$/.test(did)) throw new Error("No valid DID configured for this robot.");
-        const tokens = await this.cloudMapClient.fetchDeviceTokens(country, [did], async () => this.persistCloudSession());
-        const found = tokens.get(did);
-        if (!found) throw new Error("Robot (configured DID) not found in the Xiaomi Cloud device list of this account and region.");
-        return found;
+    /**
+     * The robot's current entry in the Xiaomi Cloud device list: matched by DID, or by the
+     * configured IP address when no DID is set yet (first setup).
+     */
+    private async lookupCloudDevice(did: string, host: string, country: string): Promise<CloudDeviceToken> {
+        if (did && !/^\d{1,20}$/.test(did)) throw new Error("The configured DID is invalid.");
+        if (!did && !host) throw new Error("Enter the robot's IP address (or its DID) first.");
+        const devices = await this.cloudMapClient.fetchCloudDevices(country, async () => this.persistCloudSession());
+        const found = findCloudDevice(devices, did, host);
+        if (found) return found;
+        throw new Error(did
+            ? "Robot (configured DID) not found in the Xiaomi Cloud device list of this account and region."
+            : `No unique device with IP ${host} in the Xiaomi Cloud device list of this account and region; check the IP or enter the DID.`);
     }
 
     /**
@@ -2146,12 +2171,14 @@ class RoidmiAdapter extends Adapter {
         const payload = (obj.message && typeof obj.message === "object" ? obj.message : {}) as Record<string, unknown>;
         const robot = payload.robot === "x20Plus" ? "x20Plus" : "evePlus";
         const tokenKey = robot === "evePlus" ? "token" : "xiaomiToken";
+        const didKey = robot === "evePlus" ? "did" : "xiaomiDid";
         const did = typeof payload.did === "string" ? payload.did.trim() : "";
+        const host = typeof payload.host === "string" ? payload.host.trim() : "";
         const country = typeof payload.country === "string" && payload.country.trim() ? payload.country.trim() : "de";
         try {
-            const found = await this.lookupCloudToken(did, country);
+            const found = await this.lookupCloudDevice(did, host, country);
             this.log.info(`${robot === "evePlus" ? "EVE Plus" : "Xiaomi X20+"}: current token read from the Xiaomi Cloud for the settings page.`);
-            this.sendTo(obj.from, obj.command, { native: { [tokenKey]: found.token } }, obj.callback);
+            this.sendTo(obj.from, obj.command, { native: { [tokenKey]: found.token, [didKey]: found.did } }, obj.callback);
         } catch (error) {
             const message = error instanceof Error ? error.message : String(error);
             const hint = this.cloudMapClient.hasSession() ? "" : " Sign in to the Xiaomi Cloud first (tab Xiaomi Cloud).";
@@ -2183,6 +2210,7 @@ class RoidmiAdapter extends Adapter {
         const label = robot === "evePlus" ? "EVE Plus" : "Xiaomi X20+";
         const did = String((robot === "evePlus" ? config.did : config.xiaomiDid) ?? "").trim();
         const tokenKey = robot === "evePlus" ? "token" : "xiaomiToken";
+        const didKey = robot === "evePlus" ? "did" : "xiaomiDid";
         const configuredHost = String((robot === "evePlus" ? config.host : config.xiaomiHost) ?? "").trim();
         const report = async (text: string, level: "info" | "warn"): Promise<void> => {
             await this.setStateAsync(`${robot}.control.refreshTokenStatus`, { val: text, ack: true });
@@ -2190,17 +2218,17 @@ class RoidmiAdapter extends Adapter {
             else this.log.info(`${label} token refresh: ${text}`);
         };
         try {
-            const found = await this.lookupCloudToken(did, config.cloudCountry || "de");
+            const found = await this.lookupCloudDevice(did, configuredHost, config.cloudCountry || "de");
             const ipNote = found.localIp && configuredHost && found.localIp !== configuredHost
                 ? ` Note: the cloud reports IP ${found.localIp}, configured is ${configuredHost}.`
                 : "";
             const current = String((config as unknown as Record<string, unknown>)[tokenKey] ?? "").toLowerCase();
-            if (found.token === current) {
+            if (found.token === current && found.did === did) {
                 await report(`Token unchanged; the configured token is current.${ipNote}`, "info");
                 return;
             }
             await report(`New token taken over from the Xiaomi Cloud; the adapter restarts now.${ipNote}`, "info");
-            await this.extendForeignObjectAsync(`system.adapter.${this.namespace}`, { native: { [tokenKey]: this.encrypt(found.token) } });
+            await this.extendForeignObjectAsync(`system.adapter.${this.namespace}`, { native: { [tokenKey]: this.encrypt(found.token), [didKey]: found.did } });
         } catch (error) {
             await report(`Failed: ${error instanceof Error ? error.message : String(error)}`, "warn");
         }
