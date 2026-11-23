@@ -34,15 +34,15 @@ Die Instanzeinstellungen haben drei Reiter:
 - EVE Plus liest lokal (SIID 8 / PIID 6), der X20+ über die Xiaomi Cloud (aktive Cloud-Sitzung nötig).
 
 **Xiaomi Cloud** (optional)
-- Benutzername, Passwort und Region des Xiaomi-Kontos. Anmeldung in zwei Schritten: Code anfordern, dann den Code aus SMS/E-Mail eingeben.
+- Benutzername, Passwort und Region des Xiaomi-Kontos. Anmeldung in zwei Schritten: Code anfordern, dann den Code aus SMS/E-Mail eingeben. Kein Roboter-Token nötig; die Anmeldung dient auch zum Holen von Token und DID.
 - Optional: **Steuerbefehle über Xiaomi Cloud senden** – Statusabfragen bleiben trotzdem lokal.
 
 ### IP-Adresse, DID und Token ermitteln
 
 - **IP-Adresse:** in der Geräteliste des Routers. Eine feste DHCP-Zuweisung wird empfohlen.
-- **DID und Token:** z. B. mit dem [Xiaomi Cloud Tokens Extractor](https://github.com/PiotrMachowski/Xiaomi-cloud-tokens-extractor). Die richtige Region des Xiaomi-Kontos wählen.
+- **DID und Token:** über den Adapter selbst. Zuerst im Reiter „Xiaomi Cloud“ Benutzername, Passwort und Region eintragen und anmelden (Schritt 1 fordert den Code an, Xiaomi schickt ihn per E-Mail oder SMS; Schritt 2 prüft ihn). Die Sitzung wird gespeichert, die Anmeldung ist nur einmal nötig. Dann im Reiter „Geräte & Verbindung“ die IP-Adresse eintragen und **„Token aus der Xiaomi-Cloud holen“** klicken: Der Adapter trägt Token und, falls noch leer, die DID ein. Danach speichern. Alternativ funktioniert weiterhin der [Xiaomi Cloud Tokens Extractor](https://github.com/PiotrMachowski/Xiaomi-cloud-tokens-extractor).
 - Der Token ist ein Geheimnis: nie in Chats, Screenshots, GitHub oder Logs veröffentlichen.
-- **Nach einem WLAN-Wechsel** des Roboters (in der Xiaomi- bzw. Roidmi-App) vergibt Xiaomi meist einen neuen Token. Der Roboter beantwortet dann nur noch den Handshake, nicht die Anfragen. Abhilfe in den Instanzeinstellungen: neben dem Token **„Token aus der Xiaomi-Cloud holen“** klicken und speichern. Der Adapter liest den aktuellen Token anhand der DID über die Xiaomi-Cloud-Anmeldung aus. Alternativ, etwa aus einem Skript: `<roboter>.control.refreshToken` drücken; dann speichert der Adapter den Token selbst und startet neu, das Ergebnis steht in `<roboter>.control.refreshTokenStatus`.
+- **Nach einem WLAN-Wechsel** des Roboters (in der Xiaomi- bzw. Roidmi-App) vergibt Xiaomi meist einen neuen Token. Der Roboter beantwortet dann nur noch den Handshake, nicht die Anfragen. Abhilfe wie oben: **„Token aus der Xiaomi-Cloud holen“** und speichern. Alternativ, etwa aus einem Skript: `<roboter>.control.refreshToken` drücken; dann speichert der Adapter den Token selbst und startet neu, das Ergebnis steht in `<roboter>.control.refreshTokenStatus`.
 
 ## Objektbaum
 

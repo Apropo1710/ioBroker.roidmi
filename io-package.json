@@ -1,7 +1,7 @@
 {
   "common": {
     "name": "roidmi",
-    "version": "0.1.74",
+    "version": "0.1.75",
     "title": "Roidmi",
     "titleLang": {
       "en": "Roidmi",
@@ -27,6 +27,10 @@
       "xiaomiToken"
     ],
     "news": {
+      "0.1.75": {
+        "en": "First setup without token: Xiaomi Cloud sign-in no longer needs a robot token; the token button also finds the robot by IP and fills in the DID",
+        "de": "Ersteinrichtung ohne Token: Die Xiaomi-Cloud-Anmeldung braucht keinen Roboter-Token mehr; der Token-Knopf findet den Roboter auch über die IP-Adresse und ergänzt die DID"
+      },
       "0.1.74": {
         "en": "Instance settings: button \"Get token from Xiaomi Cloud\" next to each robot token. It fills in the current token; save to apply.",
         "de": "Instanzeinstellungen: Knopf „Token aus der Xiaomi-Cloud holen“ neben dem Token jedes Roboters. Er trägt den aktuellen Token ein; zum Übernehmen speichern."
@@ -102,10 +106,6 @@
       "0.1.45": {
         "en": "Filter unnamed X20+ map segments from room selection",
         "de": "Unbenannte X20+-Kartensegmente aus Raum-Auswahl gefiltert"
-      },
-      "0.1.44": {
-        "en": "Added on-demand Xiaomi X20+ FDS room-map import",
-        "de": "Xiaomi-X20+-FDS-Raumkartenimport auf Abruf ergänzt"
       }
     },
     "adminUI": {

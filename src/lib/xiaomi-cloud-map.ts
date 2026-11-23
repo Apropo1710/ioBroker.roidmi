@@ -176,12 +176,13 @@ export class XiaomiCloudMapClient {
     }
 
     /** Read the current miIO tokens of the given devices from the Xiaomi Cloud device list (explicit request only). */
-    public async fetchDeviceTokens(country: string, dids: string[], onSessionChanged?: () => Promise<void>): Promise<Map<string, CloudDeviceToken>> {
+    /** All devices of the signed-in account that report a miIO token (current tokens, DID, model, local IP). */
+    public async fetchCloudDevices(country: string, onSessionChanged?: () => Promise<void>): Promise<CloudDeviceToken[]> {
         if (!this.hasSession()) throw new Error("Xiaomi Cloud session is unavailable; sign in first.");
         const base = `https://${country === "cn" ? "" : country + "."}api.io.mi.com/app`;
         const devices = await this.api(base + "/home/device_list", { data: '{"getVirtualModel":false,"getHuamiDevices":0}' }, onSessionChanged);
         if (!Array.isArray(devices?.result?.list)) throw new Error("Xiaomi Cloud did not return a device list.");
-        return pickDeviceTokens(devices.result.list, dids);
+        return parseCloudDevices(devices.result.list);
     }
 
     /** Fetch the C102GL saved room map from Xiaomi FDS. This is explicit/manual and never part of polling. */
@@ -220,8 +221,12 @@ export class XiaomiCloudMapClient {
         return parseXiaomiDreameFdsMap(body, object.suffix);
     }
 
-    public async fetchMap(o:XiaomiCloudMapOptions, verificationCode?: string, onProgress?: (message: string) => void, onSessionChanged?: () => Promise<void>):Promise<XiaomiCloudMapResult>{
-        if(!o.username.trim()||!o.password||!o.mapName.trim())throw new Error("Xiaomi cloud username, password and map name are required");
+    /**
+     * Signs in to the Xiaomi Cloud unless a session exists. The first sign-in usually needs a
+     * verification code (e-mail or SMS); the session is then persisted via onSessionChanged.
+     */
+    public async signIn(o: { username: string; password: string }, verificationCode?: string, onProgress?: (message: string) => void, onSessionChanged?: () => Promise<void>): Promise<void> {
+        if (!o.username.trim() || !o.password) throw new Error("Xiaomi cloud username and password are required");
         if (!this.serviceToken || !this.ssecurity) {
             if (this.pendingFlag) {
                 if (!verificationCode?.trim()) throw new Error("XIAOMI_2FA_CODE:Enter the verification code sent by Xiaomi.");
@@ -286,6 +291,11 @@ export class XiaomiCloudMapClient {
             const missing = [!this.ssecurity && "ssecurity", !this.serviceToken && "serviceToken", !this.userId && "userId"].filter(Boolean).join(", ");
             throw new Error("Xiaomi login session is incomplete (missing " + missing + ")");
         }
+    }
+
+    public async fetchMap(o:XiaomiCloudMapOptions, verificationCode?: string, onProgress?: (message: string) => void, onSessionChanged?: () => Promise<void>):Promise<XiaomiCloudMapResult>{
+        if(!o.mapName.trim())throw new Error("Xiaomi cloud map name is required");
+        await this.signIn(o, verificationCode, onProgress, onSessionChanged);
         const base=`https://${o.country==="cn"?"":o.country+"."}api.io.mi.com/app`;
         const devices=await this.api(base+"/home/device_list",{data:'{"getVirtualModel":false,"getHuamiDevices":0}'});
         const list=devices?.result?.list;
@@ -512,16 +522,16 @@ export interface CloudDeviceToken {
  * Picks the current miIO token for each requested DID from a Xiaomi Cloud
  * home/device_list result. Entries without a valid 32-hex token are ignored.
  */
-export function pickDeviceTokens(list: unknown, dids: string[]): Map<string, CloudDeviceToken> {
-    const result = new Map<string, CloudDeviceToken>();
+export function parseCloudDevices(list: unknown): CloudDeviceToken[] {
+    const result: CloudDeviceToken[] = [];
     if (!Array.isArray(list)) return result;
     for (const entry of list) {
         if (!entry || typeof entry !== "object") continue;
         const record = entry as Record<string, unknown>;
         const did = String(record.did ?? "");
         const token = typeof record.token === "string" ? record.token.toLowerCase() : "";
-        if (!dids.includes(did) || !/^[0-9a-f]{32}$/.test(token)) continue;
-        result.set(did, {
+        if (!/^\d{1,20}$/.test(did) || !/^[0-9a-f]{32}$/.test(token)) continue;
+        result.push({
             did,
             token,
             model: typeof record.model === "string" ? record.model : "",
@@ -529,4 +539,15 @@ export function pickDeviceTokens(list: unknown, dids: string[]): Map<string, Clo
         });
     }
     return result;
+}
+
+/**
+ * The robot in the cloud device list: by DID when one is configured, otherwise by its local IP
+ * (first setup without a known DID). An IP match must be unambiguous.
+ */
+export function findCloudDevice(devices: CloudDeviceToken[], did: string, ip: string): CloudDeviceToken | undefined {
+    if (did) return devices.find((device) => device.did === did);
+    if (!ip) return undefined;
+    const matches = devices.filter((device) => device.localIp === ip);
+    return matches.length === 1 ? matches[0] : undefined;
 }
