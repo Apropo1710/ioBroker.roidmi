@@ -227,8 +227,11 @@ export function answersHandshakeOnly(trace: readonly string[]): boolean {
 }
 
 /** Log hint for persistent handshake-only failures. */
-export function tokenHint(robot: "evePlus" | "x20Plus", message: string): string {
-    return message.includes(HANDSHAKE_ONLY_MARK)
+export function tokenHint(robot: "evePlus" | "x20Plus", message: string, succeededSinceStart: boolean): string {
+    // A wrong token makes every request fail. Once a request has succeeded with the current
+    // token (the adapter restarts after a token change), a handshake-only failure is a lost or
+    // unanswered packet, not a token problem.
+    return !succeededSinceStart && message.includes(HANDSHAKE_ONLY_MARK)
         ? ` – if the robot's WLAN was reconfigured, its token has probably changed: press ${robot}.control.refreshToken`
         : "";
 }

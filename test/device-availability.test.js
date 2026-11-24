@@ -106,6 +106,7 @@ test("handshake-only failures are recognised and produce a token hint", () => {
     const radioGap = ["+0ms sending handshake packet (32 bytes)", "+4001ms timeout while waiting for handshake"];
     assert.equal(answersHandshakeOnly(tokenProblem), true);
     assert.equal(answersHandshakeOnly(radioGap), false);
-    assert.match(tokenHint("x20Plus", `retry failed: timed out (${HANDSHAKE_ONLY_MARK})`), /x20Plus\.control\.refreshToken/);
-    assert.equal(tokenHint("evePlus", "retry failed: timed out"), "");
+    assert.match(tokenHint("x20Plus", `retry failed: timed out (${HANDSHAKE_ONLY_MARK})`, false), /x20Plus\.control\.refreshToken/);
+    assert.equal(tokenHint("x20Plus", `retry failed: timed out (${HANDSHAKE_ONLY_MARK})`, true), "", "no hint once the token has worked");
+    assert.equal(tokenHint("evePlus", "retry failed: timed out", false), "");
 });

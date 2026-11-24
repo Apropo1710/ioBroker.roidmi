@@ -187,8 +187,11 @@ function answersHandshakeOnly(trace) {
         trace.some((line) => line.includes("timeout while waiting for RPC response"));
 }
 /** Log hint for persistent handshake-only failures. */
-function tokenHint(robot, message) {
-    return message.includes(exports.HANDSHAKE_ONLY_MARK)
+function tokenHint(robot, message, succeededSinceStart) {
+    // A wrong token makes every request fail. Once a request has succeeded with the current
+    // token (the adapter restarts after a token change), a handshake-only failure is a lost or
+    // unanswered packet, not a token problem.
+    return !succeededSinceStart && message.includes(exports.HANDSHAKE_ONLY_MARK)
         ? ` – if the robot's WLAN was reconfigured, its token has probably changed: press ${robot}.control.refreshToken`
         : "";
 }

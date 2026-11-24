@@ -460,7 +460,7 @@ class RoidmiAdapter extends Adapter {
                 await this.setRobotConnection("evePlus", false);
                 await this.setStateChangedAsync("evePlus.info.connectionText", { val: message, ack: true });
                 eveStats.recordFailedPoll();
-                this.logAvailability(eveAvailability.onPollFailed(message + tokenHint("evePlus", message)));
+                this.logAvailability(eveAvailability.onPollFailed(message + tokenHint("evePlus", message, successfulPollCount > 0)));
                 this.lastPollError = message;
             } finally {
                 this.commandRunning = false;
@@ -964,7 +964,7 @@ class RoidmiAdapter extends Adapter {
                 await this.setRobotConnection("x20Plus", false);
                 await this.setStateChangedAsync(prefix + "info.connectionText", { val: message, ack: true });
                 x20Stats.recordFailedPoll();
-                this.logAvailability(x20Availability.onPollFailed(message + tokenHint("x20Plus", message)));
+                this.logAvailability(x20Availability.onPollFailed(message + tokenHint("x20Plus", message, pollCount > 0)));
                 if (message !== lastError) {
                     // Emit trace only on failure; normal successful polls remain quiet.
                     for (const traceLine of this.xiaomiMiioTrace) this.log.debug("Xiaomi miIO trace: " + traceLine);

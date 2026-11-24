@@ -1,7 +1,7 @@
 {
   "common": {
     "name": "roidmi",
-    "version": "0.1.77",
+    "version": "0.1.78",
     "title": "Roidmi",
     "titleLang": {
       "en": "Roidmi",
@@ -27,6 +27,10 @@
       "xiaomiToken"
     ],
     "news": {
+      "0.1.78": {
+        "en": "Token hint only while no request has succeeded since the adapter start; single lost replies no longer suggest a token change",
+        "de": "Token-Hinweis nur, solange seit dem Adapterstart keine Anfrage gelungen ist; einzelne verlorene Antworten deuten nicht mehr auf einen neuen Token hin"
+      },
       "0.1.77": {
         "en": "Larger text for the setup guide in the settings",
         "de": "Größere Schrift für die Einrichtungsanleitung in den Einstellungen"
@@ -102,10 +106,6 @@
       "0.1.48": {
         "en": "Verify Xiaomi X20+ suction, cleaning intensity and mop settings by reading the single MIoT property back after each manual write; synchronize control and status with the value actually reported by the robot.",
         "de": "Saugstärke, Reinigungsintensität und Wasserstufe des Xiaomi X20+ nach manueller Änderung durch einmaliges Rücklesen der jeweiligen MIoT-Eigenschaft verifizieren; Steuerungs- und Statusdatenpunkt auf den tatsächlich gemeldeten Roboterwert setzen."
-      },
-      "0.1.47": {
-        "en": "Remove non-functional Xiaomi X20+ locate control",
-        "de": "Nicht funktionierende Locate-Steuerung des Xiaomi X20+ entfernt"
       }
     },
     "adminUI": {
