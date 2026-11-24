@@ -105,4 +105,4 @@ export declare const HANDSHAKE_ONLY_MARK = "device answered the handshake but no
  */
 export declare function answersHandshakeOnly(trace: readonly string[]): boolean;
 /** Log hint for persistent handshake-only failures. */
-export declare function tokenHint(robot: "evePlus" | "x20Plus", message: string): string;
+export declare function tokenHint(robot: "evePlus" | "x20Plus", message: string, succeededSinceStart: boolean): string;
