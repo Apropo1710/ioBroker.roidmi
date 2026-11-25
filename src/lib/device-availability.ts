@@ -60,10 +60,13 @@ function clock(ms: number): string {
  * - If the next poll fails as well, a warning is logged once for the whole outage, and
  *   recovery is reported as info.
  */
+/** Outages shorter than this are logged at debug level only; the statistics still count them. */
+export const OUTAGE_WARN_AFTER_MS = 5 * 60_000;
+
 export class OutageReporter {
     private outage?: { since: number; firstMessage: string; failedPolls: number; warned: boolean };
 
-    public constructor(private readonly deviceName: string) {}
+    public constructor(private readonly deviceName: string, private readonly warnAfterMs = OUTAGE_WARN_AFTER_MS) {}
 
     /** True while an outage is open (at least one failed poll since the last success). */
     public get isOutageOpen(): boolean {
@@ -73,10 +76,13 @@ export class OutageReporter {
     public onPollFailed(message: string, now = Date.now()): AvailabilityEvent {
         if (!this.outage) {
             this.outage = { since: now, firstMessage: message, failedPolls: 1, warned: false };
-            return { level: "debug", message: `${this.deviceName} poll failed; waiting for the next poll before reporting: ${message}` };
+            return { level: "debug", message: `${this.deviceName} poll failed; waiting before reporting: ${message}` };
         }
         this.outage.failedPolls++;
         if (this.outage.warned) return { level: "none" };
+        if (now - this.outage.since < this.warnAfterMs) {
+            return { level: "debug", message: `${this.deviceName} still unreachable (${this.outage.failedPolls} polls failed): ${message}` };
+        }
         this.outage.warned = true;
         return {
             level: "warn",
@@ -99,8 +105,8 @@ export class OutageReporter {
             return { level: "info", message: `${this.deviceName} reachable again after about ${seconds} s` };
         }
         return {
-            level: "warn",
-            message: `${this.deviceName} poll failed, reachable again after about ${seconds} s (no device restart detected): ${outage.firstMessage}`
+            level: "debug",
+            message: `${this.deviceName} reachable again after about ${seconds} s (short outage, no device restart detected): ${outage.firstMessage}`
         };
     }
 }

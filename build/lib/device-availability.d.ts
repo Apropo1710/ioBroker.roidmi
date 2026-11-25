@@ -41,10 +41,13 @@ export type AvailabilityEvent = {
  * - If the next poll fails as well, a warning is logged once for the whole outage, and
  *   recovery is reported as info.
  */
+/** Outages shorter than this are logged at debug level only; the statistics still count them. */
+export declare const OUTAGE_WARN_AFTER_MS: number;
 export declare class OutageReporter {
     private readonly deviceName;
+    private readonly warnAfterMs;
     private outage?;
-    constructor(deviceName: string);
+    constructor(deviceName: string, warnAfterMs?: number);
     /** True while an outage is open (at least one failed poll since the last success). */
     get isOutageOpen(): boolean;
     onPollFailed(message: string, now?: number): AvailabilityEvent;

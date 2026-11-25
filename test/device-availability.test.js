@@ -22,22 +22,24 @@ test("single failed poll followed by a restart is reported as info, not as warni
     assert.match(ok.message, /60 s/);
 });
 
-test("single failed poll without restart is still reported as warning", () => {
+test("short outages without restart stay at debug level", () => {
     const reporter = new OutageReporter("EVE Plus");
     reporter.onPollFailed("retry failed: miIO request timed out", 0);
-    const ok = reporter.onPollSucceeded(undefined, 30_000);
-    assert.equal(ok.level, "warn");
+    assert.equal(reporter.onPollFailed("retry failed: miIO request timed out", 30_000).level, "debug");
+    const ok = reporter.onPollSucceeded(undefined, 60_000);
+    assert.equal(ok.level, "debug");
     assert.match(ok.message, /no device restart detected/);
     assert.match(ok.message, /retry failed/);
 });
 
-test("longer outage warns once and reports recovery as info", () => {
+test("outage of five minutes or more warns once and reports recovery as info", () => {
     const reporter = new OutageReporter("EVE Plus");
     assert.equal(reporter.onPollFailed("timeout", 0).level, "debug");
-    const second = reporter.onPollFailed("timeout", 60_000);
-    assert.equal(second.level, "warn");
-    assert.match(second.message, /unreachable since/);
-    assert.equal(reporter.onPollFailed("timeout", 180_000).level, "none");
+    assert.equal(reporter.onPollFailed("timeout", 60_000).level, "debug");
+    const warned = reporter.onPollFailed("timeout", 300_000);
+    assert.equal(warned.level, "warn");
+    assert.match(warned.message, /unreachable since/);
+    assert.equal(reporter.onPollFailed("timeout", 330_000).level, "none");
     const ok = reporter.onPollSucceeded(undefined, 900_000);
     assert.equal(ok.level, "info");
     assert.match(ok.message, /reachable again after about 900 s/);
